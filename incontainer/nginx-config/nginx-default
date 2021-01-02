@@ -1,0 +1,128 @@
+##
+# You should look at the following URL's in order to grasp a solid understanding
+# of Nginx configuration files in order to fully unleash the power of Nginx.
+# https://www.nginx.com/resources/wiki/start/
+# https://www.nginx.com/resources/wiki/start/topics/tutorials/config_pitfalls/
+# https://wiki.debian.org/Nginx/DirectoryStructure
+#
+# Please see /usr/share/doc/nginx-doc/examples/ for more detailed examples.
+##
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+
+    server_name http-over-all.de;
+    
+    root /var/www/html;
+
+    default_type text/plain;
+    charset   utf-8;
+
+    server_name http-over-all;
+    disable_symlinks off;
+
+    # Add index.php to the list if you are using PHP
+    index index.php index.html index.htm index.nginx-debian.html;
+
+    location = / {
+        # First attempt to serve request as file, then
+        # as directory, then fall back to displaying a 404.
+   #     try_files $uri $uri/ =404;
+        autoindex on;
+    }
+
+    # return ip address from the requestor
+    location /func/remote-ip {
+        default_type	text/plain;
+        add_header	X-Remote-Addr $remote_addr;
+        add_header	X-Forwarded-For $http_x_forwarded_for;
+        return	200	$real_remote_addr;
+    }
+
+    location = /dav {
+        alias __WEBDAV__/web/;
+
+        client_max_body_size 2000M;
+        
+        client_body_temp_path /var/www/dav/temp;
+        dav_methods     PUT DELETE MKCOL COPY MOVE;
+        dav_ext_methods   PROPFIND OPTIONS;
+        create_full_put_path  on;
+        dav_access    user:rw group:rw all:rw;
+        autoindex     on;
+
+        satisfy all;    
+
+        allow all;
+
+        # auth_bas ic "restricted";
+        # auth_basic_user_file /etc/nginx/htpasswd;
+    }
+
+    location = /dav/ {
+        alias __WEBDAV__/web/;
+
+        client_max_body_size 2000M;
+        
+        client_body_temp_path /var/www/dav/temp;
+        dav_methods     PUT DELETE MKCOL COPY MOVE;
+        dav_ext_methods   PROPFIND OPTIONS;
+        create_full_put_path  on;
+        dav_access    user:rw group:rw all:rw;
+        autoindex     on;
+
+        satisfy all;    
+
+        allow all;
+
+        # auth_basic "restricted";
+        # auth_basic_user_file /etc/nginx/htpasswd;
+    }
+
+    # pass PHP scripts to FastCGI server
+
+    location ~* /php/..*.php$ {
+        alias /scripts;
+        fastcgi_pass unix:__PHP7_SOCK__;
+        
+        fastcgi_index index.php;
+        include fastcgi.conf;
+    }
+
+    location /decrypt/ {
+        rewrite_by_lua_block {
+            ngx.req.set_uri(ngx.escape_uri(ngx.var.uri));
+        }
+
+        # rewrite ^/decrypt/(.*)/(.*)/ $scheme://$http_host/php/decrypt.php?v=$2&f=$1;
+        proxy_pass http://127.0.0.1/php/decrypt.php?uri=$uri&remote_addr=$remote_addr;
+    }
+
+    location /decrypt-link/ {
+        rewrite_by_lua_block {
+            ngx.req.set_uri(ngx.escape_uri(ngx.var.uri));
+        }
+
+        # rewrite ^/decrypt/(.*)/(.*)/ $scheme://$http_host/php/decrypt.php?v=$2&f=$1;
+        proxy_pass http://127.0.0.1/php/decrypt-link.php?uri=$uri&remote_addr=$remote_addr;
+    }
+
+    location ~ ^/force-update(/.*)?$ {
+        rewrite_by_lua_block {
+            ngx.req.set_uri(ngx.escape_uri(ngx.var.uri));
+        }
+
+        # rewrite ^/decrypt/(.*)/(.*)/ $scheme://$http_host/php/decrypt.php?v=$2&f=$1;
+        proxy_pass http://127.0.0.1/php/force-update.php?uri=$uri&remote_addr=$remote_addr;
+    }
+
+    location = /favicon.ico {
+        alias /scripts/nginx-config/favicon.ico;
+    }
+
+   include /etc/nginx/http-over-all/*.conf;
+}

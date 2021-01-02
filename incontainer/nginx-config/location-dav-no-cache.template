@@ -1,0 +1,32 @@
+    location /dav/__RESOURCE_NAME__/ {
+        alias __WEBDAV__/web/__RESOURCE_NAME__/; 
+        autoindex on;
+        client_max_body_size 2000M;
+        client_body_temp_path /var/www/dav/temp;
+        # dav_methods     PUT DELETE MKCOL COPY MOVE;
+        #DAV_METHODS
+        
+        dav_ext_methods   PROPFIND OPTIONS;
+        create_full_put_path  on;
+        dav_access    user:rw group:rw all:rw;
+
+        satisfy all;
+        access_log /var/log/nginx/access_dav___RESOURCE_NAME__.log;
+        error_log /var/log/nginx/error_dav___RESOURCE_NAME__.log;
+
+        #IP_RESTRICTION
+
+        # https://forum.nginx.org/read.php?2,213481,213485#msg-213485
+        #auth_basic "__RESOURCE_NAME__ restricted"; 
+        #auth_basic_user_file /etc/nginx/htpasswd_dav___RESOURCE_NAME__;
+
+        proxy_http_version  1.1;
+        if ($args ~ share) {
+            rewrite_by_lua_block {
+                ngx.req.set_uri(ngx.escape_uri(ngx.var.uri));
+            }
+
+            proxy_pass http://127.0.0.1/php/encrypt.php?uri=$uri&scheme=$scheme&http_host=$http_host&remote_addr=$remote_addr&cache=false;
+            break;
+        } 
+    }

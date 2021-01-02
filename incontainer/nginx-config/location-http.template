@@ -1,0 +1,84 @@
+    location /__RESOURCE_NAME__/ {
+        autoindex on;
+        satisfy all;
+        access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
+        error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
+
+        #IP_RESTRICTION
+
+        # https://forum.nginx.org/read.php?2,213481,213485#msg-213485
+        #auth_basic "__RESOURCE_NAME__ restricted"; 
+        #auth_basic_user_file /etc/nginx/htpasswd_http___RESOURCE_NAME__;
+
+        proxy_http_version  1.1;
+        if ($args ~ share) {
+            rewrite_by_lua_block {
+                ngx.req.set_uri(ngx.escape_uri(ngx.var.uri));
+            }
+
+            proxy_pass http://127.0.0.1/php/encrypt.php?uri=$uri&scheme=$scheme&http_host=$http_host&remote_addr=$remote_addr&cache=true;
+            break;
+        }
+
+        if ($args ~ view) {            
+            rewrite_by_lua_block {
+                ngx.req.set_uri(ngx.escape_uri(ngx.var.uri));
+            }
+
+            proxy_pass http://127.0.0.1/php/latest-highlight.php?uri=$uri&remote_addr=$remote_addr;
+            break;
+        }
+
+        if ($uri !~* "/$") {            
+            rewrite_by_lua_block {
+                ngx.req.set_uri(ngx.escape_uri(ngx.var.uri));
+            }
+
+            proxy_pass http://127.0.0.1/php/latest.php?uri=$uri&remote_addr=$remote_addr;
+            break;
+        }
+
+    }
+
+    location /internal/__RESOURCE_NAME__/ {
+        alias /var/www/html/__RESOURCE_NAME__/;
+        autoindex off;
+        satisfy all;
+        access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
+        error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
+        
+        allow 127.0.0.1;
+        deny all;
+    }
+
+    location /cached_internal/__RESOURCE_NAME__/ {
+        alias /var/www/html/__RESOURCE_NAME__/;
+        autoindex off;
+        satisfy all;
+        access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
+        error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
+        
+        allow 127.0.0.1;
+        deny all;
+
+       # http://nginx.org/en/docs/http/ngx_http_proxy_module.htm
+        add_header X-Proxy-Cache $upstream_cache_status;
+        proxy_cache REMOTE_CONTENT;
+        proxy_cache_revalidate on;
+        #cproxy_cache_min_uses 3;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        # proxy_cache_background_update on;
+        proxy_cache_lock on;
+        proxy_cache_valid      200  10d;
+        proxy_set_header       Host $host;
+        #proxy_cache_key 	$scheme$proxy_host$uri$is_args$args;
+        proxy_cache_key 	$uri;
+
+        # not working with debian:stable / nginx version: nginx/1.10.3
+        proxy_buffering        on;
+
+        # https://stackoverflow.com/questions/6236078/how-to-clear-the-cache-of-nginx
+        proxy_cache_bypass $http_secret_header;
+
+        proxy_pass http://127.0.0.1/internal/__RESOURCE_NAME__/;
+    }
