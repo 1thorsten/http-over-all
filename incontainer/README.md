@@ -1,5 +1,5 @@
 # HTTP over all
-A unified interface for accessing various resources (nfs, smb, ssh, http/dav, git, docker) through an http endpoint.
+A unified interface for accessing various resources (nfs, smb, ssh, http/dav, git, docker) through a http endpoint.
 Integrates a proxy that always delivers the latest content.
 Enables access restriction on different layers.
 - http: basic auth, ip address
