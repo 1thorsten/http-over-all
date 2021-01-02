@@ -4,7 +4,7 @@ services:
 
   http-over-all:
     container_name: http-over-all
-    image: http-over-all
+    image: 1thorsten/http-over-all
     restart: unless-stopped
     env_file:
       - example.env
