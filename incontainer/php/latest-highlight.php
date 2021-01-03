@@ -1,6 +1,6 @@
 <?php
 
-# rm /scripts/php/latest-view.php ; nano /scripts/php/latest-view.php
+# rm /scripts/php/latest-highlight.php ; nano /scripts/php/latest-highlight.php
 # ./scripts/docker-exec.sh bash
 # tail -f /tmp/php.log
 
@@ -9,7 +9,7 @@ include "common_functions.php";
 include "UptoDate.php";
 
 # common_functions.php
-denyAccessFromExternal("latest-view.php");
+denyAccessFromExternal("latest-highlight.php");
 
 $time_start = microtime(true);
 
@@ -21,7 +21,7 @@ $url = $uptoDate->url(true);
 
 if (strstr($uptoDate->lastHttpStatus,'301') === '301 Moved Permanently') {
     header("Location: {$path}/");
-    LOG::writeTime("latest-view.php",$remote_addr,"redirect to {$path}/ [{$uptoDate->lastHttpStatus}]", $time_start);
+    LOG::writeTime("latest-highlight.php",$remote_addr,"redirect to {$path}/ [{$uptoDate->lastHttpStatus}]", $time_start);
     exit();
 }
 
@@ -36,6 +36,7 @@ $basename = basename($url);
 # common_functions.php
 $language = determineLanguage($basename);
 $content = file_get_contents($url);
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -50,11 +51,11 @@ $content = file_get_contents($url);
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
 
-    <pre><code class="<?php echo $language;?> line-numbers"><?php echo htmlspecialchars($content);?></code></pre>
+    <pre><code class="<?php echo $language;?> line-numbers"><?php echo htmlspecialchars($content,ENT_SUBSTITUTE, "UTF-8");?></code></pre>
 </body>
 </html>
 <?php
 if ($log) {
-    LOG::writeTime("latest-view.php",$remote_addr,"Name: {$basename} {$language} {$debugOut}| Length: ".strlen($content)." | Cache: {$uptoDate->cacheStatus}", $time_start);
+    LOG::writeTime("latest-highlight.php",$remote_addr,"Name: {$basename} {$language} {$debugOut}| Length: ".strlen($content)." | Cache: {$uptoDate->cacheStatus}", $time_start);
 }
 ?>

@@ -1,5 +1,7 @@
 FROM debian:buster-slim
 ENV PHP_VERSION=7.3
+LABEL maintainer="Thorsten Winkler"
+LABEL description="http-over-all"
 
 #FROM ubuntu:20.04
 #ENV PHP_VERSION=7.4
