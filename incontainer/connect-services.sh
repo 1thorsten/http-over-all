@@ -186,7 +186,8 @@ function connect_or_update_docker {
         local PULL="docker pull ${IMAGE}:${TAG}"
         local IMAGE_STATUS="NEW"
         local DIGEST
-        
+
+        echo "$PULL"
         if ! pull_output=$(docker pull ${IMAGE}:${TAG} 2>&1); then
             echo "ERR (pull): ${pull_output}"
 
@@ -219,7 +220,7 @@ function connect_or_update_docker {
             if none_images=$(docker images | grep "$IMAGE.*<none>" | awk '{print $3}'); then
                 if [[ "$none_images" != "" ]]; then
                     echo "remove old images: $none_images"
-                    docker rmi -f $none_images
+                    docker rmi -f "$none_images"
                 fi
             fi
 
@@ -237,7 +238,7 @@ function connect_or_update_docker {
                     fi
                 done
                 rsync -rtu --delete ${tmp_dir}/ ${DOCKER_MOUNT}
-                rm -rf ${tmp_dir}
+                rm -rf "${tmp_dir}"
             else
                 echo "unknown method: $METHOD | ignore"
                 continue
@@ -246,7 +247,6 @@ function connect_or_update_docker {
 
         # update -> call from periodic_jobs
         if [[ "${TYPE}" != "update" ]]; then
-            echo
             initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DOCKER_${COUNT}" "${DOCKER_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
         fi
     done
