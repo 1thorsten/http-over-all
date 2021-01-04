@@ -4,22 +4,23 @@ rm -f ${SDS_READY}
 
 source "/scripts/connect-services.sh"
 
-echo "-- ENV --"
-env | grep "^DAV_" | sort
-env | grep "^GIT_" | sort
-env | grep "^LOCAL_" | sort
-env | grep "^NFS_" | sort
-env | grep "^PROXY_" | sort
-env | grep "^SMB_" | sort
-env | grep "^SSH_" | sort
-env | grep -v "^SMB_" | grep -v "^GIT_" | grep -v "^LOCAL_" | grep -v "^SSH_" | grep -v "^DAV_" | grep -v "^PROXY_" | grep -v "^NFS_" | sort
+_ENV=$(env)
 
 SYS_ENV=/var/run/sys_env.sh
-env | grep "^[A-Z]*_[0-9]*_" | sort | awk -F '=' '{printf "export %s\n",$0 }' > "${SYS_ENV}"
-env | grep "^HTDOCS" | awk -F '=' '{printf "export %s\n",$0 }' >> "${SYS_ENV}"
-env | grep "^DATA" | awk -F '=' '{printf "export %s\n",$0 }' >> "${SYS_ENV}"
+echo "$_ENV" | grep "^[A-Z]*_[0-9]*_" | sort -t '_' -k1,1 -k2,2n | awk -F '=' '{printf "export %s\n",$0 }' > "${SYS_ENV}"
+echo "$_ENV" | grep "^HTDOCS" | awk -F '=' '{printf "export %s\n",$0 }' >> "${SYS_ENV}"
+echo "$_ENV" | grep "^DATA" | awk -F '=' '{printf "export %s\n",$0 }' >> "${SYS_ENV}"
 
+echo "-- ENV --"
+for RES in DAV DOCKER GIT LOCAL NFS PROXY SMB SSH; do
+  echo "$_ENV" | grep "^${RES}_[0-9]*_" | sort -t '_' -k2 -n
+done
+for RES in DAV DOCKER GIT LOCAL NFS PROXY SMB SSH; do
+  _ENV=$(echo "$_ENV" | grep -v "^${RES}_[0-9]*_")
+done
 echo "---------"
+echo "$_ENV" | sort
+echo "-- ENV --"
 
 mkdir -p "${DATA}"
 
