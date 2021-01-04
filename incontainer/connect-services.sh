@@ -3,8 +3,7 @@
 source "/scripts/helper.sh"
 
 function mount_dav_shares {
-    local COUNT='1'
-    while [[ "$(var_exp "DAV_${COUNT}_NAME")" != "nil" ]]; do
+    for COUNT in $(env | grep -o "^DAV_[0-9]*_NAME" | awk -F '_' '{print $2}' | sort -nu); do
         local PASS="$(var_exp "DAV_${COUNT}_PASS")"
         local USER="$(var_exp "DAV_${COUNT}_USER")"
         local SHARE="$(var_exp "DAV_${COUNT}_SHARE")"
@@ -44,13 +43,11 @@ function mount_dav_shares {
                 echo "mount not successful (ignore): ${SHARE}"
             fi
         fi
-        (( COUNT++ ))
     done
 }
 
 function mount_ssh_shares {
-    local COUNT='1'
-    while [[ "$(var_exp "SSH_${COUNT}_NAME")" != "nil" ]]; do
+    for COUNT in $(env | grep -o "^SSH_[0-9]*_NAME" | awk -F '_' '{print $2}' | sort -nu); do
         local PASS="$(var_exp "SSH_${COUNT}_PASS")"
         local SHARE="$(var_exp "SSH_${COUNT}_SHARE")"
         local RESOURCE_NAME="$(var_exp "SSH_${COUNT}_NAME")"
@@ -77,15 +74,13 @@ function mount_ssh_shares {
         else
             echo "mount not successful (ignore): ${SHARE}"
         fi
-        (( COUNT++ ))
     done
 }
 
 # https://help.ubuntu.com/lts/serverguide/network-file-system.html.en
 # https://wiki.ubuntuusers.de/NFS/
 function mount_nfs_shares {
-    local COUNT='1'
-    while [[ "$(var_exp "NFS_${COUNT}_SHARE")" != "nil" ]]; do
+    for COUNT in $(env | grep -o "^NFS_[0-9]*_SHARE" | awk -F '_' '{print $2}' | sort -nu); do
         local SHARE="$(var_exp "NFS_${COUNT}_SHARE")"
         local OPTS="$(var_exp "NFS_${COUNT}_OPTS")"
         local RESOURCE_NAME="$(var_exp "NFS_${COUNT}_NAME")"
@@ -113,13 +108,11 @@ function mount_nfs_shares {
         mount "${SHARE}" "${NFS_MOUNT}" "${NFS_OPTS}"
 
         initial_create_symlinks_for_resources "${RESOURCE_NAME}" "NFS_${COUNT}" "${NFS_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" 
-        (( COUNT++ ))
     done
 }
 
 function mount_smb_shares {
-    local COUNT='1'
-    while [[ "$(var_exp "SMB_${COUNT}_USER")" != "nil" ]]; do
+    for COUNT in $(env | grep -o "^SMB_[0-9]*_SHARE" | awk -F '_' '{print $2}' | sort -nu); do
         local USER="$(var_exp "SMB_${COUNT}_USER")"
         local PASS="$(var_exp "SMB_${COUNT}_PASS")"
         local SHARE="$(var_exp "SMB_${COUNT}_SHARE")"
@@ -153,15 +146,12 @@ function mount_smb_shares {
         else
             echo "mount not successful (ignore): ${SHARE}"
         fi
-
-        (( COUNT++ ))
     done
 }
 
 function connect_or_update_docker {
     local TYPE="${1}"
-    local COUNT='1'
-    while [[ "$(var_exp "DOCKER_${COUNT}_IMAGE")" != "nil" ]]; do
+    for COUNT in $(env | grep -o "^DOCKER_[0-9]*_IMAGE" | awk -F '_' '{print $2}' | sort -nu); do
         local IMAGE="$(var_exp "DOCKER_${COUNT}_IMAGE")"
         local TAG="$(var_exp "DOCKER_${COUNT}_TAG" "latest")"
         local LOGIN="$(var_exp "DOCKER_${COUNT}_LOGIN")"
@@ -189,7 +179,6 @@ function connect_or_update_docker {
                 echo "login not succeeded ($LOGIN)"
                 echo "ERR: ${login_output}"
                 echo "ignore ${RESOURCE_NAME}"
-                (( COUNT++ ))
                 continue
             fi
         fi
@@ -204,7 +193,6 @@ function connect_or_update_docker {
             # check if the image exists at all, if not then ignore resource
             if ! history_output=$(docker history ${IMAGE}:${TAG} 2>&1); then
                 echo "ignore ${RESOURCE_NAME}"
-                (( COUNT++ ))
                 continue
             else
                 # could not pull, but image exists
@@ -252,7 +240,6 @@ function connect_or_update_docker {
                 rm -rf ${tmp_dir}
             else
                 echo "unknown method: $METHOD | ignore"
-                (( COUNT++ ))
                 continue
             fi
         fi
@@ -261,16 +248,13 @@ function connect_or_update_docker {
         if [[ "${TYPE}" != "update" ]]; then
             echo
             initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DOCKER_${COUNT}" "${DOCKER_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
-        fi 
- 
-        (( COUNT++ ))
+        fi
     done
 }
 
 function connect_or_update_git_repos {
     local TYPE="${1}"
-    local COUNT='1'
-    while [[ "$(var_exp "GIT_${COUNT}_REPO_URL")" != "nil" ]]; do
+    for COUNT in $(env | grep -o "^GIT_[0-9]*_REPO_URL" | awk -F '_' '{print $2}' | sort -nu); do
         local REPO_URL="$(var_exp "GIT_${COUNT}_REPO_URL")"
         local REPO_BRANCH="$(var_exp "GIT_${COUNT}_REPO_BRANCH" "master")"
         local RESOURCE_NAME="$(var_exp "GIT_${COUNT}_NAME")"
@@ -301,7 +285,6 @@ function connect_or_update_git_repos {
         if [[ ! -d "${GIT_MOUNT}" ]] ; then
             if ! ${ACCESSIBLE} ; then
                 echo "${GIT_MOUNT} not exists -> ignore"
-                (( COUNT++ ))                
                 continue 
             fi
             clone_git_repo "${GIT_REPO_PATH}" "${REPO_URL}" "$RESOURCE_NAME"
@@ -316,7 +299,6 @@ function connect_or_update_git_repos {
                     initial_create_symlinks_for_resources "${RESOURCE_NAME}" "GIT_${COUNT}" "${GIT_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
                     rm -f "${GIT_REPO_PATH}.error"
                 fi
-                (( COUNT++ )) 
                 continue
             fi
         else
@@ -371,14 +353,12 @@ function connect_or_update_git_repos {
         if [[ "${TYPE}" != "update" ]]; then
             echo
             initial_create_symlinks_for_resources "${RESOURCE_NAME}" "GIT_${COUNT}" "${GIT_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
-        fi 
-        (( COUNT++ ))
+        fi
     done
 }
 
 function handle_local_paths {
-    local COUNT='1'
-    while [[ "$(var_exp "LOCAL_${COUNT}_PATH")" != "nil" ]]; do
+    for COUNT in $(env | grep -o "^LOCAL_[0-9]*_PATH" | awk -F '_' '{print $2}' | sort -nu); do
         local LOCAL_NAME="$(var_exp "LOCAL_${COUNT}_NAME")"
         local LOCAL_PATH="$(var_exp "LOCAL_${COUNT}_PATH")"
         local DAV_ACTIVE="$(var_exp "LOCAL_${COUNT}_DAV" "false")"
@@ -394,15 +374,11 @@ function handle_local_paths {
             # no subdir supported so far, so "LOCAL_${COUNT}" always points to a non existing location
             initial_create_symlinks_for_resources "${LOCAL_NAME}" "LOCAL_${COUNT}" "${LOCAL_PATH}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
         fi
-
-        (( COUNT++ ))
     done
 }
 
 function handle_proxy {
-    local COUNT='1'
-    
-    while [[ "$(var_exp "PROXY_${COUNT}_URL")" != "nil" ]]; do
+    for COUNT in $(env | grep -o "^PROXY_[0-9]*_URL" | awk -F '_' '{print $2}' | sort -nu); do
         local PROXY_NAME="$(var_exp "PROXY_${COUNT}_NAME")"
         local PROXY_URL="$(var_exp "PROXY_${COUNT}_URL")"
         local PROXY_CACHE="$(var_exp "PROXY_${COUNT}_CACHE_TIME")"
@@ -443,8 +419,7 @@ function handle_proxy {
         else
             echo "resource is not accessible (ignore): ${PROXY_URL}"
         fi
-        (( COUNT++ ))
-    done    
+    done
 }
 
 function start_http_server {
