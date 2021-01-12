@@ -50,7 +50,8 @@ server {
         
         client_body_temp_path /var/www/dav/temp;
         dav_methods     PUT DELETE MKCOL COPY MOVE;
-        dav_ext_methods   PROPFIND OPTIONS;
+        dav_ext_methods   PROPFIND OPTIONS LOCK UNLOCK;
+        dav_ext_lock zone=sds;
         create_full_put_path  on;
         dav_access    user:rw group:rw all:rw;
         autoindex     on;
@@ -70,7 +71,8 @@ server {
         
         client_body_temp_path /var/www/dav/temp;
         dav_methods     PUT DELETE MKCOL COPY MOVE;
-        dav_ext_methods   PROPFIND OPTIONS;
+        dav_ext_methods   PROPFIND OPTIONS LOCK UNLOCK;
+        dav_ext_lock zone=sds;
         create_full_put_path  on;
         dav_access    user:rw group:rw all:rw;
         autoindex     on;
