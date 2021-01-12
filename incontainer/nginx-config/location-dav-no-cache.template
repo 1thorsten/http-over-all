@@ -6,7 +6,8 @@
         # dav_methods     PUT DELETE MKCOL COPY MOVE;
         #DAV_METHODS
         
-        dav_ext_methods   PROPFIND OPTIONS;
+        dav_ext_methods PROPFIND OPTIONS LOCK UNLOCK;
+        dav_ext_lock zone=sds;
         create_full_put_path  on;
         dav_access    user:rw group:rw all:rw;
 

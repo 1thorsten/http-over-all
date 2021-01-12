@@ -53,7 +53,7 @@ function download_hint {
     echo "wget -S -N --http-user=$USER --http-password=$PASS ${DAV_PATH%/}/update-from-webdav.sh $SERVER ; . update-from-webdav.sh $SERVER"
 }
 
-create_webdav_directory "${BASE_DAV_PATH}/" "false"
+create_webdav_directory "${BASE_DAV_PATH}" "false"
 upload_files "${CURRENT_DIRECTORY}" "./"
 upload_files "${CURRENT_DIRECTORY}/incontainer" "./incontainer/"
 upload_files "${CURRENT_DIRECTORY}/scripts" "./scripts/"

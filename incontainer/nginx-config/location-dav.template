@@ -1,12 +1,13 @@
     location /dav/__RESOURCE_NAME__/ {
-        alias __WEBDAV__/web/__RESOURCE_NAME__/; 
+        alias __WEBDAV__/web/__RESOURCE_NAME__/;
         autoindex on;
         client_max_body_size 2000M;
         client_body_temp_path /var/www/dav/temp;
         # dav_methods     PUT DELETE MKCOL COPY MOVE;
         #DAV_METHODS
         
-        dav_ext_methods   PROPFIND OPTIONS;
+        dav_ext_methods PROPFIND OPTIONS LOCK UNLOCK;
+        dav_ext_lock zone=sds;
         create_full_put_path  on;
         dav_access    user:rw group:rw all:rw;
 
@@ -21,7 +22,6 @@
         #auth_basic_user_file /etc/nginx/htpasswd_dav___RESOURCE_NAME__;
 
         proxy_http_version  1.1;
-
     }
 
     location /internal/dav/__RESOURCE_NAME__/ {

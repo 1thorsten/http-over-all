@@ -1,10 +1,11 @@
+#FROM ubuntu:20.04
+#ENV PHP_VERSION=7.4
+
 FROM debian:buster-slim
 ENV PHP_VERSION=7.3
 LABEL maintainer="Thorsten Winkler"
 LABEL description="http-over-all"
 
-#FROM ubuntu:20.04
-#ENV PHP_VERSION=7.4
 
 # os part
 
@@ -47,7 +48,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG BUILD_DATE="2021-01-04 / 01:58"
+ARG BUILD_DATE="2021-01-12 / 01:09"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
