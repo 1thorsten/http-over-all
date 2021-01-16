@@ -6,12 +6,11 @@ ENV PHP_VERSION=7.3
 LABEL maintainer="Thorsten Winkler"
 LABEL description="http-over-all"
 
-
 # os part
 
 # https://www.howtoforge.de/anleitung/wie-man-webdav-mit-lighttpd-auf-debian-etch-konfiguriert/
 
-ARG DOCKER_CLI_VERSION="20.10.1"
+ARG DOCKER_CLI_VERSION="20.10.2"
 ARG DOWNLOAD_URL="https://download.docker.com/linux/static/stable/x86_64/docker-$DOCKER_CLI_VERSION.tgz"
 
 ENV WEBDAV=/var/www/dav
@@ -21,11 +20,11 @@ ENV TZ=Europe/Berlin
 RUN set -x && \
     apt-get update -y && \
     apt-get dist-upgrade -y && \
-    APT_SYSTEM="sudo tzdata ca-certificates lsof procps" && \
+    APT_SYSTEM="sudo tzdata ca-certificates" && \
     APT_HTTP="nginx nginx-extras lua5.3 apache2-utils" && \
     APT_PHP="php-curl php-fpm php-mbstring" && \
     APT_SERVICES="openssl sshfs nfs-common davfs2 cifs-utils git" && \
-    APT_TOOLS="iputils-ping wget curl rsync" && \
+    APT_TOOLS="iputils-ping curl rsync" && \
     APT_ETC="nano" && \
     apt-get install -y --no-install-recommends ${APT_SYSTEM} ${APT_HTTP} ${APT_PHP} ${APT_SERVICES} ${APT_TOOLS} ${APT_ETC} && \
     mkdir -p ${WEBDAV}/web && \
