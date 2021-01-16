@@ -157,6 +157,7 @@ function connect_or_update_docker {
         local LOGIN="$(var_exp "DOCKER_${COUNT}_LOGIN")"
         local METHOD="$(var_exp "DOCKER_${COUNT}_METHOD" "TAR")"
         local SRC_DIRS="$(var_exp "DOCKER_${COUNT}_SRC_DIRS" "./")"
+        local EXCLUDES="$(var_exp "DOCKER_${COUNT}_EXCL")"
         local RESOURCE_NAME="$(var_exp "DOCKER_${COUNT}_NAME")"
         local DAV_ACTIVE="$(var_exp "DOCKER_${COUNT}_DAV" "false")"
         local HTTP_ACTIVE="$(var_exp "DOCKER_${COUNT}_HTTP" "true")"
@@ -188,11 +189,11 @@ function connect_or_update_docker {
         local DIGEST
 
         echo "$PULL"
-        if ! pull_output=$(docker pull ${IMAGE}:${TAG} 2>&1); then
+        if ! pull_output=$(docker pull "${IMAGE}:${TAG}" 2>&1); then
             echo "ERR (pull): ${pull_output}"
 
             # check if the image exists at all, if not then ignore resource
-            if ! history_output=$(docker history ${IMAGE}:${TAG} 2>&1); then
+            if ! docker history "${IMAGE}:${TAG}" 2>&1 ; then
                 echo "ignore ${RESOURCE_NAME}"
                 continue
             else
@@ -201,7 +202,7 @@ function connect_or_update_docker {
                 IMAGE_STATUS="OLD"
             fi
         elif [[ "${pull_output}" == *"Status: Image is up to date"* ]]; then 
-            DIGEST=$(docker images --no-trunc --quiet ${IMAGE}:${TAG} | tr ':' '_')
+            DIGEST=$(docker images --no-trunc --quiet "${IMAGE}:${TAG}" | tr ':' '_')
             if [[ "${TYPE}" != "connect" ]] && [ ! -e "/tmp/docker-digests/$DIGEST" ]; then
                 echo "recognize usage of known but unprocessed image, declare it to NEW (digest: $DIGEST)"
                 IMAGE_STATUS="NEW"
@@ -225,19 +226,27 @@ function connect_or_update_docker {
             fi
 
             if [[ "$METHOD" == "TAR" ]]; then
-                local tmp_dir=$(mktemp -d -t docker-XXXXXXXXXXXX)        
+                local tmp_dir=$(mktemp -d -t docker-XXXXXXXXXXXX)
+                # handle excludes
+                local exclude_list
+                if [[ "$EXCLUDES" != "nil" ]]; then
+                  echo "path excludes: $EXCLUDES"
+                  for excl in $EXCLUDES; do
+                    exclude_list="$exclude_list --exclude=$excl"
+                  done
+                fi
                 for dir in $SRC_DIRS; do
                     # without slashes (/usr/lib/ -> usr/lib, ./ -> .)
                     local DIR_BASE=${dir#/}
                     DIR_BASE=${DIR_BASE%/} 
                     echo "$METHOD $dir (base: $DIR_BASE) start at $(date +'%T')"
-                    if [[ "$DIR_BASE" == "." ]]; then 
-                        docker run --rm --entrypoint "" ${IMAGE}:${TAG} /bin/sh -c "tar c -h * -f -" | tar Chxf $tmp_dir -
-                    else 
-                        docker run --rm --entrypoint "" ${IMAGE}:${TAG} /bin/sh -c "tar c -h -C/ $dir/* -f -" | tar Chxf $tmp_dir -
+                    if [[ "$DIR_BASE" == "." ]]; then
+                        docker run --rm --entrypoint "" "${IMAGE}:${TAG}" /bin/sh -c "tar c -h $exclude_list * -f -" | tar Chxf "$tmp_dir" -
+                    else
+                        docker run --rm --entrypoint "" "${IMAGE}:${TAG}" /bin/sh -c "tar c -h $exclude_list -C/ ${DIR_BASE}/* -f -" | tar Chxf "$tmp_dir" -
                     fi
                 done
-                rsync -rtu --delete ${tmp_dir}/ ${DOCKER_MOUNT}
+                rsync -rtu --delete "${tmp_dir}"/ "${DOCKER_MOUNT}"
                 rm -rf "${tmp_dir}"
             else
                 echo "unknown method: $METHOD | ignore"

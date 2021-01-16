@@ -88,6 +88,7 @@ The base image should be a Linux image, because of the method used to synchroniz
 | DOCKER_[COUNT]_TAG | tag (default: latest) | - |
 | DOCKER_[COUNT]_METHOD | method   for synchronizing data (default: TAR) | - |
 | DOCKER_[COUNT]_SRC_DIRS | dirs to extract from the container (default: DOCKER-VAR WORKSPACE) | - |
+| DOCKER_[COUNT]_EXCL | paths to exclude (e.g. proc/* dev/* sys/*) | - |
 
 General Options: yes
 ## PROXY
