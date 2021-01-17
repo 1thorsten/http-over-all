@@ -8,9 +8,6 @@ services:
     restart: unless-stopped
     env_file:
       - example.env
-    build:
-      context: .
-      dockerfile: Dockerfile
     privileged: true
     ports: 
       # http/1.1
