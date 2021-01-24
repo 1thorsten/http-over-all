@@ -30,10 +30,9 @@ docker build -t 1thorsten/http-over-all .
 
 # Accessing
 - http
-http://localhost:8338/
-https://localhost:4334/
-
+    - http://localhost:8338/
+    - https://localhost:4334/
 - dav
-http://localhost:8338/dav/
-https://localhost:4334/dav/
+    - http://localhost:8338/dav/
+    - https://localhost:4334/dav/
 

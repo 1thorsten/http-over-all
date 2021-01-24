@@ -7,6 +7,8 @@ Enables access restriction on different layers.
 
 [Special Functions](#special-functions)
 
+[Additions](#additions)
+
 **Supported protocols (according the order of connecting):**
 
 - NFS
@@ -150,7 +152,7 @@ Options for all resources
 | PROXY_MAX_SIZE | maximum size of the proxy cache (default: 10g) | - |
 | PROXY_INACTIVE | data that are not accessed during the time get removed (default: 1d) | - |
 
-# <a name="special-functions"></a> Special functions
+# <a name="special-functions"></a>Special functions
 ## periodic jobs
 ENV: PERIODIC_JOB_INTERVAL
 
@@ -182,6 +184,16 @@ Why do I should use this encryption mechanism:
 - it restricts access to this one resource. Everything else remains secure.
 
 Generate your own CRYPT_KEY:
-```
+```bash
 docker run --rm php:cli-alpine php -r 'echo "CRYPT_KEY:".base64_encode(openssl_random_pseudo_bytes(32))."\n";'
 ```
+# <a name="additions"></a>Additions
+## func/remote-ip
+Show ip address from the requestor.
+Sometime you need to know your real internal ip address (e.g. if you are in a container with its own virtual network)
+
+```bash
+curl http://[http-over-all:8338]/func/remote-ip
+```
+
+
