@@ -52,6 +52,7 @@ General Options: yes
 | -------------| ------------| ---------|
 | SSH_[COUNT]_PASS | - | x | 
 | SSH_[COUNT]_SHARE | e.g. rute@10.23.4.161:/ | x | 
+| SSH_[COUNT]_PORT | default: 22 | - | 
 
 General Options: yes
 
