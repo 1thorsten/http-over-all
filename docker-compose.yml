@@ -8,15 +8,18 @@ services:
     restart: unless-stopped
     env_file:
       - example.env
-    privileged: true
-    ports: 
+    ports:
       # http/1.1
       - "8338:80"
       # http/2 ssl
       - "4334:443"
     cap_add:
+      # necessary for SSH and SMB
       - SYS_ADMIN
+      # necessary for SMB
       - DAC_READ_SEARCH
+    devices:
+      - "/dev/fuse:/dev/fuse"
     volumes: 
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /var/run/docker.sock:/var/run/docker.sock
