@@ -50,6 +50,7 @@ function mount_ssh_shares {
     for COUNT in $(env | grep -o "^SSH_[0-9]*_NAME" | awk -F '_' '{print $2}' | sort -nu); do
         local PASS="$(var_exp "SSH_${COUNT}_PASS")"
         local SHARE="$(var_exp "SSH_${COUNT}_SHARE")"
+        local SSH_PORT="$(var_exp "SSH_${COUNT}_PORT" "22")"
         local RESOURCE_NAME="$(var_exp "SSH_${COUNT}_NAME")"
         local DAV_ACTIVE="$(var_exp "SSH_${COUNT}_DAV" "false")"
         local HTTP_ACTIVE="$(var_exp "SSH_${COUNT}_HTTP" "true")"
@@ -67,8 +68,8 @@ function mount_ssh_shares {
 
         local id_user="$(id -u www-data)"
         local gid_user="$(id -g www-data)"
-        echo "echo obfuscated | /usr/bin/sshfs '${SHARE}' ${SSH_MOUNT} -o password_stdin -o StrictHostKeyChecking=no -o auto_unmount,allow_other,follow_symlinks,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 -o uid=${id_user},gid=${gid_user}"
-        echo "${PASS}" | /usr/bin/sshfs "${SHARE}" "${SSH_MOUNT}" -o "password_stdin" -o "StrictHostKeyChecking=no" -o "auto_unmount,allow_other,follow_symlinks,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3" -o "uid=${id_user},gid=${gid_user}"
+        echo "echo obfuscated | /usr/bin/sshfs '${SHARE}' ${SSH_MOUNT} -p ${SSH_PORT} -o password_stdin -o StrictHostKeyChecking=no -o auto_unmount,allow_other,follow_symlinks,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 -o uid=${id_user},gid=${gid_user}"
+        echo "${PASS}" | /usr/bin/sshfs "${SHARE}" "${SSH_MOUNT}" -p "${SSH_PORT}" -o "password_stdin" -o "StrictHostKeyChecking=no" -o "auto_unmount,allow_other,follow_symlinks,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3" -o "uid=${id_user},gid=${gid_user}"
         if [ $? -eq 0 ]; then        
             initial_create_symlinks_for_resources "${RESOURCE_NAME}" "SSH_${COUNT}" "${SSH_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" 
         else
