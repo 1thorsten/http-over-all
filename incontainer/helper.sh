@@ -81,8 +81,8 @@ function clean_up {
 function link_permitted_resource {
     local START_PATH="${1}"
     local DST_PATH="${2}"
-    # remove leading and trailign whitespaces and tabs
-    local PERMITTED_RESOURCE=$(echo ${3} | awk '{$1=$1}1')
+    # remove leading and trailing whitespaces and tabs
+    local PERMITTED_RESOURCE=$(echo "${3}" | awk '{$1=$1}1')
 
     local SRC="${START_PATH%/}/${PERMITTED_RESOURCE}"
     local DST="${DST_PATH%/}/${PERMITTED_RESOURCE}"
@@ -135,8 +135,9 @@ function validate_and_process_permitted_resources {
     local ENV_NAME="${1}"
     local RESOURCE_SRC="${2}"
     local DST="${3}"
-
+    local START_PATH="${4:-$RESOURCE_SRC}"
     local PERMISSION_FILE="$(var_exp "${ENV_NAME}")"
+
     if [[ ! -e "${PERMISSION_FILE}" ]]; then
         PERMISSION_FILE="${RESOURCE_SRC%/}/${PERMISSION_FILE}"
         echo "validation: try to retrieve resource from resource source: ${PERMISSION_FILE}"
@@ -144,7 +145,7 @@ function validate_and_process_permitted_resources {
     if [[ ! -e "${PERMISSION_FILE}" ]]; then
         echo "validation: permitted resource not found -> ignore resource"
     else
-        process_permitted_resources "create" "${ENV_NAME}" "${PERMISSION_FILE}" "${RESOURCE_SRC}" "${DST}"
+        process_permitted_resources "create" "${ENV_NAME}" "${PERMISSION_FILE}" "${START_PATH}" "${DST}"
     fi
 }
 
@@ -157,7 +158,7 @@ function process_permitted_resources {
     local START_PATH="${4}"
     local DST_PATH="${5}"
 
-    local PERMITTED_RESOURCES_DIR="/tmp/permitted_resources/"
+    local PERMITTED_RESOURCES_DIR="/tmp/permitted_resources"
     local RESOURCES_FILE="resources.txt"
 
     echo "process_permitted_resources (${TYPE}}: ${PERMISSION_FILE}"
@@ -165,7 +166,10 @@ function process_permitted_resources {
     if [[ "$TYPE" = "create" ]]; then
         mkdir -p "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}"
         sha1sum "${PERMISSION_FILE}" > "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/${RESOURCES_FILE}"
+        echo "START_PATH = ${START_PATH}"
         echo "${START_PATH}" > "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/START_PATH"
+
+        echo "DST_PATH = ${DST_PATH}"
         echo "${DST_PATH}" > "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/DST_PATH"
 
     elif [[ "$TYPE" = "update" ]]; then
@@ -260,7 +264,7 @@ function create_symlinks_for_resources {
                 local DESTINATION="${MAIN_PATH}/${RESOURCE_NAME}/${SUB_DIR_NAME}"
                 if [[ "$(var_exp "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}")" != "nil" ]]; then
                     echo "${SUB_DIR_NAME}: check permitted resources"
-                    validate_and_process_permitted_resources "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}" "${RESOURCE_SRC}" "${DESTINATION}"
+                    validate_and_process_permitted_resources "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}" "${RESOURCE_SRC}" "${DESTINATION}" "${RESOURCE_SRC}/${SUB_DIR_PATH}"
                 else         
                     echo "${SUB_DIR_NAME}: enabled -> ${SUB_DIR_PATH}/"
                     local LNK_SRC="${RESOURCE_SRC}/${SUB_DIR_PATH}"
