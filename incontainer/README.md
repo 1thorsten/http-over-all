@@ -27,7 +27,7 @@ Enables access restriction on different layers.
 - restrict the access to your connecting resource by
   - endpoint definiton: user@xx.xx.xx:/root/.jenkins/
   - allowing only specified files (permitted resources)
-  - shareing only subdirectories
+  - sharing only subdirectories
 - act as caching proxy for all requests against the http-endpoint (not WEBDAV)
   - only the newest version will be delivered.
 - provide restricted access to secured resources with a crypted key mechanism
@@ -126,6 +126,7 @@ General Options: yes
 
 ## General resource options
 Options for all resources
+
 [RES] stands for Resource_[COUNT]_ (e.g. LOCAL_[COUNT])
 
 | ENV-Variable | Description | required |
@@ -143,6 +144,8 @@ Options for all resources
 | [RES]_SUB_DIR_PATH_1++ | restrict acccess to this path (relative) | - |
 | [RES]_SUB_DIR_NAME_1++ | accessible name | - |
 | [RES]_SUB_DIR_PERMITTED_RESOURCES_1++ | absolute path of permitted resource file | - |
+
+SUB_DIR_PERMITTED_RESOURCES: base path of the permitted resources is SUB_DIR_PATH
 
 ## Common options
 

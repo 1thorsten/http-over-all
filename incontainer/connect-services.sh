@@ -214,7 +214,7 @@ function connect_or_update_docker {
 
         if [[ "$IMAGE_STATUS" == "NEW" ]] || [[ "${TYPE}" == "connect" ]]; then
             # for better update detecting get the digest for the image
-            if [ -z "$DIGEST" ]; then DIGEST=$(docker images --no-trunc --quiet ${IMAGE}:${TAG} | tr ':' '_'); fi
+            if [ -z "$DIGEST" ]; then DIGEST=$(docker images --no-trunc --quiet "${IMAGE}":"${TAG}" | tr ':' '_'); fi
             echo "digest: $DIGEST"
             echo "${IMAGE}:${TAG}" > "/tmp/docker-digests/$DIGEST"
 
@@ -283,7 +283,7 @@ function connect_or_update_git_repos {
         local ACCESSIBLE
         parse_url "${REPO_URL%/}/"
         local URL_STRICT="${PARSED_PROTO}${PARSED_HOST}${PARSED_PORT}"
-        local HTTP_STATUS="$(curl ${CURL_CREDENTIALS} -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${URL_STRICT}")"
+        local HTTP_STATUS="$(curl "${CURL_CREDENTIALS}" -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${URL_STRICT}")"
         if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' || "${HTTP_STATUS}" -eq '302' ]]; then         
             ACCESSIBLE=true
         else
