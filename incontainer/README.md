@@ -145,8 +145,6 @@ Options for all resources
 | [RES]_SUB_DIR_NAME_1++ | accessible name | - |
 | [RES]_SUB_DIR_PERMITTED_RESOURCES_1++ | absolute path of permitted resource file | - |
 
-SUB_DIR_PERMITTED_RESOURCES: base path of the permitted resources is SUB_DIR_PATH
-
 ## Common options
 
 | ENV-Variable | Description | required |

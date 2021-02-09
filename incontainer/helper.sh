@@ -130,85 +130,6 @@ function periodic_job_update_permitted_resources {
         fi
     done
 }
-
-function validate_and_process_permitted_resources {
-    local ENV_NAME="${1}"
-    local RESOURCE_SRC="${2}"
-    local DST="${3}"
-    local START_PATH="${4:-$RESOURCE_SRC}"
-    local PERMISSION_FILE="$(var_exp "${ENV_NAME}")"
-
-    if [[ ! -e "${PERMISSION_FILE}" ]]; then
-        PERMISSION_FILE="${RESOURCE_SRC%/}/${PERMISSION_FILE}"
-        echo "validation: try to retrieve resource from resource source: ${PERMISSION_FILE}"
-    fi
-    if [[ ! -e "${PERMISSION_FILE}" ]]; then
-        echo "validation: permitted resource not found -> ignore resource"
-    else
-        process_permitted_resources "create" "${ENV_NAME}" "${PERMISSION_FILE}" "${START_PATH}" "${DST}"
-    fi
-}
-
-function process_permitted_resources {
-    # CREATE | UPDATE
-    local TYPE="${1}"
-    # e.g. GIT_1_REPO_PERMITTED_RESOURCES
-    local ENV_NAME="${2}"
-    local PERMISSION_FILE="${3}"
-    local START_PATH="${4}"
-    local DST_PATH="${5}"
-
-    local PERMITTED_RESOURCES_DIR="/tmp/permitted_resources"
-    local RESOURCES_FILE="resources.txt"
-
-    echo "process_permitted_resources (${TYPE}}: ${PERMISSION_FILE}"
-
-    if [[ "$TYPE" = "create" ]]; then
-        mkdir -p "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}"
-        sha1sum "${PERMISSION_FILE}" > "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/${RESOURCES_FILE}"
-        echo "START_PATH = ${START_PATH}"
-        echo "${START_PATH}" > "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/START_PATH"
-
-        echo "DST_PATH = ${DST_PATH}"
-        echo "${DST_PATH}" > "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/DST_PATH"
-
-    elif [[ "$TYPE" = "update" ]]; then
-        sha1sum "${PERMISSION_FILE}" > "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/${RESOURCES_FILE}"
-
-        echo "rm -rf ${DST_PATH}"
-        rm -rf "${DST_PATH}"
-    fi
-
-    while IFS='' read -r line || [[ -n "$line" ]]; do
-        if [[ "$line" != "" ]]; then
-            local normalizedResource="$(echo "${line}" | tr -d '\r' | tr -d '\n')"
-            link_permitted_resource "${START_PATH}" "${DST_PATH}" "$normalizedResource"
-        fi
-    done < "$PERMISSION_FILE"
-}
-
-
-function handle_basic_auth {
-    # PROXY_${COUNT}_HTTP_AUTH or ${BASE_VAR}_${TYPE}_AUTH
-    local AUTH="$(var_exp "${1}")"
-    # proxy_${PROXY_NAME} or ${TYPE_LC}_${RESOURCE_NAME}
-    local HTPASSWD_FILE_EXT="${2}"
-    # /tmp/new_proxy_${PROXY_NAME}
-    local TEMP_FILE="${3}"
-    
-    if [[ "${AUTH}" != "nil" ]]; then
-        local AUTH_USER="$(cut -d ':' -f 1 <<< "${AUTH}")"
-        local AUTH_PASS="$(cut -d ':' -f 2- <<< "${AUTH}")"
-        echo "handle_basic_auth: ${AUTH_USER} / obfuscated"
-        echo "/usr/bin/htpasswd -bc /etc/nginx/htpasswd_${HTPASSWD_FILE_EXT} ${AUTH_USER} obfuscated"
-        /usr/bin/htpasswd -bc "/etc/nginx/htpasswd_${HTPASSWD_FILE_EXT}" "${AUTH_USER}" "${AUTH_PASS}"
-        SED_HTPASSWD="s|#auth_basic|auth_basic|;"            
-
-        echo sed -i "${SED_HTPASSWD}" "${TEMP_FILE}"
-        sed -i "${SED_HTPASSWD}" "${TEMP_FILE}"
-    fi    
-}
-
 # create symlink for the resources. In case of the existing of xxx_SUB_DIR sub-dir handling is done, too
 # for smb (mount_smb_shares) and git (connect_or_update_git_repos)
 function create_symlinks_for_resources {
@@ -264,8 +185,8 @@ function create_symlinks_for_resources {
                 local DESTINATION="${MAIN_PATH}/${RESOURCE_NAME}/${SUB_DIR_NAME}"
                 if [[ "$(var_exp "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}")" != "nil" ]]; then
                     echo "${SUB_DIR_NAME}: check permitted resources"
-                    validate_and_process_permitted_resources "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}" "${RESOURCE_SRC}" "${DESTINATION}" "${RESOURCE_SRC}/${SUB_DIR_PATH}"
-                else         
+                    validate_and_process_permitted_resources "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}" "${RESOURCE_SRC}" "${DESTINATION}" "${SUB_DIR_PATH}"
+                else
                     echo "${SUB_DIR_NAME}: enabled -> ${SUB_DIR_PATH}/"
                     local LNK_SRC="${RESOURCE_SRC}/${SUB_DIR_PATH}"
                     echo ln -fs "${LNK_SRC}" "${DESTINATION}"
@@ -287,6 +208,94 @@ function create_symlinks_for_resources {
         echo "ln -fs ${MAIN_PATH}/${RESOURCE_NAME} ${WEBDAV}/web/${RESOURCE_NAME}"
         ln -fs "${MAIN_PATH}/${RESOURCE_NAME}" "${WEBDAV}/web/${RESOURCE_NAME}"
     fi
+}
+
+function validate_and_process_permitted_resources {
+    local ENV_NAME="${1}"
+    local RESOURCE_SRC="${2}"
+    local DST="${3}"
+    local SUB_DIR="${4}"
+    local PERMISSION_FILE="$(var_exp "${ENV_NAME}")"
+
+    if [[ ! -e "${PERMISSION_FILE}" ]]; then
+        PERMISSION_FILE="${RESOURCE_SRC%/}/${PERMISSION_FILE}"
+        echo "validation: try to retrieve resource from resource source: ${PERMISSION_FILE}"
+    fi
+    if [[ ! -e "${PERMISSION_FILE}" ]]; then
+        echo "validation: permitted resource not found -> ignore resource"
+    else
+        process_permitted_resources "create" "${ENV_NAME}" "${PERMISSION_FILE}" "${RESOURCE_SRC}" "${DST}" "${SUB_DIR}"
+    fi
+}
+
+function process_permitted_resources {
+    # CREATE | UPDATE
+    local TYPE="${1}"
+    # e.g. GIT_1_REPO_PERMITTED_RESOURCES
+    local ENV_NAME="${2}"
+    local PERMISSION_FILE="${3}"
+    local START_PATH="${4}"
+    local DST_PATH="${5}"
+    local SUB_DIR="${6}"
+
+    local PERMITTED_RESOURCES_DIR="/tmp/permitted_resources"
+    local RESOURCES_FILE="resources.txt"
+
+    echo "process_permitted_resources (${TYPE}}: ${PERMISSION_FILE}"
+
+    # if SUB_DIR (Scanner) than modify START_PATH (/) -> /Scanner
+    if [ -n "$SUB_DIR" ]; then START_PATH="${START_PATH}/${SUB_DIR}"; fi
+
+    if [[ "$TYPE" = "create" ]]; then
+        mkdir -p "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}"
+        sha1sum "${PERMISSION_FILE}" > "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/${RESOURCES_FILE}"
+        echo "START_PATH = ${START_PATH}"
+        echo "${START_PATH}" > "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/START_PATH"
+
+        echo "DST_PATH = ${DST_PATH}"
+        echo "${DST_PATH}" > "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/DST_PATH"
+
+    elif [[ "$TYPE" = "update" ]]; then
+        sha1sum "${PERMISSION_FILE}" > "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/${RESOURCES_FILE}"
+
+        echo "rm -rf ${DST_PATH}"
+        rm -rf "${DST_PATH}"
+    fi
+
+    while IFS='' read -r line || [[ -n "$line" ]]; do
+        if [[ "$line" != "" ]]; then
+            local normalizedResource="$(echo "${line}" | tr -d '\r' | tr -d '\n')"
+            # ignore comments
+            if [[ $normalizedResource == "#"* ]]; then continue; fi
+            # if normalizedResource (Scanner/Alt) starts with SUB_DIR (Scanner) -> /Alt
+            if [ -n "$SUB_DIR" ] && [[ $normalizedResource == ${SUB_DIR}* ]]; then
+              normalizedResource="${normalizedResource#${SUB_DIR}*}"
+            fi
+            link_permitted_resource "${START_PATH}" "${DST_PATH}" "$normalizedResource"
+        fi
+    done < "$PERMISSION_FILE"
+}
+
+
+function handle_basic_auth {
+    # PROXY_${COUNT}_HTTP_AUTH or ${BASE_VAR}_${TYPE}_AUTH
+    local AUTH="$(var_exp "${1}")"
+    # proxy_${PROXY_NAME} or ${TYPE_LC}_${RESOURCE_NAME}
+    local HTPASSWD_FILE_EXT="${2}"
+    # /tmp/new_proxy_${PROXY_NAME}
+    local TEMP_FILE="${3}"
+    
+    if [[ "${AUTH}" != "nil" ]]; then
+        local AUTH_USER="$(cut -d ':' -f 1 <<< "${AUTH}")"
+        local AUTH_PASS="$(cut -d ':' -f 2- <<< "${AUTH}")"
+        echo "handle_basic_auth: ${AUTH_USER} / obfuscated"
+        echo "/usr/bin/htpasswd -bc /etc/nginx/htpasswd_${HTPASSWD_FILE_EXT} ${AUTH_USER} obfuscated"
+        /usr/bin/htpasswd -bc "/etc/nginx/htpasswd_${HTPASSWD_FILE_EXT}" "${AUTH_USER}" "${AUTH_PASS}"
+        SED_HTPASSWD="s|#auth_basic|auth_basic|;"            
+
+        echo sed -i "${SED_HTPASSWD}" "${TEMP_FILE}"
+        sed -i "${SED_HTPASSWD}" "${TEMP_FILE}"
+    fi    
 }
 
 function create_nginx_location {
