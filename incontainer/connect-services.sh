@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-
+# shellcheck disable=SC2155,SC2181
+# SC2155: Declare and assign separately to avoid masking return values.
+# SC2181: Check exit code directly with e.g. 'if mycmd;', not indirectly with $?
 source "/scripts/helper.sh"
 
 function mount_dav_shares {
