@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2155
+# SC2155: Declare and assign separately to avoid masking return values.
 
 export NGINX_CONF=/etc/nginx/http-over-all
 
@@ -158,29 +160,32 @@ function create_symlinks_for_resources {
     echo rm -rf "${MAIN_PATH}/${RESOURCE_NAME}"
     rm -rf "${MAIN_PATH:?}/${RESOURCE_NAME:?}"
 
-    local COUNT_SUB_DIR='1'
     # no restrictions to sub directories / share the whole thing
     local SUB_DIR="${BASE}_SUB_DIR"
 
+    # look for sub dirs
+    local SUB_DIRS=$(env | grep -o "^${SUB_DIR}_PATH_[0-9]*" | awk -F '_' '{print $6}' | sort -nu)
+
     # permitted files
     if [[ "$(var_exp "${BASE}_PERMITTED_RESOURCES")" != "nil" ]]; then
+        if [ "$SUB_DIRS" != "" ]; then echo "ignore SUB_DIRS for ${BASE} b/c of ${BASE}_PERMITTED_RESOURCES"; fi
         local DESTINATION="${MAIN_PATH}/${RESOURCE_NAME}"
         validate_and_process_permitted_resources "${BASE}_PERMITTED_RESOURCES" "${RESOURCE_SRC}" "${DESTINATION}"
-    elif [[ "$(var_exp "${SUB_DIR}_PATH_${COUNT_SUB_DIR}")" == "nil" ]]; then
+    elif [ "$SUB_DIRS" == "" ]; then
         echo "SUB-DIR-MODE: not active"
         echo "ln -fs ${RESOURCE_SRC} ${MAIN_PATH}/${RESOURCE_NAME}"
         ln -fs "${RESOURCE_SRC}" "${MAIN_PATH}/${RESOURCE_NAME}"
     else
         echo mkdir -p "${MAIN_PATH}/${RESOURCE_NAME}"
         mkdir -p "${MAIN_PATH}/${RESOURCE_NAME}"
-        while [[ "$(var_exp "${SUB_DIR}_PATH_${COUNT_SUB_DIR}")" != "nil" ]]; do
-            echo "SUB-DIR-MODE: active"
+        for COUNT_SUB_DIR in $SUB_DIRS ; do
             # SMB_1_SHARE_SUB_DIR_PATH_1=downloads
             local SUB_DIR_PATH="$(var_exp "${SUB_DIR}_PATH_${COUNT_SUB_DIR}")"
             # to support the whole resource as well (=/)
             SUB_DIR_PATH="${SUB_DIR_PATH%/}"
             # SMB_1_SHARE_SUB_DIR_NAME_1=d
             local SUB_DIR_NAME="$(var_exp "${SUB_DIR}_NAME_${COUNT_SUB_DIR}")"
+            echo "SUB-DIR-MODE: active: ${COUNT_SUB_DIR} -> ${SUB_DIR_NAME}"
             if [[ -d "${RESOURCE_SRC}/${SUB_DIR_PATH}" ]]; then
                 local DESTINATION="${MAIN_PATH}/${RESOURCE_NAME}/${SUB_DIR_NAME}"
                 if [[ "$(var_exp "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}")" != "nil" ]]; then
@@ -195,7 +200,6 @@ function create_symlinks_for_resources {
             else
                 echo "${SUB_DIR_NAME}: ignore b/c ${RESOURCE_SRC}/${SUB_DIR_PATH} not existing"
             fi
-            (( COUNT_SUB_DIR++ ))
         done
     fi
 
@@ -421,40 +425,37 @@ function handle_update_jobs_lock {
     echo  "force-update started: $(date)" > "${LOCK_FILE}"
     echo "----------------------------------" >> "${LOCK_FILE}"
     if [[ ${TRAP} == "handle-trap" ]]; then
-        trap "echo \"remove ${LOCK_FILE}\" ; rm -f ${LOCK_FILE}" EXIT TERM QUIT
+        trap 'echo "remove ${LOCK_FILE}" ; rm -f ${LOCK_FILE}' EXIT TERM QUIT
     fi
 }
 
 
 function parse_url() {
-    PROJECT_URL=$1
+    local PROJECT_URL=$1
     # Extract the protocol (includes trailing "://").
-    PARSED_PROTO="$(echo $PROJECT_URL | sed -nr 's,^(.*://).*,\1,p')"
-    P_PROTO="$(echo $PROJECT_URL | sed -nr 's,^(.*)://.*,\1,p')"
+    export PARSED_PROTO="$(echo "$PROJECT_URL" | sed -nr 's,^(.*://).*,\1,p')"
 
     # Remove the protocol from the URL.
-    local PARSED_URL="$(echo ${PROJECT_URL/$PARSED_PROTO/})"
+    local PARSED_URL="${PROJECT_URL/$PARSED_PROTO/}"
 
     # Extract the user (includes trailing "@").
-    local PARSED_USER="$(echo $PARSED_URL | sed -nr 's,^(.*@).*,\1,p')"
-    P_USER="$(echo $PARSED_URL | sed -nr 's,^(.*)@.*,\1,p')"
+    local PARSED_USER="$(echo "$PARSED_URL" | sed -nr 's,^(.*@).*,\1,p')"
 
     # Remove the user from the URL.
-    local PARSED_URL="$(echo ${PARSED_URL/$PARSED_USER/})"
+    local PARSED_URL="${PARSED_URL/$PARSED_USER/}"
 
     # Extract the port (includes leading ":").
-    PARSED_PORT="$(echo $PARSED_URL | sed -nr 's,.*(:[0-9]+).*,\1,p')"
-    P_PORT="$(echo $PARSED_URL | sed -nr 's,.*:([0-9]+).*,\1,p')"
+    export PARSED_PORT="$(echo "$PARSED_URL" | sed -nr 's,.*(:[0-9]+).*,\1,p')"
 
     # Remove the port from the URL.
-    local PARSED_URL="$(echo ${PARSED_URL/$PARSED_PORT/})"
+    local PARSED_URL="${PARSED_URL/$PARSED_PORT/}"
 
     # Extract the path (includes leading "/" or ":").
-    PARSED_PATH="$(echo $PARSED_URL | sed -nr 's,[^/:]*([/:].*),\1,p')"
-    P_PATH="$(echo $PARSED_URL | sed -nr 's,[^/:]*[/:](.*),\1,p')"
+    PARSED_PATH="$(echo "$PARSED_URL" | sed -nr 's,[^/:]*([/:].*),\1,p')"
+    #P_PATH="$(echo "$PARSED_URL" | sed -nr 's,[^/:]*[/:](.*),\1,p')"
 
     # Remove the path from the URL.
-    PARSED_HOST="$(echo ${PARSED_URL/$PARSED_PATH/})"  
+    export PARSED_HOST="${PARSED_URL/$PARSED_PATH/}"
 }
 
 # SIGTERM-handler
