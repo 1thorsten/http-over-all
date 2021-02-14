@@ -2,14 +2,17 @@
 SDS_READY="/tmp/sds.ready"
 rm -f ${SDS_READY}
 
-source "/scripts/connect-services.sh"
+source /scripts/connect-services.sh
 
 _ENV=$(env)
 
 SYS_ENV=/var/run/sys_env.sh
-echo "$_ENV" | grep "^[A-Z]*_[0-9]*_" | sort -t '_' -k1,1 -k2,2n | awk -F '=' '{printf "export %s\n",$0 }' > "${SYS_ENV}"
-echo "$_ENV" | grep "^HTDOCS" | awk -F '=' '{printf "export %s\n",$0 }' >> "${SYS_ENV}"
-echo "$_ENV" | grep "^DATA" | awk -F '=' '{printf "export %s\n",$0 }' >> "${SYS_ENV}"
+{
+echo "$_ENV" | grep "^[A-Z]*_[0-9]*_" | sort -t '_' -k1,1 -k2,2n | awk -F '=' '{printf "export %s\n",$0 }'
+echo "$_ENV" | grep "^DATA" | awk -F '=' '{printf "export %s\n",$0 }'
+echo "$_ENV" | grep "^HTDOCS" | awk -F '=' '{printf "export %s\n",$0 }'
+echo "$_ENV" | grep "^TZ" | awk -F '=' '{printf "export %s\n",$0 }'
+} > "${SYS_ENV}"
 
 echo "-- ENV --"
 for RES in DAV DOCKER GIT LOCAL NFS PROXY SMB SSH; do
@@ -52,6 +55,9 @@ echo
 source /etc/os-release
 echo "$(date +'%T'): ready -> ${PRETTY_NAME}"
 
+echo "$(date +'%T'): http-over-all -> RELEASE: ${RELEASE}"
+
 trap "term_handler" EXIT
 
+echo
 periodic_jobs
