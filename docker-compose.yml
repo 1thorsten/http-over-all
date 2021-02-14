@@ -7,7 +7,8 @@ services:
     image: 1thorsten/http-over-all
     restart: unless-stopped
     env_file:
-      - example.env
+      - example_smb.env
+      - crypt_key.env
     ports:
       # http/1.1
       - "8338:80"

@@ -7,10 +7,7 @@ LABEL maintainer="Thorsten Winkler"
 LABEL description="http-over-all"
 
 # os part
-
-# https://www.howtoforge.de/anleitung/wie-man-webdav-mit-lighttpd-auf-debian-etch-konfiguriert/
-
-ARG DOCKER_CLI_VERSION="20.10.2"
+ARG DOCKER_CLI_VERSION="20.10.3"
 ARG DOWNLOAD_URL="https://download.docker.com/linux/static/stable/x86_64/docker-$DOCKER_CLI_VERSION.tgz"
 
 ENV WEBDAV=/var/www/dav
@@ -47,7 +44,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG BUILD_DATE="2021-01-12 / 01:09"
+ARG RELEASE="1.0.0"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
@@ -71,6 +68,8 @@ RUN set -x && \
     # https://kofler.info/sudo-ohne-passwort/
     printf '\nwww-data  ALL=(ALL) NOPASSWD: /scripts/force-update.sh\n' >> /etc/sudoers && \
     find /scripts -name "*.sh" -exec sed -i 's/\r$//' {} + && \
+    echo "\nexport RELEASE=${RELEASE}\n" >> /scripts/system-helper.sh && \
+    echo "source /scripts/system-helper.sh" >> /etc/bash.bashrc && \
     echo "http-over-all part successfully terminated" && \
     set +x
 

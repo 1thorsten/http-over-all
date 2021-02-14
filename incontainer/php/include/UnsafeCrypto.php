@@ -1,7 +1,9 @@
 <?php
 
 # rm /scripts/php/include/UnsafeCrypto.php ; nano /scripts/php/include/UnsafeCrypto.php
-
+# use with php interpreter:
+# php -r "include 'UnsafeCrypto.php'; echo UnsafeCrypto::encrypt('lala', true);" ; echo
+# php -r "include 'UnsafeCrypto.php'; echo UnsafeCrypto::decrypt('tsdtPHQdtFbxdjCxaP3HclvPLxc', true);" ; echo
 include_once "globals.php";
  
 class UnsafeCrypto {
