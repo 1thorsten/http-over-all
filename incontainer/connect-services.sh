@@ -285,8 +285,12 @@ function connect_or_update_git_repos {
         local ACCESSIBLE
         parse_url "${REPO_URL%/}/"
         local URL_STRICT="${PARSED_PROTO}${PARSED_HOST}${PARSED_PORT}"
-        local HTTP_STATUS="$(curl "${CURL_CREDENTIALS}" -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${URL_STRICT}")"
-        if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' || "${HTTP_STATUS}" -eq '302' ]]; then         
+        if [[ -n $PARSED_USER ]]; then
+          local CURL_CREDENTIALS="--user ${PARSED_USER}";
+        fi
+        # shellcheck disable=SC2086
+        local HTTP_STATUS="$(curl ${CURL_CREDENTIALS} -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${URL_STRICT}")"
+        if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' || "${HTTP_STATUS}" -eq '302' ]]; then
             ACCESSIBLE=true
         else
             ACCESSIBLE=false

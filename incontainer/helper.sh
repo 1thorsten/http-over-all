@@ -466,7 +466,7 @@ function parse_url() {
     local PARSED_URL="${PROJECT_URL/$PARSED_PROTO/}"
 
     # Extract the user (includes trailing "@").
-    local PARSED_USER="$(echo "$PARSED_URL" | sed -nr 's,^(.*@).*,\1,p')"
+    export PARSED_USER="$(echo "$PARSED_URL" | sed -nr 's,^(.*@).*,\1,p')"
 
     # Remove the user from the URL.
     local PARSED_URL="${PARSED_URL/$PARSED_USER/}"
