@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-export TZ=Europe/Berlin
-
-# curl -s --header "X-Debug-Out: jenkins.redbox2docker" http://localhost:8338/force-update/
+# curl -s --header "X-Debug-Out: something.meaningful" http://localhost:8338/force-update/
 # http://localhost:8338/force-update/
 # http://10.10.0.141:8338/force-update
 # http://10.20.1.122:8338/force-update
 
 SYS_ENV="/var/run/sys_env.sh"
+# shellcheck disable=SC1090
 if [[ -e ${SYS_ENV} ]]; then source "${SYS_ENV}"; fi
 
 source "/scripts/connect-services.sh"
