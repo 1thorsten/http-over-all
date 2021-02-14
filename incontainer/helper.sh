@@ -183,7 +183,7 @@ function create_symlinks_for_resources {
     fi
 
     # clear the webserver directory
-    echo rm -rf "${MAIN_PATH}/${RESOURCE_NAME}"
+    echo "rm -rf ${MAIN_PATH}/${RESOURCE_NAME}"
     rm -rf "${MAIN_PATH:?}/${RESOURCE_NAME:?}"
 
     # no restrictions to sub directories / share the whole thing
