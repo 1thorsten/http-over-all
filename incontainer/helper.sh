@@ -2,22 +2,35 @@
 # shellcheck disable=SC2155
 # SC2155: Declare and assign separately to avoid masking return values.
 
-export NGINX_CONF=/etc/nginx/http-over-all
+source /scripts/system-helper.sh
 
 # parameter expansion (NFS_1_SHARE -> 10.10.0.201:/home)
 function var_exp {
     local VAR="${1}"
     local DEFAULT_VALUE="${2}"
     local EXPANDED="${!VAR}"
-    if [[ -z "${EXPANDED}" ]]; then 
+    if [[ -z "${EXPANDED}" ]]; then
         if [[ -z "${DEFAULT_VALUE}" ]]; then
             echo "nil"
         else
             echo "${DEFAULT_VALUE}"
         fi
     else
-        echo "${EXPANDED}"
+        decrypt "${EXPANDED}"
     fi
+}
+
+# decrypt the part of the given argument (key = CRYPT_KEY)
+# VAR = "texttext{crypt:ENCRYPTED}texttext
+# @return "texttextDECRYPTEDtexttext"
+function decrypt {
+  local VAR="${1}"
+  local ENCRYPTED=$(echo "$VAR" | grep -oP "{crypt:\K(.*)(?=\})")
+  if [[ $ENCRYPTED != "" ]]; then
+    local DECRYPTED=$(php -r "include 'UnsafeCrypto.php'; echo UnsafeCrypto::decrypt('$ENCRYPTED', true);")
+    VAR=$(echo "$VAR" | perl -pe "s/{crypt:.*}/$DECRYPTED/g")
+  fi
+  echo "${VAR}"
 }
 
 function initialize {
@@ -34,8 +47,8 @@ function initialize {
     fi
 
     echo "create ${NGINX_CONF}"
-    rm -rf ${NGINX_CONF}
-    mkdir -p ${NGINX_CONF}
+    rm -rf "${NGINX_CONF}"
+    mkdir -p "${NGINX_CONF}"
     
     echo "cp /scripts/nginx-config/nginx-default /etc/nginx/sites-enabled/default"
     cp "/scripts/nginx-config/nginx-default" "/etc/nginx/sites-enabled/default"
@@ -50,6 +63,19 @@ function initialize {
     cp "/scripts/nginx-config/nginx.conf" "/etc/nginx/nginx.conf"
 
     configure_nginx_proxy "/etc/nginx/nginx.conf"
+
+    echo "sed -i \"s|__PHP7_SOCK__|${PHP7_SOCK}|g\" /etc/nginx/sites-enabled/default"
+    sed -i "s|__PHP7_SOCK__|${PHP7_SOCK}|g" "/etc/nginx/sites-enabled/default"
+
+    echo "sed -i \"s|__WEBDAV__|${WEBDAV}|g\" /etc/nginx/sites-enabled/default"
+    sed -i "s|__WEBDAV__|${WEBDAV}|g" "/etc/nginx/sites-enabled/default"
+
+    local PHP_INCLUDE_PATH="$(grep "^include_path" "/scripts/nginx-config/php/php.ini")"
+    echo "adjust include_path from ${PHP7_ETC}/cli/php.ini -> $PHP_INCLUDE_PATH"
+    sed -i "s|^;include_path = \".:/.*$|${PHP_INCLUDE_PATH}|g" "${PHP7_ETC}/cli/php.ini"
+
+    echo "sed -i \"s|__CRYPT_KEY__|obfuscated|g\" /scripts/php/include/globals.php"
+    sed -i "s|__CRYPT_KEY__|${CRYPT_KEY}|g" "/scripts/php/include/globals.php"
 
     # docker digests (put all docker-digests from processed images into this dir)
     mkdir -p /tmp/docker-digests/
@@ -267,16 +293,16 @@ function process_permitted_resources {
     fi
 
     while IFS='' read -r line || [[ -n "$line" ]]; do
-        if [[ "$line" != "" ]]; then
-            local normalizedResource="$(echo "${line}" | tr -d '\r' | tr -d '\n')"
-            # ignore comments
-            if [[ $normalizedResource == "#"* ]]; then continue; fi
-            # if normalizedResource (Scanner/Alt) starts with SUB_DIR (Scanner) -> /Alt
-            if [ -n "$SUB_DIR" ] && [[ $normalizedResource == ${SUB_DIR}* ]]; then
-              normalizedResource="${normalizedResource#${SUB_DIR}*}"
-            fi
-            link_permitted_resource "${START_PATH}" "${DST_PATH}" "$normalizedResource"
-        fi
+      if [[ "$line" != "" ]]; then
+          # ignore comments
+          if [[ $line == "#"* ]]; then continue; fi
+          local normalizedResource="$(echo "${line}" | tr -d '\r' | tr -d '\n')"
+          # if normalizedResource (Scanner/Alt) starts with SUB_DIR (Scanner) -> /Alt
+          if [ -n "$SUB_DIR" ] && [[ $normalizedResource == ${SUB_DIR}* ]]; then
+            normalizedResource="${normalizedResource#${SUB_DIR}*}"
+          fi
+          link_permitted_resource "${START_PATH}" "${DST_PATH}" "$normalizedResource"
+      fi
     done < "$PERMISSION_FILE"
 }
 
@@ -425,7 +451,8 @@ function handle_update_jobs_lock {
     echo  "force-update started: $(date)" > "${LOCK_FILE}"
     echo "----------------------------------" >> "${LOCK_FILE}"
     if [[ ${TRAP} == "handle-trap" ]]; then
-        trap 'echo "remove ${LOCK_FILE}" ; rm -f ${LOCK_FILE}' EXIT TERM QUIT
+      # shellcheck disable=SC2064
+      trap "echo \"remove ${LOCK_FILE}\" ; rm -f ${LOCK_FILE}" EXIT TERM QUIT
     fi
 }
 

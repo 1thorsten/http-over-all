@@ -33,7 +33,24 @@ Enables access restriction on different layers.
 - provide restricted access to secured resources with a crypted key mechanism
 - provide a local space on demand
 
-# Protocols
+## Security
+To access the various resources, http-over-all requires passwords in clear text.  
+To add an extra layer of security, it is possible to encrypt the values of the ENV variables.
+
+Be aware that encryption can be a false friend, and if someone has access to your key (CRYPT_KEY), that person could easily decrypt the value.
+Therefore, it is important that you separate the key from the encrypted values.  
+You can do this by defining the CRYPT_KEY in a different configuration file (for example, crypt_key.env) instead of in the main configuration file (for example, example.env).
+
+- generate a new crypt key (CRYPT_KEY)
+  ```bash
+  docker run --rm php:cli-alpine php -r 'echo "CRYPT_KEY:".base64_encode(openssl_random_pseudo_bytes(32))."\n";'
+  ```  
+- encrypt a value  
+  substitute the plain text with the encrypted one
+  ```bash
+  docker exec -ti http-over-all bash -ic "encrypt value2encrypt"
+  ```
+
 ## SMB
 ### Options
 
@@ -182,7 +199,7 @@ encrypted URL: /decrypt/bMXKoBXXX_zQkDKG5fAXtwvdov20A4clKimP8YsdAvbVweqcgfdrUxUs
 
 Why do I should use this encryption mechanism:
 
-- it makes unavailable resources available. With the encrypted URL you bypasses the access restrictions (Authentification and ipaddress restriction)
+- it makes unavailable resources available. With the encrypted URL you bypass the access restrictions (Authentification and ipaddress restriction)
 - it restricts access to this one resource. Everything else remains secure.
 
 Generate your own CRYPT_KEY:

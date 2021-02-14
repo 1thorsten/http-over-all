@@ -8,6 +8,7 @@ services:
     restart: unless-stopped
     env_file:
       - example.env
+      # - crypt_key.env
     ports:
       # http/1.1
       - "8338:80"

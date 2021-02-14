@@ -2,7 +2,7 @@
 # shellcheck disable=SC2155,SC2181
 # SC2155: Declare and assign separately to avoid masking return values.
 # SC2181: Check exit code directly with e.g. 'if mycmd;', not indirectly with $?
-source "/scripts/helper.sh"
+source /scripts/helper.sh
 
 function mount_dav_shares {
     for COUNT in $(env | grep -o "^DAV_[0-9]*_NAME" | awk -F '_' '{print $2}' | sort -nu); do
@@ -437,20 +437,6 @@ function handle_proxy {
 function start_http_server {
     echo
     echo "$(date +'%T'): start http server"
-
-    echo "sed -i \"s|__PHP7_SOCK__|${PHP7_SOCK}|g\" /etc/nginx/sites-enabled/default"
-    sed -i "s|__PHP7_SOCK__|${PHP7_SOCK}|g" "/etc/nginx/sites-enabled/default"
-
-    echo "sed -i \"s|__WEBDAV__|${WEBDAV}|g\" /etc/nginx/sites-enabled/default"
-    sed -i "s|__WEBDAV__|${WEBDAV}|g" "/etc/nginx/sites-enabled/default"
-
-    local PHP_INCLUDE_PATH="$(grep "^include_path" "/scripts/nginx-config/php/php.ini")"
-    echo "adjust include_path from ${PHP7_ETC}/cli/php.ini -> $PHP_INCLUDE_PATH"
-    sed -i "s|^;include_path = \".:/.*$|${PHP_INCLUDE_PATH}|g" "${PHP7_ETC}/cli/php.ini"
-
-    echo "sed -i \"s|__CRYPT_KEY__|obfuscated|g\" /scripts/php/include/globals.php"
-    sed -i "s|__CRYPT_KEY__|${CRYPT_KEY}|g" "/scripts/php/include/globals.php"
-
 
     mkdir -p "/tmp/cache"
     chown -R "www-data:www-data" "/tmp/cache"
