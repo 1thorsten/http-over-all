@@ -37,12 +37,13 @@ function mount_dav_shares {
         if ${ACCESSIBLE} ; then 
             local id_user="$(id -u "www-data")"
             local gid_user="$(id -g "www-data")"
-            echo "echo '${PASS}' | mount -t davfs ${SHARE} ${DAV_MOUNT} -o users,uid=${id_user},gid=${gid_user},username=${USER}"
+            echo "echo obfuscated | mount -t davfs ${SHARE} ${DAV_MOUNT} -o users,uid=${id_user},gid=${gid_user},username=${USER}"
             echo "${PASS}" | mount -t davfs "${SHARE}" "${DAV_MOUNT}" -o "users,uid=${id_user},gid=${gid_user},username=${USER}"
             if [ $? -eq 0 ]; then
                 initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DAV_${COUNT}" "${DAV_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" 
             else
                 echo "mount not successful (ignore): ${SHARE}"
+                echo "sometimes it only works on the second try..."
             fi
         fi
     done
