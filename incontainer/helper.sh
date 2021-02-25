@@ -334,7 +334,7 @@ function create_nginx_location {
     # HTTP or DAV
     local TYPE="${2}"
     local TYPE_LC="${2,,}"
-    local CACHE_ACTIVE=${3:-"true"}
+    local CACHE_ACTIVE=${3:-"false"}
 
     local RESOURCE_NAME="$(var_exp "${BASE_VAR}_NAME")"
     local TEMPLATE_TYPE=${TYPE_LC}
