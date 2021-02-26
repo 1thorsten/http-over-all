@@ -42,7 +42,7 @@ $content = file_get_contents($url);
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/plugins/autoloader/prism-autoloader.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
 
-    <pre><code class="<?php echo $language;?> line-numbers"><?php echo htmlspecialchars($content,ENT_SUBSTITUTE, "UTF-8");?></code></pre>
+    <pre><code class="<?php echo $language;?> line-numbers"><?php echo htmlspecialchars($content,ENT_SUBSTITUTE);?></code></pre>
 </body>
 </html>
 <?php
