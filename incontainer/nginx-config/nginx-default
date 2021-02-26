@@ -29,6 +29,12 @@ server {
     index index.php index.html index.htm index.nginx-debian.html;
 
     location = / {
+        # seems to be necessary for webdav on windows clients
+        if ($request_method = OPTIONS ) {
+            add_header Content-Length 0;
+            add_header Content-Type text/plain;
+            return 200;
+        }
         autoindex on;
     }
 

@@ -23,7 +23,13 @@ Enables access restriction on different layers.
 ## Features
 - support WEBDAV for the provided resources and allow the following methods DELETE MKCOL COPY MOVE PROPFIND OPTIONS
   - Allow changing files where it is possible and desired
-  - windows clients (up to Windows 10): if you secure your content with basic authentication you should enable it ([EN](https://www.webdavsystem.com/server/prev/v2/documentation/authentication/basic_auth_vista/) ,[DE](https://www.windowspage.de/tipps/022703.html))
+  - windows clients
+    - (up to Windows 10): if you secure your content with basic authentication you should enable it ([EN](https://www.webdavsystem.com/server/prev/v2/documentation/authentication/basic_auth_vista/) ,[DE](https://www.windowspage.de/tipps/022703.html))
+    - network folder: 
+      ```bash
+      browser: 192.168.1.1:8338/dav/smb_share
+      folder:  \\192.168.1.1@8338\DavWWWRoot\dav\smb_share
+      ```
 - protecting access with basic-auth on demand
 - restrict the access to your connecting resource by
   - endpoint definiton: user@xx.xx.xx:/root/.jenkins/
@@ -215,5 +221,3 @@ Sometime you need to know your real internal ip address (e.g. if you are in a co
 ```bash
 curl http://[http-over-all:8338]/func/remote-ip
 ```
-
-
