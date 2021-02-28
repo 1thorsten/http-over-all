@@ -2,8 +2,8 @@
         alias /var/www/html/__RESOURCE_NAME__/;
         autoindex on;
         satisfy all;
-        access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
-        error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
+        #access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
+        #error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
 
         #IP_RESTRICTION
 

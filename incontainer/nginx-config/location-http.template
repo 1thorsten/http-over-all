@@ -1,8 +1,8 @@
     location /__RESOURCE_NAME__/ {
         autoindex on;
         satisfy all;
-        access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
-        error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
+        #access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
+        #error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
 
         #IP_RESTRICTION
 
@@ -44,8 +44,8 @@
         alias /var/www/html/__RESOURCE_NAME__/;
         autoindex off;
         satisfy all;
-        access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
-        error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
+        #access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
+        #error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
         
         allow 127.0.0.1;
         deny all;
@@ -55,8 +55,8 @@
         alias /var/www/html/__RESOURCE_NAME__/;
         autoindex off;
         satisfy all;
-        access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
-        error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
+        #access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
+        #error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
         
         allow 127.0.0.1;
         deny all;
@@ -74,11 +74,11 @@
         #proxy_cache_key 	$scheme$proxy_host$uri$is_args$args;
         proxy_cache_key 	$uri;
 
-        # not working with debian:stable / nginx version: nginx/1.10.3
         proxy_buffering        on;
 
         # https://stackoverflow.com/questions/6236078/how-to-clear-the-cache-of-nginx
         proxy_cache_bypass $http_secret_header;
 
+        proxy_set_header User-Agent nginx-proxy;
         proxy_pass http://127.0.0.1/internal/__RESOURCE_NAME__/;
     }
