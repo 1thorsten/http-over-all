@@ -9,8 +9,8 @@ function var_exp {
     local VAR="${1}"
     local DEFAULT_VALUE="${2}"
     local EXPANDED="${!VAR}"
-    if [[ -z "${EXPANDED}" ]]; then
-        if [[ -z "${DEFAULT_VALUE}" ]]; then
+    if [ -z "${EXPANDED}" ]; then
+        if [ -z "${DEFAULT_VALUE}" ]; then
             echo "nil"
         else
             echo "${DEFAULT_VALUE}"
@@ -26,7 +26,7 @@ function var_exp {
 function decrypt {
   local VAR="${1}"
   local ENCRYPTED=$(echo "$VAR" | grep -oP "{crypt:\K(.*)(?=\})")
-  if [[ $ENCRYPTED != "" ]]; then
+  if [ "$ENCRYPTED" != "" ]; then
     local DECRYPTED=$(php -r "include 'UnsafeCrypto.php'; echo UnsafeCrypto::decrypt('$ENCRYPTED', true);")
     VAR=$(echo "$VAR" | perl -pe "s/{crypt:.*}/$DECRYPTED/g")
   fi
@@ -158,6 +158,7 @@ function periodic_job_update_permitted_resources {
         fi
     done
 }
+
 # create symlink for the resources. In case of the existing of xxx_SUB_DIR sub-dir handling is done, too
 # for smb (mount_smb_shares) and git (connect_or_update_git_repos)
 function create_symlinks_for_resources {
@@ -193,8 +194,10 @@ function create_symlinks_for_resources {
     local SUB_DIRS=$(env | grep -o "^${SUB_DIR}_PATH_[0-9]*" | awk -F '_' '{print $6}' | sort -nu)
 
     # permitted files
+    local RESOURCE_RESTRICTION=false
     if [[ "$(var_exp "${BASE}_PERMITTED_RESOURCES")" != "nil" ]]; then
         if [ "$SUB_DIRS" != "" ]; then echo "ignore SUB_DIRS for ${BASE} b/c of ${BASE}_PERMITTED_RESOURCES"; fi
+        RESOURCE_RESTRICTION=true
         local DESTINATION="${MAIN_PATH}/${RESOURCE_NAME}"
         validate_and_process_permitted_resources "${BASE}_PERMITTED_RESOURCES" "${RESOURCE_SRC}" "${DESTINATION}"
     elif [ "$SUB_DIRS" == "" ]; then
@@ -216,6 +219,7 @@ function create_symlinks_for_resources {
                 local DESTINATION="${MAIN_PATH}/${RESOURCE_NAME}/${SUB_DIR_NAME}"
                 if [[ "$(var_exp "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}")" != "nil" ]]; then
                     echo "${SUB_DIR_NAME}: check permitted resources"
+                    RESOURCE_RESTRICTION=true
                     validate_and_process_permitted_resources "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}" "${RESOURCE_SRC}" "${DESTINATION}" "${SUB_DIR_PATH}"
                 else
                     echo "${SUB_DIR_NAME}: enabled -> ${SUB_DIR_PATH}/"
@@ -237,6 +241,12 @@ function create_symlinks_for_resources {
         fi
         echo "ln -fs ${MAIN_PATH}/${RESOURCE_NAME} ${WEBDAV}/web/${RESOURCE_NAME}"
         ln -fs "${MAIN_PATH}/${RESOURCE_NAME}" "${WEBDAV}/web/${RESOURCE_NAME}"
+    fi
+
+    if ! $RESOURCE_RESTRICTION; then
+      return 1
+    else
+      return 0
     fi
 }
 
@@ -306,7 +316,6 @@ function process_permitted_resources {
     done < "$PERMISSION_FILE"
 }
 
-
 function handle_basic_auth {
     # PROXY_${COUNT}_HTTP_AUTH or ${BASE_VAR}_${TYPE}_AUTH
     local AUTH="$(var_exp "${1}")"
@@ -315,12 +324,12 @@ function handle_basic_auth {
     # /tmp/new_proxy_${PROXY_NAME}
     local TEMP_FILE="${3}"
     
-    if [[ "${AUTH}" != "nil" ]]; then
+    if [ "${AUTH}" != "nil" ]; then
         local AUTH_USER="$(cut -d ':' -f 1 <<< "${AUTH}")"
         local AUTH_PASS="$(cut -d ':' -f 2- <<< "${AUTH}")"
         echo "handle_basic_auth: ${AUTH_USER} / obfuscated"
-        echo "/usr/bin/htpasswd -bc /etc/nginx/htpasswd_${HTPASSWD_FILE_EXT} ${AUTH_USER} obfuscated"
-        /usr/bin/htpasswd -bc "/etc/nginx/htpasswd_${HTPASSWD_FILE_EXT}" "${AUTH_USER}" "${AUTH_PASS}"
+        echo "printf \"${AUTH_USER}:\$(openssl passwd -apr1 obfuscated)\" > /etc/nginx/htpasswd_${HTPASSWD_FILE_EXT}"
+        printf '%s:%s\n' "${AUTH_USER}" "$(openssl passwd -apr1 "${AUTH_PASS}")" > "/etc/nginx/htpasswd_${HTPASSWD_FILE_EXT}"
         SED_HTPASSWD="s|#auth_basic|auth_basic|;"            
 
         echo sed -i "${SED_HTPASSWD}" "${TEMP_FILE}"
@@ -334,11 +343,13 @@ function create_nginx_location {
     # HTTP or DAV
     local TYPE="${2}"
     local TYPE_LC="${2,,}"
-    local CACHE_ACTIVE=${3:-"false"}
+    local CACHE_ACTIVE=${3}
+    # 0 (true) or 1 (false; no restriction)
+    local RESOURCE_RESTRICTION=${4}
 
     local RESOURCE_NAME="$(var_exp "${BASE_VAR}_NAME")"
     local TEMPLATE_TYPE=${TYPE_LC}
-    if [[ "${CACHE_ACTIVE}" = "false" ]]; then TEMPLATE_TYPE="${TYPE_LC}-no-cache" ; fi
+    if [ "${CACHE_ACTIVE}" = "false" ]; then TEMPLATE_TYPE="${TYPE_LC}-no-cache" ; fi
     echo "location $TYPE_LC: $RESOURCE_NAME | CACHE: ${CACHE_ACTIVE}"
 
     local TEMPLATE="nginx-config/location-${TEMPLATE_TYPE}.template"
@@ -346,16 +357,22 @@ function create_nginx_location {
 
     local IP_RESTRICTION=$(var_exp "${BASE_VAR}_${TYPE}_IP_RESTRICTION" "allow all")
     local SED_PATTERN="s|__RESOURCE_NAME__|${RESOURCE_NAME%/}|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|;"
-    if [[ "${TYPE_LC}" = "dav" ]]; then
+    if [ "${TYPE_LC}" = "dav" ]; then
         SED_PATTERN="${SED_PATTERN} s|__WEBDAV__|${WEBDAV}|;"
         local DAV_METHODS="$(var_exp "${BASE_VAR}_DAV_METHODS")"
-        if [[ "${DAV_METHODS}" == "nil" ]]; then
-            echo "none of the standard dav_methods (PUT DELETE MKCOL COPY MOVE) active"
-        else
-            DAV_METHODS_PATTERN="dav_methods ${DAV_METHODS^^};"
-            echo "${DAV_METHODS_PATTERN}"
-            SED_PATTERN="${SED_PATTERN} s|#DAV_METHODS|${DAV_METHODS_PATTERN}|;"
+
+        if [ "${DAV_METHODS}" = "nil" ] && [ "$RESOURCE_RESTRICTION" -eq 1 ]; then
+          DAV_METHODS="PUT DELETE MKCOL COPY MOVE"
+          echo "dav_methods not defined; activate ${DAV_METHODS}"
         fi
+
+        if [ "$RESOURCE_RESTRICTION" -eq 0 ]; then
+          DAV_METHODS="DELETE"
+          echo "RESOURCE_RESTRICTION detected -> restrict DAV_METHODS [${DAV_METHODS}]"
+        fi
+        DAV_METHODS_PATTERN="dav_methods ${DAV_METHODS^^};"
+        echo "${DAV_METHODS_PATTERN}"
+        SED_PATTERN="${SED_PATTERN} s|#DAV_METHODS|${DAV_METHODS_PATTERN}|;"
     fi
     sed "${SED_PATTERN}" "${TEMPLATE}" > "${TEMP_FILE}"
 
@@ -363,8 +380,6 @@ function create_nginx_location {
 
     # remove comments
     sed -i "/#/d" "${TEMP_FILE}"
-    # sed -i "/#NEXT_LOCATION/r $TEMP_FILE" "/etc/nginx/sites-enabled/default"
-    #rm "${TEMP_FILE}"
 }
 
 function initial_create_symlinks_for_resources {
@@ -377,10 +392,11 @@ function initial_create_symlinks_for_resources {
     local DAV_ACTIVE="$5"
     local CACHE_ACTIVE=${6:-"true"}
 
-    if [[ "${HTTP_ACTIVE}" == "true" ]]; then create_nginx_location "${BASE}" "HTTP" "${CACHE_ACTIVE}" ; fi
-    if [[ "${DAV_ACTIVE}" == "true" ]]; then create_nginx_location "${BASE}" "DAV" ; fi
+    create_symlinks_for_resources "${MOUNT}" "${RESOURCE_NAME}" "${BASE}" "${DAV_ACTIVE}" "${HTTP_ACTIVE}"
+    local RESOURCE_RESTRICTION="$?"
 
-    create_symlinks_for_resources "${MOUNT}" "${RESOURCE_NAME}" "${BASE}" "${DAV_ACTIVE}" "${HTTP_ACTIVE}"    
+    if [ "${HTTP_ACTIVE}" = "true" ]; then create_nginx_location "${BASE}" "HTTP" "${CACHE_ACTIVE}" "$RESOURCE_RESTRICTION" ; fi
+    if [ "${DAV_ACTIVE}" = "true" ]; then create_nginx_location "${BASE}" "DAV" "false" "$RESOURCE_RESTRICTION" ; fi
 }
 
 function clone_git_repo {
@@ -441,7 +457,7 @@ function periodic_jobs {
 function handle_update_jobs_lock {
     local LOCK_FILE="${1}"
     local TRAP="${2}"
-    while [[ -e "${LOCK_FILE}" ]]; do
+    while [ -e "${LOCK_FILE}" ]; do
         echo "$(date +'%T'): ${LOCK_FILE} exists -> another force-update process is running"
         echo "----------------------------------"
         cat "${LOCK_FILE}"
@@ -450,7 +466,7 @@ function handle_update_jobs_lock {
 
     echo  "force-update started: $(date)" > "${LOCK_FILE}"
     echo "----------------------------------" >> "${LOCK_FILE}"
-    if [[ ${TRAP} == "handle-trap" ]]; then
+    if [ "${TRAP}" = "handle-trap" ]; then
       # shellcheck disable=SC2064
       trap "echo \"remove ${LOCK_FILE}\" ; rm -f ${LOCK_FILE}" EXIT TERM QUIT
     fi
