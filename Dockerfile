@@ -1,4 +1,4 @@
-#FROM ubuntu:20.04
+#FROM debian:bullseye-slim
 #ENV PHP_VERSION=7.4
 
 FROM debian:buster-slim
@@ -18,7 +18,7 @@ RUN set -x && \
     apt-get update -y && \
     apt-get dist-upgrade -y && \
     APT_SYSTEM="sudo tzdata ca-certificates" && \
-    APT_HTTP="nginx nginx-extras lua5.3 apache2-utils" && \
+    APT_HTTP="nginx nginx-extras lua5.3" && \
     APT_PHP="php-curl php-fpm php-mbstring" && \
     APT_SERVICES="openssl sshfs nfs-common davfs2 cifs-utils git" && \
     APT_TOOLS="iputils-ping curl rsync" && \
@@ -44,7 +44,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.0.3"
+ARG RELEASE="1.0.4"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin

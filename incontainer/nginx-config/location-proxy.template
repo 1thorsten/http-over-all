@@ -15,8 +15,8 @@
         proxy_pass __PROXY_URL__;
 
         satisfy all;
-        access_log /var/log/nginx/access_proxy___PROXY_NAME__.log;
-        error_log /var/log/nginx/error_proxy___PROXY_NAME__.log;
+        #access_log /var/log/nginx/access_proxy___PROXY_NAME__.log;
+        #error_log /var/log/nginx/error_proxy___PROXY_NAME__.log;
 
         #IP_RESTRICTION
 
@@ -61,8 +61,8 @@
         proxy_pass __PROXY_URL__;
 
         satisfy all;
-        access_log /var/log/nginx/access_proxy___PROXY_NAME__.log;
-        error_log /var/log/nginx/error_proxy___PROXY_NAME__.log;
+        #access_log /var/log/nginx/access_proxy___PROXY_NAME__.log;
+        #error_log /var/log/nginx/error_proxy___PROXY_NAME__.log;
 
         allow 127.0.0.1;
         deny all;       
@@ -87,8 +87,8 @@
         proxy_pass __PROXY_URL__;
 
         satisfy all;
-        access_log /var/log/nginx/access_proxy___PROXY_NAME__.log;
-        error_log /var/log/nginx/error_proxy___PROXY_NAME__.log;
+        #access_log /var/log/nginx/access_proxy___PROXY_NAME__.log;
+        #error_log /var/log/nginx/error_proxy___PROXY_NAME__.log;
 
         allow 127.0.0.1;
         deny all; 

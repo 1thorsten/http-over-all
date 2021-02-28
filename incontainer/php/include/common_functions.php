@@ -32,6 +32,7 @@ function forwardRequest($url) {
     fwrite($sock, "GET {$path} HTTP/1.1\r\n");
     fwrite($sock, "Host: $host\r\n");
     fwrite($sock, "Accept: */*\r\n");
+    fwrite($sock, "User-Agent: forwardRequest\r\n");
 
     // this leads to problems when the client accepts compressed content (gzip, deflate, etc.)
     // with fgets which reads chunks it is only possible to decompress the content in the end
