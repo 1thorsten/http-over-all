@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2155
+# SC2155: Declare and assign separately to avoid masking return values.
 
 export NGINX_CONF=/etc/nginx/http-over-all
 
@@ -23,7 +25,7 @@ function evaluate_external_env {
   if [ -f "${EXT_ENV}" ]; then
     echo "evaluate $EXT_ENV"
     while IFS='' read -r line || [[ -n "$line" ]]; do
-      if [[ "$line" != "" ]]; then
+      if [ "$line" != "" ]; then
           # ignore comments
           if [[ $line == "#"* ]]; then continue; fi
           local IN="$(echo "${line}" | tr -d '\r' | tr -d '\n')"
