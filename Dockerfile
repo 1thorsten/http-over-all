@@ -73,5 +73,5 @@ RUN set -x && \
     echo "http-over-all part successfully terminated" && \
     set +x
 
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "/scripts/healthcheck.sh" ]
+HEALTHCHECK --interval=1m --timeout=30s --start-period=5s --retries=3 CMD [ "/scripts/healthcheck.sh" ]
 ENTRYPOINT [ "./http-over-all.sh" ]
