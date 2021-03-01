@@ -44,7 +44,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.0.4"
+ARG RELEASE="1.0.5"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
@@ -73,5 +73,5 @@ RUN set -x && \
     echo "http-over-all part successfully terminated" && \
     set +x
 
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "/scripts/healthcheck.sh" ]
+HEALTHCHECK --interval=1m --timeout=30s --start-period=5s --retries=3 CMD [ "/scripts/healthcheck.sh" ]
 ENTRYPOINT [ "./http-over-all.sh" ]

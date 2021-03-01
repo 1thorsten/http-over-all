@@ -105,7 +105,7 @@ General Options: yes
 ### Options
 CACHE is set to false, because the resources are on the local drive.
 
-The docker image should be better a pure data image. Entrypoint and Cmd are overwritten. If the METHOD 'TAR' is chosen, it is also important to know that a shell is executed and the defaults (.bashrc) are executed.
+The docker image should be better a pure data image. Entrypoint and Cmd are overwritten. If the METHOD 'TAR' is chosen, it is also important to know that a shell is executed, and the defaults (.bashrc) are executed.
 The base image should be a Linux image, because of the method used to synchronize data between containers.
 
 | ENV-Variable | Description | required |
@@ -158,7 +158,7 @@ Options for all resources
 | [RES]_NAME | resource name (shown in root dir) | x |
 | [RES]_CACHE | cache resources through proxy cache / true/false (default: true) | - |
 | [RES]_DAV | true/false (default: false) | - |
-| [RES]_DAV_METHODS | standard DAV methods (e.g. PUT DELETE MKCOL COPY MOVE) | - |
+| [RES]_DAV_METHODS | standard DAV methods (default: PUT DELETE MKCOL COPY MOVE) | - |
 | [RES]_DAV_AUTH | user:password (basic auth) | - |
 | [RES]_DAV_IP_RESTRICTION | ip restriction (default: allow all;) | - |
 | [RES]_HTTP | true/false (default: true) | - |
@@ -199,7 +199,7 @@ The content will be shown highlighted and with line numbers. Thanks to Prism.js.
 ## encrypt resources
 URL (relative): /resource/folder1/folder2/file.suffix?share
 
-To trigger the encryption you have only to add ?share to the URL. The URL to the resource will be encrypted. The decrypt URL will be shown. The link is valid as long as the CRYPT_KEY does not change. It is also valid accross different servers as long as the CRYPT_KEY is the same and the resource on the server is also the same.
+To trigger the encryption you have only to add ?share to the URL. The URL to the resource will be encrypted (Decrypt URL will be shown). The link is valid as long as the CRYPT_KEY does not change. It is also valid accross different servers as long as the CRYPT_KEY is the same, and the resource on the server is also the same.
 To be sure which file is behind the key, the url always ends with the file name (e.g. start.ini).
 
 encrypted URL: /decrypt/bMXKoBXXX_zQkDKG5fAXtwvdov20A4clKimP8YsdAvbVweqcgfdrUxUsRlPdymEfGLINZD_y-c0/start.ini
