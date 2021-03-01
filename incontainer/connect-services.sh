@@ -102,14 +102,15 @@ function mount_nfs_shares {
             umount -f "${NFS_MOUNT}"
         fi
 
-        local NFS_OPTS=''
-        if [[ "${OPTS}" != "nil" ]]; then
+        local NFS_OPTS
+        if [ "${OPTS}" != "nil" ]; then
             echo "additional options detected: ${OPTS}"
             NFS_OPTS="-o ${OPTS}"
         fi
 
-        echo "mount ${SHARE} ${NFS_MOUNT} ${NFS_OPTS}"
-        mount "${SHARE}" "${NFS_MOUNT}" "${NFS_OPTS}"
+        echo "mount -v $SHARE $NFS_MOUNT $NFS_OPTS"
+        # shellcheck disable=SC2086
+        mount -v "$SHARE" "$NFS_MOUNT" $NFS_OPTS
 
         initial_create_symlinks_for_resources "${RESOURCE_NAME}" "NFS_${COUNT}" "${NFS_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" 
     done
