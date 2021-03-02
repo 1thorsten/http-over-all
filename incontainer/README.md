@@ -131,6 +131,15 @@ General Options: no
 
 ## NFS
 ### Options
+On the server that provides the nfs share you have to edit the /etc/exports accordingly.
+```
+/etc/exports:
+/mnt/data/downloads 10.40.4.33(async,no_subtree_check,rw,all_squash,anonuid=1000,anongid=1000)
+```
+Reload the configuration afterwards:
+```bash
+exportfs -rs
+```
 
 | ENV-Variable | Description | required |
 | -------------| ------------| ---------|
