@@ -44,7 +44,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.0.5"
+ARG RELEASE="1.0.6"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
