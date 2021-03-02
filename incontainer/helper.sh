@@ -77,6 +77,9 @@ function initialize {
     echo "sed -i \"s|__CRYPT_KEY__|obfuscated|g\" /scripts/php/include/globals.php"
     sed -i "s|__CRYPT_KEY__|${CRYPT_KEY}|g" "/scripts/php/include/globals.php"
 
+    echo "adjust davfs2 (/etc/davfs2/davfs2.conf)"
+    echo "ignore_dav_header 1" >> /etc/davfs2/davfs2.conf
+
     # docker digests (put all docker-digests from processed images into this dir)
     mkdir -p /tmp/docker-digests/
 }
