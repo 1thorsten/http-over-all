@@ -47,11 +47,11 @@ server {
     }
 
     location = /dav {
-        alias __WEBDAV__/web/;
+        root /var/www;
 
         client_max_body_size 2000M;
         
-        client_body_temp_path /var/www/dav/temp;
+        client_body_temp_path /tmp/dav_cache;
         dav_methods     PUT DELETE MKCOL COPY MOVE;
         dav_ext_methods   PROPFIND OPTIONS LOCK UNLOCK;
         dav_ext_lock zone=sds;
@@ -68,11 +68,11 @@ server {
     }
 
     location = /dav/ {
-        alias __WEBDAV__/web/;
-
+        #alias __WEBDAV__/web/;
+        root /var/www;
         client_max_body_size 2000M;
         
-        client_body_temp_path /var/www/dav/temp;
+        client_body_temp_path /tmp/dav_cache;
         dav_methods     PUT DELETE MKCOL COPY MOVE;
         dav_ext_methods   PROPFIND OPTIONS LOCK UNLOCK;
         dav_ext_lock zone=sds;

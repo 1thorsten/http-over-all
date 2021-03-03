@@ -431,9 +431,6 @@ function handle_proxy {
 
             fi
             sed -i "/#/d" "${TEMP_FILE}"
-            # echo "sed -i /#PROXY_CONTENT/r ${TEMP_FILE} /etc/nginx/sites-enabled/default"
-            # sed -i "/#PROXY_CONTENT/r ${TEMP_FILE}" /etc/nginx/sites-enabled/default
-            # rm "${TEMP_FILE}"
         else
             echo "resource is not accessible (ignore): ${PROXY_URL}"
         fi
