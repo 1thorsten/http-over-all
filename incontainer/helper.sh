@@ -102,10 +102,10 @@ function clean_up {
     echo "clean up -> reinitialize ${HTDOCS}"
     rm -rf "${HTDOCS:?}/"*
 
-    echo "clean up -> reinitialize ${WEBDAV}/web"
-    rm -rf "${WEBDAV}/web"
-    mkdir -p "${WEBDAV}/web"
-    chown "www-data:www-data" "${WEBDAV}/web"
+    echo "clean up -> reinitialize ${WEBDAV}"
+    rm -rf "${WEBDAV}"
+    mkdir -p "${WEBDAV}"
+    chown "www-data:www-data" "${WEBDAV}"
 }
 
 # define permitted resources and only link available resources 
@@ -236,14 +236,14 @@ function create_symlinks_for_resources {
         done
     fi
 
-    if [[ "$DAV_ACTIVE" == "true" ]]; then
+    if [ "$DAV_ACTIVE" = "true" ]; then
         echo "DAV: active"
-        if [[ -e "${WEBDAV}/web/${RESOURCE_NAME}" ]]; then
-            echo "rm -rf ${WEBDAV}/web/${RESOURCE_NAME}"
-            rm -rf "${WEBDAV}/web/${RESOURCE_NAME}"
+        if [ -e "${WEBDAV}/${RESOURCE_NAME}" ]; then
+            echo "rm -rf ${WEBDAV}/${RESOURCE_NAME}"
+            rm -rf "${WEBDAV}/${RESOURCE_NAME}"
         fi
-        echo "ln -fs ${MAIN_PATH}/${RESOURCE_NAME} ${WEBDAV}/web/${RESOURCE_NAME}"
-        ln -fs "${MAIN_PATH}/${RESOURCE_NAME}" "${WEBDAV}/web/${RESOURCE_NAME}"
+        echo "ln -fs ${MAIN_PATH}/${RESOURCE_NAME} ${WEBDAV}/${RESOURCE_NAME}"
+        ln -fs "${MAIN_PATH}/${RESOURCE_NAME}" "${WEBDAV}/${RESOURCE_NAME}"
     fi
 
     if ! $RESOURCE_RESTRICTION; then
