@@ -2,7 +2,7 @@
         alias __WEBDAV__/web/__RESOURCE_NAME__;
         autoindex on;
         client_max_body_size 2000M;
-        client_body_temp_path /var/www/dav/temp;
+        client_body_temp_path /tmp/dav_cache;
         # dav_methods     PUT DELETE MKCOL COPY MOVE;
         #DAV_METHODS
 
