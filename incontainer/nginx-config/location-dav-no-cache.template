@@ -3,7 +3,9 @@
             rewrite ^(.*[^/])$ $1/ break;
         }
 
+        # rewrite if request_filename is a directory and replace destination header (windows and mac client not working rfc compliant)
         if (-d $request_filename) {
+            more_set_input_headers "Destination: $fixed_destination";
             rewrite ^(.*[^/])$ $1/ break;
         }
 
@@ -11,7 +13,7 @@
 
         autoindex on;
         client_max_body_size 2000M;
-        client_body_temp_path /tmp/dav_cache;
+        client_body_temp_path /tmp/dav_tmp;
         # dav_methods     PUT DELETE MKCOL COPY MOVE;
         #DAV_METHODS
 
