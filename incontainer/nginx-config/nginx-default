@@ -40,6 +40,21 @@ server {
         autoindex on;
     }
 
+    # stop finder's garbage
+    location ~ \.(_.*|DS_Store|Spotlight-V100|TemporaryItems|Trashes|hidden|localized)$ {
+        access_log  off;
+        error_log   off;
+
+        if ($request_method = PUT) {
+            return 403;
+        }
+        return 404;
+    }
+
+    location ~ \.metadata_never_index$ {
+        return 200 "Don't index this drive!";
+    }
+
     # return ip address from the requestor
     location /func/remote-ip {
         default_type	text/plain;
@@ -53,7 +68,7 @@ server {
 
         client_max_body_size 2000M;
         
-        client_body_temp_path /tmp/dav_cache;
+        client_body_temp_path /tmp/dav_tmp;
         dav_methods     PUT DELETE MKCOL COPY MOVE;
         dav_ext_methods   PROPFIND OPTIONS LOCK UNLOCK;
         dav_ext_lock zone=sds;
@@ -70,11 +85,10 @@ server {
     }
 
     location = /dav/ {
-        #alias __WEBDAV__/web/;
         root /var/www;
         client_max_body_size 2000M;
         
-        client_body_temp_path /tmp/dav_cache;
+        client_body_temp_path /tmp/dav_tmp;
         dav_methods     PUT DELETE MKCOL COPY MOVE;
         dav_ext_methods   PROPFIND OPTIONS LOCK UNLOCK;
         dav_ext_lock zone=sds;
