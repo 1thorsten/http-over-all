@@ -400,6 +400,7 @@ function handle_proxy {
         local PROXY_NAME="$(var_exp "PROXY_${COUNT}_NAME")"
         local PROXY_URL="$(var_exp "PROXY_${COUNT}_URL")"
         local PROXY_CACHE="$(var_exp "PROXY_${COUNT}_CACHE_TIME")"
+        local PROXY_MODE="$(var_exp "PROXY_${COUNT}_MODE" "cache")"
         local SOCKET_FILE="$(var_exp "PROXY_${COUNT}_SOCKET_FILE")"
         local HTTP_ROOT_SHOW="$(var_exp "PROXY_${COUNT}_HTTP_ROOT_SHOW" "true")"
         local IP_RESTRICTION="$(var_exp "PROXY_${COUNT}_HTTP_IP_RESTRICTION" "allow all")"
@@ -435,17 +436,24 @@ function handle_proxy {
                 SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|; s|__PROXY_CACHE_TIME__|${PROXY_CACHE}|;  s|#proxy_cache|proxy_cache|;"
             fi
 
+            if [ "${PROXY_MODE,,}" = "direct" ]; then
+              PROXY_MODE="direct"
+            else
+              PROXY_MODE="cache"
+            fi
             local TEMP_FILE="${NGINX_CONF}/proxy_${PROXY_NAME}.conf"
-            sed "${SED_PATTERN}" nginx-config/location-proxy.template > "${TEMP_FILE}"
+            echo "use nginx-config/location-proxy-$PROXY_MODE.template"
+            sed "${SED_PATTERN}" nginx-config/location-proxy-"$PROXY_MODE".template > "${TEMP_FILE}"
         
             handle_basic_auth "PROXY_${COUNT}_HTTP_AUTH" "proxy_${PROXY_NAME}" "${TEMP_FILE}"
 
-            if [[ "${HTTP_ROOT_SHOW}" == "true" ]]; then
+            if [ "${HTTP_ROOT_SHOW}" = "true" ]; then
                 echo "HTTP: root show active"
                 echo "mkdir -p ${HTDOCS%/}/${PROXY_NAME%/}"
                 mkdir -p "${HTDOCS%/}/${PROXY_NAME%/}"
                 chown www-data:www-data "${HTDOCS%/}/${PROXY_NAME%/}"
-
+            else
+              sed -i "/autoindex/d" "${TEMP_FILE}"
             fi
             sed -i "/#/d" "${TEMP_FILE}"
         else

@@ -127,10 +127,11 @@ The file permissions for the socket are very important. Read and write access on
 | -------------| ------------| ---------|
 | PROXY_[COUNT]_NAME | resource name (shown in root dir) | x | 
 | PROXY_[COUNT]_URL | e.g http:/x.x.x.x/resource/ or http://unix:/var/run/docker.sock:/ | x | 
-| PROXY_[COUNT]_SOCKET_FILE | e.g /var/run/docker.sock (check the rights and change it if necessary)  | - | 
 | PROXY_[COUNT]_CACHE_TIME | cache content, and how to cache - e.g. 1d (one day) | - | 
 | PROXY_[COUNT]_HTTP_ROOT_SHOW | show the content in the root directory (default: true) | - | 
+| PROXY_[COUNT]_MODE | cache or direct | - | 
 | PROXY_[COUNT]_HTTP_IP_RESTRICTION | ip restriction (default: allow all;) | - | 
+| PROXY_[COUNT]_SOCKET_FILE | e.g /var/run/docker.sock (check the rights and change it if necessary)  | - | 
 
 General Options: no
 

@@ -1,0 +1,30 @@
+	location /__PROXY_NAME__/ {
+        autoindex on;
+
+        proxy_set_header       Host $host;
+
+		#add_header X-Proxy-Cache $upstream_cache_status;
+
+        #proxy_cache REMOTE_CONTENT;
+        #proxy_cache_revalidate on;
+        #proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        ##proxy_cache_lock on;
+        #proxy_cache_valid      200  __PROXY_CACHE_TIME__;
+        #proxy_cache_key 	$scheme$proxy_host$uri$is_args$args;
+
+        proxy_pass __PROXY_URL__;
+
+        satisfy all;
+        #access_log /var/log/nginx/access_proxy___PROXY_NAME__.log;
+        #error_log /var/log/nginx/error_proxy___PROXY_NAME__.log;
+
+        #IP_RESTRICTION
+
+        # https://forum.nginx.org/read.php?2,213481,213485#msg-213485
+        #auth_basic "__PROXY_NAME__ restricted"; 
+        #auth_basic_user_file /etc/nginx/htpasswd_proxy___PROXY_NAME__;
+
+        proxy_http_version  1.1;
+	}
+
+    
