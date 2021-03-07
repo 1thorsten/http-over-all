@@ -482,32 +482,92 @@ function parse_url() {
     export PARSED_PROTO="$(echo "$PROJECT_URL" | sed -nr 's,^(.*://).*,\1,p')"
 
     # Remove the protocol from the URL.
-    local PARSED_URL="${PROJECT_URL/$PARSED_PROTO/}"
+    PARSED_URL="${PROJECT_URL/$PARSED_PROTO/}"
 
     # Extract the user (includes trailing "@").
     export PARSED_USER="$(echo "$PARSED_URL" | sed -nr 's,^(.*@).*,\1,p')"
 
     # Remove the user from the URL.
-    local PARSED_URL="${PARSED_URL/$PARSED_USER/}"
+    PARSED_URL="${PARSED_URL/$PARSED_USER/}"
 
     # Extract the port (includes leading ":").
     export PARSED_PORT="$(echo "$PARSED_URL" | sed -nr 's,.*(:[0-9]+).*,\1,p')"
 
     # Remove the port from the URL.
-    local PARSED_URL="${PARSED_URL/$PARSED_PORT/}"
+    export PARSED_URL="${PARSED_URL/$PARSED_PORT/}"
 
     # Extract the path (includes leading "/" or ":").
-    PARSED_PATH="$(echo "$PARSED_URL" | sed -nr 's,[^/:]*([/:].*),\1,p')"
-    #P_PATH="$(echo "$PARSED_URL" | sed -nr 's,[^/:]*[/:](.*),\1,p')"
+    export PARSED_PATH="$(echo "$PARSED_URL" | sed -nr 's,[^/:]*([/:].*),\1,p')"
 
     # Remove the path from the URL.
     export PARSED_HOST="${PARSED_URL/$PARSED_PATH/}"
 }
 
+# set permission to access the socket
+# first it check whether others have read/write access
+# then it checks whether the group has read/write access and the given user belongs to it
+# otherwise try to add the user to the group
+# if group permission is not sufficient or adding the user to the group failed it set the permission of the socket
+function socket_permission {
+	local socket=$1
+	local user="www-data"
+	if [ ! -S "$socket" ]; then
+		echo "no unix-socket detected for: $socket"
+		return 1
+	fi
+
+
+	local access_rights=$(stat -c '%a' "$socket")
+	local r_group=$((${access_rights:1:1} + 0))
+	local r_other=$((${access_rights:2:1} + 0))
+
+	if [[ $r_other -ge 6 ]]; then
+	    echo "others have enough rights: $r_other"
+		return 0
+	fi
+
+	# only if group rights sufficient
+	if [[ $r_group -ge 6 ]]; then
+		local user_groups=$(id -Gn "$user")
+
+		# UNKNOWN when group is not existing
+		local socket_group_name=$(stat -c '%G' "$socket")
+		if [ "$socket_group_name" != "UNKNOWN" ]; then
+			for user_group in $user_groups; do
+				if [ "$user_group" = "$socket_group_name" ]; then
+					echo "$user belongs to group '$socket_group_name' (permission: $r_group)"
+					return 0
+				fi
+			done
+		else
+			echo "$socket belongs to a group that does not exist"
+			local socket_group_id=$(stat -c '%g' "$socket")
+			echo "create group $socket_group_id -> groupadd -g $socket_group_id $socket_group_id"
+			# delete with gpasswd -d www-data 999
+			groupadd -g "$socket_group_id" "$socket_group_id"
+			socket_group_name=$(stat -c '%G' "$socket")
+		fi
+
+		echo "add $user to $socket_group_name -> usermod -aG $socket_group_name $user"
+		if usermod -aG "$socket_group_name" "$user" ; then
+		  echo "$user belongs to group '$socket_group_name' (permission: $r_group)"
+			return 0
+		fi
+  fi
+
+	echo "set permission to $socket -> chmod o+rw $socket"
+	if chmod o+rw "$socket"; then
+		return 0
+	fi
+	return 1
+}
+
 # SIGTERM-handler
 # https://blog.codeship.com/trapping-signals-in-docker-containers/
 function term_handler() {
-    echo "$(date +'%T'): stop http server / EXIT signal detected"
+    echo "$(date +'%T'): stop http server and unmount all filesystems / EXIT signal detected"
+    umount -all --force
     service nginx stop
+    echo "$(date +'%T'): all terminated"
     exit 143; # 128 + 15 -- SIGTERM
 }
