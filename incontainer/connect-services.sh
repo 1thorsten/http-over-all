@@ -400,25 +400,42 @@ function handle_proxy {
         local PROXY_NAME="$(var_exp "PROXY_${COUNT}_NAME")"
         local PROXY_URL="$(var_exp "PROXY_${COUNT}_URL")"
         local PROXY_CACHE="$(var_exp "PROXY_${COUNT}_CACHE_TIME")"
+        local SOCKET_FILE="$(var_exp "PROXY_${COUNT}_SOCKET_FILE")"
         local HTTP_ROOT_SHOW="$(var_exp "PROXY_${COUNT}_HTTP_ROOT_SHOW" "true")"
         local IP_RESTRICTION="$(var_exp "PROXY_${COUNT}_HTTP_IP_RESTRICTION" "allow all")"
 
         echo
         echo "$(date +'%T'): proxy: $PROXY_NAME"
 
-        # check accessibility
-        local HTTP_STATUS="$(curl -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${PROXY_URL%/}/")"
+        parse_url "${PROXY_URL%/}/"
+        local STATUS
+        if [ "${PARSED_HOST,,}" = "unix" ]; then
+          echo "unix socket ($PARSED_URL)"
+          STATUS='200'
+          if [ "$SOCKET_FILE" != "nil" ]; then
+            if ! socket_permission "$SOCKET_FILE"; then
+              echo "unix socket is not accessible"
+              STATUS='404'
+            fi
+            local permissions=$(stat -c '%A %a %n' "$SOCKET_FILE")
+           echo "permissions: $permissions"
+          else
+             echo "take care of the file permission or define PROXY_${COUNT}_SOCKET_FILE"
+          fi
+        else
+          # check accessibility
+          echo "check accessibility : curl -s -o /dev/null -I -w '%{http_code}' --connect-timeout 1 ${PROXY_URL%/}/"
+          STATUS="$(curl -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${PROXY_URL%/}/")"
+        fi
 
-        if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' ]]; then         
+        if [[ "${STATUS}" -eq '200' || "${STATUS}" -eq '401' ]]; then
             if [[ "${PROXY_CACHE}" = "nil" ]]; then
                 SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|;"            
             else
                 SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|; s|__PROXY_CACHE_TIME__|${PROXY_CACHE}|;  s|#proxy_cache|proxy_cache|;"
             fi
 
-            echo "SED_PATTERN: ${SED_PATTERN}"
             local TEMP_FILE="${NGINX_CONF}/proxy_${PROXY_NAME}.conf"
-            
             sed "${SED_PATTERN}" nginx-config/location-proxy.template > "${TEMP_FILE}"
         
             handle_basic_auth "PROXY_${COUNT}_HTTP_AUTH" "proxy_${PROXY_NAME}" "${TEMP_FILE}"
@@ -431,9 +448,6 @@ function handle_proxy {
 
             fi
             sed -i "/#/d" "${TEMP_FILE}"
-            # echo "sed -i /#PROXY_CONTENT/r ${TEMP_FILE} /etc/nginx/sites-enabled/default"
-            # sed -i "/#PROXY_CONTENT/r ${TEMP_FILE}" /etc/nginx/sites-enabled/default
-            # rm "${TEMP_FILE}"
         else
             echo "resource is not accessible (ignore): ${PROXY_URL}"
         fi

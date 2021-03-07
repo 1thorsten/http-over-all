@@ -24,8 +24,6 @@ RUN set -x && \
     APT_TOOLS="iputils-ping curl rsync" && \
     APT_ETC="nano" && \
     apt-get install -y --no-install-recommends ${APT_SYSTEM} ${APT_HTTP} ${APT_PHP} ${APT_SERVICES} ${APT_TOOLS} ${APT_ETC} && \
-    mkdir -p ${WEBDAV}/web && \
-    chown www-data:www-data ${WEBDAV}/web && \
     rm -f /var/www/html/index.nginx-debian.html ; rm -f /etc/nginx/mime.types && \
     # docker-cli
     mkdir -p /tmp/download && \
@@ -44,7 +42,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.0.6"
+ARG RELEASE="1.0.7"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
