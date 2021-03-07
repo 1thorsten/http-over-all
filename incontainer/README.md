@@ -120,10 +120,15 @@ The base image should be a Linux image, because of the method used to synchroniz
 General Options: yes
 ## PROXY
 ### Options
+Proxy is allowed for http endpoints and [unix sockets](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass) as well.
+The file permissions for the socket are very important. Read and write access on PROXY_[COUNT]_SOCKET_FILE will be set automatically (if possible).
+
 | ENV-Variable | Description | required |
 | -------------| ------------| ---------|
-| PROXY_[COUNT]_URL | e.g http:/x.x.x.x/resource/ | x | 
-| PROXY_[COUNT]_CACHE | cache content, and how to cache - e.g. 1d (one day) | - | 
+| PROXY_[COUNT]_NAME | resource name (shown in root dir) | x | 
+| PROXY_[COUNT]_URL | e.g http:/x.x.x.x/resource/ or http://unix:/var/run/docker.sock:/ | x | 
+| PROXY_[COUNT]_SOCKET_FILE | e.g /var/run/docker.sock (check the rights and change it if necessary)  | - | 
+| PROXY_[COUNT]_CACHE_TIME | cache content, and how to cache - e.g. 1d (one day) | - | 
 | PROXY_[COUNT]_HTTP_ROOT_SHOW | show the content in the root directory (default: true) | - | 
 | PROXY_[COUNT]_HTTP_IP_RESTRICTION | ip restriction (default: allow all;) | - | 
 
