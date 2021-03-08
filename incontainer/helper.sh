@@ -359,6 +359,9 @@ function create_nginx_location {
     local TEMP_FILE="${NGINX_CONF}/location_${TYPE_LC}_${RESOURCE_NAME}.conf"
 
     local IP_RESTRICTION=$(var_exp "${BASE_VAR}_${TYPE}_IP_RESTRICTION" "allow all")
+    if [[ ${IP_RESTRICTION,,} != *"satisfy"* ]]; then
+        IP_RESTRICTION="satisfy all; $IP_RESTRICTION"
+    fi
     local SED_PATTERN="s|__RESOURCE_NAME__|${RESOURCE_NAME%/}|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|;"
     if [ "${TYPE_LC}" = "dav" ]; then
         SED_PATTERN="${SED_PATTERN} s|__WEBDAV__|${WEBDAV}|;"

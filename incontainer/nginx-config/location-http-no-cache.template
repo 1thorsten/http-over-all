@@ -1,10 +1,11 @@
     location /__RESOURCE_NAME__/ {
         alias /var/www/html/__RESOURCE_NAME__/;
         autoindex on;
-        satisfy all;
+
         #access_log /var/log/nginx/access_http___RESOURCE_NAME__.log;
         #error_log /var/log/nginx/error_http___RESOURCE_NAME__.log;
 
+        #satisfy all; comes with IP_RESTRICTION (can be overwritten)
         #IP_RESTRICTION
 
         # https://forum.nginx.org/read.php?2,213481,213485#msg-213485
