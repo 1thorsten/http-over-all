@@ -127,10 +127,11 @@ The file permissions for the socket are very important. Read and write access on
 | -------------| ------------| ---------|
 | PROXY_[COUNT]_NAME | resource name (shown in root dir) | x | 
 | PROXY_[COUNT]_URL | e.g http:/x.x.x.x/resource/ or http://unix:/var/run/docker.sock:/ | x | 
-| PROXY_[COUNT]_CACHE_TIME | cache content, and how to cache - e.g. 1d (one day) | - | 
+| PROXY_[COUNT]_CACHE_TIME | cache content, and how to cache - e.g. 1d (one day) | - |
+| PROXY_[COUNT]_HTTP_AUTH | user:password (basic auth) | - |
+| PROXY_[COUNT]_HTTP_IP_RESTRICTION | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | - | 
 | PROXY_[COUNT]_HTTP_ROOT_SHOW | show the content in the root directory (default: true) | - | 
-| PROXY_[COUNT]_MODE | cache or direct | - | 
-| PROXY_[COUNT]_HTTP_IP_RESTRICTION | ip restriction (default: allow all;) | - | 
+| PROXY_[COUNT]_MODE | cache (default) or direct (suitable for API) | - | 
 | PROXY_[COUNT]_SOCKET_FILE | e.g /var/run/docker.sock (check the rights and change it if necessary)  | - | 
 
 General Options: no
@@ -175,10 +176,10 @@ Options for all resources
 | [RES]_DAV | true/false (default: false) | - |
 | [RES]_DAV_METHODS | standard DAV methods (default: PUT DELETE MKCOL COPY MOVE) | - |
 | [RES]_DAV_AUTH | user:password (basic auth) | - |
-| [RES]_DAV_IP_RESTRICTION | ip restriction (default: allow all;) | - |
+| [RES]_DAV_IP_RESTRICTION | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | - |
 | [RES]_HTTP | true/false (default: true) | - |
 | [RES]_HTTP_AUTH | user:password (basic auth) | - |
-| [RES]_HTTP_IP_RESTRICTION | ip restriction (default: allow all;) | - |
+| [RES]_HTTP_IP_RESTRICTION | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | - |
 | [RES]_PERMITTED_RESOURCES | absolute path of permitted resource file | - |
 | [RES]_SUB_DIR_PATH_1++ | restrict acccess to this path (relative) | - |
 | [RES]_SUB_DIR_NAME_1++ | accessible name | - |
