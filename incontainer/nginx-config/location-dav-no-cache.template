@@ -22,8 +22,7 @@
         create_full_put_path  on;
         dav_access    user:rw group:rw all:rw;
 
-        #access_log /var/log/nginx/access_dav___RESOURCE_NAME__.log;
-        #error_log /var/log/nginx/error_dav___RESOURCE_NAME__.log;
+        #LOG
 
         #satisfy all; comes with IP_RESTRICTION (can be overwritten)
         #IP_RESTRICTION

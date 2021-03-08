@@ -403,7 +403,7 @@ function handle_proxy() {
     local PROXY_MODE="$(var_exp "PROXY_${COUNT}_MODE" "cache")"
     local SOCKET_FILE="$(var_exp "PROXY_${COUNT}_SOCKET_FILE")"
     local HTTP_ROOT_SHOW="$(var_exp "PROXY_${COUNT}_HTTP_ROOT_SHOW" "true")"
-    local IP_RESTRICTION="$(var_exp "PROXY_${COUNT}_HTTP_IP_RESTRICTION" "allow all")"
+    local IP_RESTRICTION="$(var_exp "PROXY_${COUNT}_IP_RESTRICTION" "allow all")"
 
     echo
     echo "$(date +'%T'): proxy: $PROXY_NAME"
@@ -448,7 +448,8 @@ function handle_proxy() {
       echo "use nginx-config/location-proxy-$PROXY_MODE.template"
       sed "${SED_PATTERN}" nginx-config/location-proxy-"$PROXY_MODE".template >"${TEMP_FILE}"
 
-      handle_basic_auth "PROXY_${COUNT}_HTTP_AUTH" "proxy_${PROXY_NAME}" "${TEMP_FILE}"
+      handle_log "${TEMP_FILE}" "PROXY_${COUNT}_LOG_ACCESS" "PROXY_${COUNT}_LOG_ERROR"
+      handle_basic_auth "PROXY_${COUNT}_AUTH" "proxy_${PROXY_NAME}" "${TEMP_FILE}"
 
       if [ "${HTTP_ROOT_SHOW}" = "true" ]; then
         echo "HTTP: root show active"
