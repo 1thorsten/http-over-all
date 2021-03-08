@@ -319,6 +319,30 @@ function process_permitted_resources {
     done < "$PERMISSION_FILE"
 }
 
+# overwrite log directive (default is configuration from nginx.conf )
+function handle_log {
+  local TEMP_FILE="${1}"
+  local LOG_ACCESS="$(var_exp "${2}")"
+  local LOG_ERROR="$(var_exp "${3}")"
+
+  if [ "$LOG_ACCESS" != "nil" ]; then
+    local LOG="access_log ${LOG_ACCESS%;};"
+  fi
+
+  if [ "$LOG_ERROR" != "nil" ]; then
+    local LOG="${LOG}error_log ${LOG_ERROR%;};"
+  fi
+
+  if [ -n "$LOG" ]; then
+    SED_PATTERN="s|#LOG|${LOG%}|;"
+
+    echo "handle_log -> sed -i ${SED_PATTERN} ${TEMP_FILE}"
+    sed -i "${SED_PATTERN}" "${TEMP_FILE}"
+  else
+    echo "use log directive from base"
+  fi
+}
+
 function handle_basic_auth {
     # PROXY_${COUNT}_HTTP_AUTH or ${BASE_VAR}_${TYPE}_AUTH
     local AUTH="$(var_exp "${1}")"
@@ -335,7 +359,6 @@ function handle_basic_auth {
         printf '%s:%s\n' "${AUTH_USER}" "$(openssl passwd -apr1 "${AUTH_PASS}")" > "/etc/nginx/htpasswd_${HTPASSWD_FILE_EXT}"
         SED_HTPASSWD="s|#auth_basic|auth_basic|;"            
 
-        echo sed -i "${SED_HTPASSWD}" "${TEMP_FILE}"
         sed -i "${SED_HTPASSWD}" "${TEMP_FILE}"
     fi    
 }
@@ -359,6 +382,9 @@ function create_nginx_location {
     local TEMP_FILE="${NGINX_CONF}/location_${TYPE_LC}_${RESOURCE_NAME}.conf"
 
     local IP_RESTRICTION=$(var_exp "${BASE_VAR}_${TYPE}_IP_RESTRICTION" "allow all")
+    if [[ ${IP_RESTRICTION,,} != *"satisfy"* ]]; then
+        IP_RESTRICTION="satisfy all; $IP_RESTRICTION"
+    fi
     local SED_PATTERN="s|__RESOURCE_NAME__|${RESOURCE_NAME%/}|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|;"
     if [ "${TYPE_LC}" = "dav" ]; then
         SED_PATTERN="${SED_PATTERN} s|__WEBDAV__|${WEBDAV}|;"
@@ -379,6 +405,7 @@ function create_nginx_location {
     fi
     sed "${SED_PATTERN}" "${TEMPLATE}" > "${TEMP_FILE}"
 
+    handle_log "${TEMP_FILE}" "${BASE_VAR}_${TYPE}_LOG_ACCESS" "${BASE_VAR}_${TYPE}_LOG_ERROR"
     handle_basic_auth "${BASE_VAR}_${TYPE}_AUTH" "${TYPE_LC}_${RESOURCE_NAME}" "${TEMP_FILE}"
 
     # remove comments

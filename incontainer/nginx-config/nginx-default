@@ -63,27 +63,6 @@ server {
         return	200	$real_remote_addr;
     }
 
-    location = /dav {
-        root /var/www;
-
-        client_max_body_size 2000M;
-        
-        client_body_temp_path /tmp/dav_tmp;
-        dav_methods     PUT DELETE MKCOL COPY MOVE;
-        dav_ext_methods   PROPFIND OPTIONS LOCK UNLOCK;
-        dav_ext_lock zone=sds;
-        create_full_put_path  on;
-        dav_access    user:rw group:rw all:rw;
-        autoindex     on;
-
-        satisfy all;    
-
-        allow all;
-
-        # auth_bas ic "restricted";
-        # auth_basic_user_file /etc/nginx/htpasswd;
-    }
-
     location = /dav/ {
         root /var/www;
         client_max_body_size 2000M;
@@ -105,7 +84,6 @@ server {
     }
 
     # pass PHP scripts to FastCGI server
-
     location ~* /php/..*.php$ {
         alias /scripts;
         fastcgi_pass unix:__PHP7_SOCK__;
