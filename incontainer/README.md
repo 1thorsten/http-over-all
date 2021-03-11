@@ -24,7 +24,8 @@ Enables access restriction on different layers.
 - support WEBDAV for the provided resources and allow the following methods DELETE MKCOL COPY MOVE PROPFIND OPTIONS
   - Allow changing files where it is possible and desired
   - windows clients
-    - (up to Windows 10): if you secure your content with basic authentication you should enable it ([EN](https://www.webdavsystem.com/server/prev/v2/documentation/authentication/basic_auth_vista/) ,[DE](https://www.windowspage.de/tipps/022703.html))
+    - (Windows): if you secure your content with basic authentication you should enable it ([EN](https://www.webdavsystem.com/server/prev/v2/documentation/authentication/basic_auth_vista/) ,[DE](https://www.windowspage.de/tipps/022703.html))
+    - (Windows): remove download size limit ([EN](https://blogs.objectsharp.com/post/2011/01/27/SharePoint-2010-and-Error-0x800700DF-The-file-size-exceeds-the-limit-allowed-and-cannot-be-saved.aspx#:~:text=When%20you%20upload%20a%20large,and%20cannot%20be%20saved%22%20message.&text=By%20default%2C%20Web%20Client%20file,Windows%20Registry%20using%20regedit%20command), [DE](https://www.strato.de/faq/cloud-speicher/so-erhoehen-sie-die-maximale-dateigroesze-fuer-downloads-bei-webdav-nutzung-unter-windows/))
     - network folder: 
       ```bash
       browser: 192.168.1.1:8338/dav/smb_share
@@ -133,7 +134,7 @@ The file permissions for the socket are very important. Read and write access on
 | PROXY_[COUNT]_IP_RESTRICTION | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | - | 
 | PROXY_[COUNT]_LOG_ACCESS | access_log -> file, device (/dev/stdout) off (default: off) | - | 
 | PROXY_[COUNT]_LOG_ERROR | error_log -> file, device (/dev/stdout) off (default: /dev/stdout) | - | 
-| PROXY_[COUNT]_MODE | cache (default) or direct (suitable for API) | - | 
+| PROXY_[COUNT]_MODE | cache (default for non unix-sockets) or direct (default for unix-sockets) | - | 
 | PROXY_[COUNT]_SOCKET_FILE | e.g /var/run/docker.sock (check the rights and change it if necessary)  | - | 
 
 General Options: no
