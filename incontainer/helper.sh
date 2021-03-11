@@ -603,8 +603,8 @@ function socket_permission() {
 function term_handler() {
   echo "$(date +'%T'): stop http server and unmount all filesystems / EXIT signal detected"
   for i in $(mount | awk '{print $3}' | grep "^/remote/"); do
-    echo umount --force $i
-    umount --force $i
+    echo "umount --force $i"
+    umount --force "$i"
   done
   service nginx stop
   echo "$(date +'%T'): all terminated"
