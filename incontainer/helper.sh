@@ -489,7 +489,7 @@ function periodic_jobs() {
     connect_or_update_git_repos "update"
     connect_or_update_docker "update"
     periodic_job_update_permitted_resources
-    echo "$(date +'%T'): periodic_jobs terminated"
+    echo "$(date +'%T'): periodic_jobs terminated / RELEASE: ${RELEASE}"
     rm -f "${LOCK_FILE}"
     echo
   done
