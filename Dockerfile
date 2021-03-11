@@ -17,7 +17,7 @@ ENV TZ=Europe/Berlin
 RUN set -x && \
     apt-get update -y && \
     apt-get dist-upgrade -y && \
-    APT_SYSTEM="sudo tzdata ca-certificates" && \
+    APT_SYSTEM="sudo tzdata ca-certificates locales" && \
     APT_HTTP="nginx nginx-extras lua5.3" && \
     APT_PHP="php-curl php-fpm php-mbstring" && \
     APT_SERVICES="openssl sshfs nfs-common davfs2 cifs-utils git" && \
@@ -30,11 +30,18 @@ RUN set -x && \
     curl -L $DOWNLOAD_URL | tar -xz -C /tmp/download && \
     mv /tmp/download/docker/docker /usr/local/bin/ && \
     rm -rf /tmp/download && \
+    # locale
+    sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    locale-gen && \
     # debian cleanup
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* ; rm -f /var/lib/dpkg/*-old && \
     echo "OS part successfully terminated" && \
     set +x
+
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
 
 ENV PHP7_ETC=/etc/php/$PHP_VERSION
 ENV PHP7_SERVICE=php${PHP_VERSION}-fpm
@@ -42,7 +49,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.0.9"
+ARG RELEASE="1.0.10"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
@@ -71,5 +78,5 @@ RUN set -x && \
     echo "http-over-all part successfully terminated" && \
     set +x
 
-HEALTHCHECK --interval=1m --timeout=30s --start-period=5s --retries=3 CMD [ "/scripts/healthcheck.sh" ]
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "/scripts/healthcheck.sh" ]
 ENTRYPOINT [ "./http-over-all.sh" ]
