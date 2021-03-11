@@ -1,4 +1,9 @@
     location /dav/__RESOURCE_NAME__ {
+        if ($request_method = PROPPATCH) {
+            more_set_input_headers "Content-Type: text/xml";
+            return	207 '<?xml version="1.0"?><a:multistatus xmlns:a="DAV:"><a:response><a:propstat><a:status>HTTP/1.1 200 OK</a:status></a:propstat></a:response></a:multistatus>';
+        }
+
         if ($request_method = MKCOL) {
             rewrite ^(.*[^/])$ $1/ break;
         }
