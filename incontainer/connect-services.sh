@@ -400,7 +400,7 @@ function handle_proxy() {
     local PROXY_NAME="$(var_exp "PROXY_${COUNT}_NAME")"
     local PROXY_URL="$(var_exp "PROXY_${COUNT}_URL")"
     local PROXY_CACHE="$(var_exp "PROXY_${COUNT}_CACHE_TIME")"
-    local PROXY_MODE="$(var_exp "PROXY_${COUNT}_MODE" "cache")"
+    local PROXY_MODE_DEFAULT="cache"
     local SOCKET_FILE="$(var_exp "PROXY_${COUNT}_SOCKET_FILE")"
     local HTTP_ROOT_SHOW="$(var_exp "PROXY_${COUNT}_HTTP_ROOT_SHOW" "true")"
     local IP_RESTRICTION="$(var_exp "PROXY_${COUNT}_IP_RESTRICTION" "allow all")"
@@ -412,6 +412,7 @@ function handle_proxy() {
     local STATUS
     if [ "${PARSED_HOST,,}" = "unix" ]; then
       echo "unix socket ($PARSED_URL)"
+      PROXY_MODE_DEFAULT="direct"
       STATUS='200'
       if [ "$SOCKET_FILE" != "nil" ]; then
         if ! socket_permission "$SOCKET_FILE"; then
@@ -428,6 +429,8 @@ function handle_proxy() {
       echo "check accessibility : curl -s -o /dev/null -I -w '%{http_code}' --connect-timeout 1 ${PROXY_URL%/}/"
       STATUS="$(curl -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${PROXY_URL%/}/")"
     fi
+
+    local PROXY_MODE="$(var_exp "PROXY_${COUNT}_MODE" "$PROXY_MODE_DEFAULT")"
 
     if [[ "${STATUS}" -eq '200' || "${STATUS}" -eq '401' ]]; then
       if [[ ${IP_RESTRICTION,,} != *"satisfy"* ]]; then
