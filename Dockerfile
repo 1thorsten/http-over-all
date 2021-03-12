@@ -7,7 +7,7 @@ LABEL maintainer="Thorsten Winkler"
 LABEL description="http-over-all"
 
 # os part
-ARG DOCKER_CLI_VERSION="20.10.3"
+ARG DOCKER_CLI_VERSION="20.10.5"
 ARG DOWNLOAD_URL="https://download.docker.com/linux/static/stable/x86_64/docker-$DOCKER_CLI_VERSION.tgz"
 
 ENV WEBDAV=/var/www/dav
@@ -17,7 +17,7 @@ ENV TZ=Europe/Berlin
 RUN set -x && \
     apt-get update -y && \
     apt-get dist-upgrade -y && \
-    APT_SYSTEM="sudo tzdata ca-certificates locales" && \
+    APT_SYSTEM="sudo tzdata ca-certificates" && \
     APT_HTTP="nginx nginx-extras lua5.3" && \
     APT_PHP="php-curl php-fpm php-mbstring" && \
     APT_SERVICES="openssl sshfs nfs-common davfs2 cifs-utils git" && \
@@ -30,18 +30,11 @@ RUN set -x && \
     curl -L $DOWNLOAD_URL | tar -xz -C /tmp/download && \
     mv /tmp/download/docker/docker /usr/local/bin/ && \
     rm -rf /tmp/download && \
-    # locale
-    sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
-    locale-gen && \
     # debian cleanup
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* ; rm -f /var/lib/dpkg/*-old && \
     echo "OS part successfully terminated" && \
     set +x
-
-ENV LC_ALL=en_US.UTF-8
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US:en
 
 ENV PHP7_ETC=/etc/php/$PHP_VERSION
 ENV PHP7_SERVICE=php${PHP_VERSION}-fpm
@@ -49,7 +42,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.0.10"
+ARG RELEASE="1.0.11"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
