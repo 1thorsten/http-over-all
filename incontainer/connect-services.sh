@@ -401,7 +401,6 @@ function handle_proxy() {
     local PROXY_URL="$(var_exp "PROXY_${COUNT}_URL")"
     local PROXY_CACHE="$(var_exp "PROXY_${COUNT}_CACHE_TIME")"
     local PROXY_MODE_DEFAULT="cache"
-    local SOCKET_FILE="$(var_exp "PROXY_${COUNT}_SOCKET_FILE")"
     local HTTP_ROOT_SHOW="$(var_exp "PROXY_${COUNT}_HTTP_ROOT_SHOW" "true")"
     local IP_RESTRICTION="$(var_exp "PROXY_${COUNT}_IP_RESTRICTION" "allow all")"
 
@@ -411,19 +410,17 @@ function handle_proxy() {
     parse_url "${PROXY_URL%/}/"
     local STATUS
     if [ "${PARSED_HOST,,}" = "unix" ]; then
-      echo "unix socket ($PARSED_URL)"
       PROXY_MODE_DEFAULT="direct"
+      # PARSED_PATH = :/var/run/docker.sock:/ -> /var/run/docker.sock
+      SOCKET_FILE=$(echo "$PARSED_PATH" | awk -F ':' '{print $2}')
+      echo "unix socket: $SOCKET_FILE"
       STATUS='200'
-      if [ "$SOCKET_FILE" != "nil" ]; then
-        if ! socket_permission "$SOCKET_FILE"; then
-          echo "unix socket is not accessible"
-          STATUS='404'
-        fi
-        local permissions=$(stat -c '%A %a %n' "$SOCKET_FILE")
-        echo "permissions: $permissions"
-      else
-        echo "take care of the file permission or define PROXY_${COUNT}_SOCKET_FILE"
+      if ! socket_permission "$SOCKET_FILE"; then
+        echo "unix socket is not accessible"
+        STATUS='404'
       fi
+      local permissions=$(stat -c '%A %a %n' "$SOCKET_FILE")
+      echo "permissions: $permissions"
     else
       # check accessibility
       echo "check accessibility : curl -s -o /dev/null -I -w '%{http_code}' --connect-timeout 1 ${PROXY_URL%/}/"
@@ -434,7 +431,7 @@ function handle_proxy() {
 
     if [[ "${STATUS}" -eq '200' || "${STATUS}" -eq '401' ]]; then
       if [[ ${IP_RESTRICTION,,} != *"satisfy"* ]]; then
-          IP_RESTRICTION="satisfy all; $IP_RESTRICTION"
+        IP_RESTRICTION="satisfy all; $IP_RESTRICTION"
       fi
       if [ "${PROXY_CACHE}" = "nil" ]; then
         SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|;"
