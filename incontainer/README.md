@@ -123,6 +123,7 @@ General Options: yes
 ### Options
 Proxy is allowed for http endpoints and [unix sockets](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass) as well.
 The file permissions for the socket are very important. Read and write access on PROXY_[COUNT]_SOCKET_FILE will be set automatically (if possible).
+Proxy (mode: direct) supports websockets.
 
 | ENV-Variable | Description | required |
 | -------------| ------------| ---------|
