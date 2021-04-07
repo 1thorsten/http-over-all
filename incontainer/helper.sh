@@ -350,7 +350,7 @@ function handle_log() {
     echo "handle_log -> sed -i ${SED_PATTERN} ${TEMP_FILE}"
     sed -i "${SED_PATTERN}" "${TEMP_FILE}"
   else
-    echo "use log directive from base"
+    echo "handle_log -> use log directive from base"
   fi
 }
 
