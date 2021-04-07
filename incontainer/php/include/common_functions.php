@@ -75,12 +75,15 @@ function forwardRequest($url) {
     // change order of the crypt output (uri ends with filename, so no Content-Dispositon is necessary anymore)
     // $name = basename($url);
     // header("Content-Disposition: inline; filename=\"$name\"");  
-
+    // stream_set_timeout($sock, 600);
     while (!feof($sock)) {
         echo fgets($sock, 4096);
     }
+    // $info = stream_get_meta_data($sock);
     fclose($sock);
-    
+
+    // $debug = var_export($info, true);
+    // LOG::write("common_functions.php","all bytes sent: $debug");
     return array('Content-Length' => $content_length);
 }
 
