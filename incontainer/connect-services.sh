@@ -73,8 +73,8 @@ function mount_ssh_shares() {
 
     local id_user="$(id -u www-data)"
     local gid_user="$(id -g www-data)"
-    echo "echo obfuscated | /usr/bin/sshfs '${SHARE}' ${SSH_MOUNT} -p ${SSH_PORT} -o password_stdin -o StrictHostKeyChecking=no -o auto_unmount,allow_other,follow_symlinks,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 -o uid=${id_user},gid=${gid_user}"
-    echo "${PASS}" | /usr/bin/sshfs "${SHARE}" "${SSH_MOUNT}" -p "${SSH_PORT}" -o "password_stdin" -o "StrictHostKeyChecking=no" -o "auto_unmount,allow_other,follow_symlinks,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3" -o "uid=${id_user},gid=${gid_user}"
+    echo "echo obfuscated | /usr/bin/sshfs '${SHARE}' ${SSH_MOUNT} -p ${SSH_PORT} -o password_stdin -o StrictHostKeyChecking=no -o auto_unmount,allow_other,follow_symlinks,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3,cache=no -o uid=${id_user},gid=${gid_user}"
+    echo "${PASS}" | /usr/bin/sshfs "${SHARE}" "${SSH_MOUNT}" -p "${SSH_PORT}" -o "password_stdin" -o "StrictHostKeyChecking=no" -o "auto_unmount,allow_other,follow_symlinks,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3,cache=no" -o "uid=${id_user},gid=${gid_user}"
     if [ $? -eq 0 ]; then
       initial_create_symlinks_for_resources "${RESOURCE_NAME}" "SSH_${COUNT}" "${SSH_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     else
