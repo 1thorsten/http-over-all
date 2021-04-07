@@ -74,7 +74,7 @@
         #proxy_cache_key 	$scheme$proxy_host$uri$is_args$args;
         proxy_cache_key 	$uri;
 
-        proxy_buffering        on;
+        proxy_buffering        off;
 
         # https://stackoverflow.com/questions/6236078/how-to-clear-the-cache-of-nginx
         proxy_cache_bypass $http_secret_header;
