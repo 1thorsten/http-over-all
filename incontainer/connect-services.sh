@@ -12,6 +12,7 @@ function mount_dav_shares() {
     local RESOURCE_NAME="$(var_exp "DAV_${COUNT}_NAME")"
     local DAV_ACTIVE="$(var_exp "DAV_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "DAV_${COUNT}_HTTP" "true")"
+    local CACHE_ACTIVE="$(var_exp "DAV_${COUNT}_CACHE" "true")"
     echo
     echo "$(date +'%T'): dav: ${RESOURCE_NAME}"
 
@@ -40,7 +41,7 @@ function mount_dav_shares() {
       echo "echo obfuscated | mount -t davfs ${SHARE} ${DAV_MOUNT} -o users,uid=${id_user},gid=${gid_user},username=${USER}"
       echo "${PASS}" | mount -t davfs "${SHARE}" "${DAV_MOUNT}" -o "users,uid=${id_user},gid=${gid_user},username=${USER}"
       if [ $? -eq 0 ]; then
-        initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DAV_${COUNT}" "${DAV_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}"
+        initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DAV_${COUNT}" "${DAV_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
       else
         echo "mount not successful (ignore): ${SHARE}"
         echo "sometimes it only works on the second try..."
@@ -57,6 +58,7 @@ function mount_ssh_shares() {
     local RESOURCE_NAME="$(var_exp "SSH_${COUNT}_NAME")"
     local DAV_ACTIVE="$(var_exp "SSH_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "SSH_${COUNT}_HTTP" "true")"
+    local CACHE_ACTIVE="$(var_exp "SSH_${COUNT}_CACHE" "true")"
     echo
     echo "$(date +'%T'): ssh: ${RESOURCE_NAME}"
 
@@ -74,7 +76,7 @@ function mount_ssh_shares() {
     echo "echo obfuscated | /usr/bin/sshfs '${SHARE}' ${SSH_MOUNT} -p ${SSH_PORT} -o password_stdin -o StrictHostKeyChecking=no -o auto_unmount,allow_other,follow_symlinks,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 -o uid=${id_user},gid=${gid_user}"
     echo "${PASS}" | /usr/bin/sshfs "${SHARE}" "${SSH_MOUNT}" -p "${SSH_PORT}" -o "password_stdin" -o "StrictHostKeyChecking=no" -o "auto_unmount,allow_other,follow_symlinks,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3" -o "uid=${id_user},gid=${gid_user}"
     if [ $? -eq 0 ]; then
-      initial_create_symlinks_for_resources "${RESOURCE_NAME}" "SSH_${COUNT}" "${SSH_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}"
+      initial_create_symlinks_for_resources "${RESOURCE_NAME}" "SSH_${COUNT}" "${SSH_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     else
       echo "mount not successful (ignore): ${SHARE}"
     fi
@@ -90,6 +92,7 @@ function mount_nfs_shares() {
     local RESOURCE_NAME="$(var_exp "NFS_${COUNT}_NAME")"
     local DAV_ACTIVE="$(var_exp "NFS_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "NFS_${COUNT}_HTTP" "true")"
+    local CACHE_ACTIVE="$(var_exp "NFS_${COUNT}_CACHE" "true")"
     echo
     echo "$(date +'%T'): nfs: ${RESOURCE_NAME}"
 
@@ -112,7 +115,7 @@ function mount_nfs_shares() {
     # shellcheck disable=SC2086
     mount -v "$SHARE" "$NFS_MOUNT" $NFS_OPTS
 
-    initial_create_symlinks_for_resources "${RESOURCE_NAME}" "NFS_${COUNT}" "${NFS_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}"
+    initial_create_symlinks_for_resources "${RESOURCE_NAME}" "NFS_${COUNT}" "${NFS_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
   done
 }
 
@@ -125,6 +128,7 @@ function mount_smb_shares() {
     local RESOURCE_NAME="$(var_exp "SMB_${COUNT}_NAME")"
     local DAV_ACTIVE="$(var_exp "SMB_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "SMB_${COUNT}_HTTP" "true")"
+    local CACHE_ACTIVE="$(var_exp "SMB_${COUNT}_CACHE" "true")"
     echo
     echo "$(date +'%T'): smb: ${RESOURCE_NAME}"
 
@@ -147,7 +151,7 @@ function mount_smb_shares() {
     mount -t cifs "${SHARE}" "${SMB_MOUNT}" -o "user=${USER},password=${PASS},iocharset=utf8,uid=www-data,gid=www-data,forceuid,forcegid${SMB_OPTS}"
 
     if [ $? -eq 0 ]; then
-      initial_create_symlinks_for_resources "${RESOURCE_NAME}" "SMB_${COUNT}" "${SMB_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}"
+      initial_create_symlinks_for_resources "${RESOURCE_NAME}" "SMB_${COUNT}" "${SMB_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     else
       echo "mount not successful (ignore): ${SHARE}"
     fi
