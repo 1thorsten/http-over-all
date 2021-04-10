@@ -183,7 +183,7 @@ function connect_or_update_docker() {
     mkdir -p "${DOCKER_MOUNT}"
     chown "www-data:www-data" "${DOCKER_MOUNT}"
 
-    if [[ "$LOGIN" != "nil" ]]; then
+    if [ "$LOGIN" != "nil" ]; then
       echo "login"
       if ! login_output="$($LOGIN 2>&1)"; then
         echo "login not succeeded ($LOGIN)"
@@ -212,7 +212,7 @@ function connect_or_update_docker() {
       fi
     elif [[ "${pull_output}" == *"Status: Image is up to date"* ]]; then
       DIGEST=$(docker images --no-trunc --quiet "${IMAGE}:${TAG}" | tr ':' '_')
-      if [[ "${TYPE}" != "connect" ]] && [ ! -e "/tmp/docker-digests/$DIGEST" ]; then
+      if [ "${TYPE}" != "connect" ] && [ ! -e "/tmp/docker-digests/$DIGEST" ]; then
         echo "recognize usage of known but unprocessed image, declare it to NEW (digest: $DIGEST)"
         IMAGE_STATUS="NEW"
       else
@@ -220,7 +220,7 @@ function connect_or_update_docker() {
       fi
     fi
 
-    if [[ "$IMAGE_STATUS" == "NEW" ]] || [[ "${TYPE}" == "connect" ]]; then
+    if [ "$IMAGE_STATUS" == "NEW" ] || [ "${TYPE}" == "connect" ]; then
       # for better update detecting get the digest for the image
       if [ -z "$DIGEST" ]; then DIGEST=$(docker images --no-trunc --quiet "${IMAGE}":"${TAG}" | tr ':' '_'); fi
       echo "digest: $DIGEST"
@@ -228,18 +228,18 @@ function connect_or_update_docker() {
 
       # remove <none> images (one backup should be fine)
       if none_images=$(docker images | grep "$IMAGE.*<none>" | awk '{print $3}'); then
-        if [[ "$none_images" != "" ]]; then
+        if [ "$none_images" != "" ]; then
           echo "remove old images: $none_images"
           docker rmi -f "$none_images"
         fi
       fi
 
-      if [[ "$METHOD" == "TAR" ]]; then
-        local tmp_dir=$(mktemp -d -t docker-XXXXXXXXXXXX)
+      if [ "$METHOD" == "TAR" ]; then
+        local tmp_dir=$(mktemp -d -t docker-tar-XXXXXXXXXXXX)
         # handle excludes
         local exclude_list
-        if [[ "$EXCLUDES" != "nil" ]]; then
-          echo "path excludes: $EXCLUDES"
+        if [ "$EXCLUDES" != "nil" ]; then
+          echo "$METHOD: path excludes: $EXCLUDES"
           for excl in $EXCLUDES; do
             exclude_list="$exclude_list --exclude=$excl"
           done
@@ -248,23 +248,49 @@ function connect_or_update_docker() {
           # without slashes (/usr/lib/ -> usr/lib, ./ -> .)
           local DIR_BASE=${dir#/}
           DIR_BASE=${DIR_BASE%/}
-          echo "$METHOD $dir (base: $DIR_BASE) start at $(date +'%T')"
-          if [[ "$DIR_BASE" == "." ]]; then
+          echo "$METHOD: $dir (base: $DIR_BASE) start at $(date +'%T')"
+          if [ "$DIR_BASE" == "." ]; then
             docker run --rm --entrypoint "" "${IMAGE}:${TAG}" /bin/sh -c "tar c -h $exclude_list * -f -" | tar Chxf "$tmp_dir" -
           else
             docker run --rm --entrypoint "" "${IMAGE}:${TAG}" /bin/sh -c "tar c -h $exclude_list -C/ ${DIR_BASE}/* -f -" | tar Chxf "$tmp_dir" -
           fi
         done
+        echo "start rsync at $(date +'%T')"
         rsync -rtu --delete "${tmp_dir}"/ "${DOCKER_MOUNT}"
         rm -rf "${tmp_dir}"
+      elif [ "$METHOD" == "CP" ]; then
+        # usage of docker cp
+        local tmp_dir=$(mktemp -d -t docker-cp-XXXXXXXXXXXX)
+        # handle excludes
+        local exclude_list
+        local tmp_exclude_file
+        if [ "$EXCLUDES" != "nil" ]; then
+          echo "$METHOD: path excludes: $EXCLUDES (after copying data from container -> via rsync)"
+          tmp_exclude_file=$(mktemp /tmp/docker-cp-excludes.XXXXXX)
+          exclude_list="--exclude-from=$tmp_exclude_file"
+          for excl in $EXCLUDES; do
+            echo "- $excl" >> "$tmp_exclude_file"
+          done
+        fi
+        local TMP_CNT=$(docker create "${IMAGE}:${TAG}")
+        for dir in $SRC_DIRS; do
+          echo "$METHOD: $dir | start at $(date +'%T')"
+          docker cp -L "$TMP_CNT":"$dir" "$tmp_dir"
+        done
+        docker rm "$TMP_CNT" > /dev/null
+        echo "start rsync at $(date +'%T')"
+        rsync -rtu --links --delete "$exclude_list" "${tmp_dir}"/ "${DOCKER_MOUNT}"
+        rm -rf "$tmp_dir"
+        if [ "$tmp_exclude_file" != "" ]; then
+          rm -f "$tmp_exclude_file"
+        fi
       else
         echo "unknown method: $METHOD | ignore"
         continue
       fi
     fi
-
     # update -> call from periodic_jobs
-    if [[ "${TYPE}" != "update" ]]; then
+    if [ "${TYPE}" != "update" ]; then
       initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DOCKER_${COUNT}" "${DOCKER_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     fi
   done
