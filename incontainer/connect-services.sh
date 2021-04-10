@@ -272,18 +272,19 @@ function connect_or_update_docker() {
             echo "- $excl" >> "$tmp_exclude_file"
           done
         fi
+        # create a container from the image (for data extraction)
         local TMP_CNT=$(docker create "${IMAGE}:${TAG}")
         for dir in $SRC_DIRS; do
           echo "$METHOD: $dir | start at $(date +'%T')"
           docker cp -L "$TMP_CNT":"$dir" "$tmp_dir"
         done
+        # remove container after copying data
         docker rm "$TMP_CNT" > /dev/null
         echo "start rsync at $(date +'%T')"
+        # shellcheck disable=SC2086
+        rsync -rtu --links --delete $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
         if [ "$tmp_exclude_file" != "" ]; then
-          rsync -rtu --links --delete "$exclude_list" "${tmp_dir}"/ "${DOCKER_MOUNT}"
           rm -f "$tmp_exclude_file"
-        else
-          rsync -rtu --links --delete "${tmp_dir}"/ "${DOCKER_MOUNT}"
         fi
         rm -rf "$tmp_dir"
       else
