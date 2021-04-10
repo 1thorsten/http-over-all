@@ -279,11 +279,13 @@ function connect_or_update_docker() {
         done
         docker rm "$TMP_CNT" > /dev/null
         echo "start rsync at $(date +'%T')"
-        rsync -rtu --links --delete "$exclude_list" "${tmp_dir}"/ "${DOCKER_MOUNT}"
-        rm -rf "$tmp_dir"
         if [ "$tmp_exclude_file" != "" ]; then
+          rsync -rtu --links --delete "$exclude_list" "${tmp_dir}"/ "${DOCKER_MOUNT}"
           rm -f "$tmp_exclude_file"
+        else
+          rsync -rtu --links --delete "${tmp_dir}"/ "${DOCKER_MOUNT}"
         fi
+        rm -rf "$tmp_dir"
       else
         echo "unknown method: $METHOD | ignore"
         continue
