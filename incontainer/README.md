@@ -106,15 +106,16 @@ General Options: yes
 ### Options
 CACHE is set to false, because the resources are on the local drive.
 
-The docker image should be better a pure data image. Entrypoint and Cmd are overwritten. If the METHOD 'TAR' is chosen, it is also important to know that a shell is executed, and the defaults (.bashrc) are executed.
-The base image should be a Linux image, because of the method used to synchronize data between containers.
+The docker image should be better a pure data image.
+For METHOD 'TAR' the base image has to  be a Linux OS. Entrypoint and Cmd will be overwritten. It is important to know that a shell is executed, the defaults (.bashrc) as well.
+METHOD 'CP' uses docker cp, so no operating system is required (should be faster that TAR). EXCL is applied after the content is copied. 
 
 | ENV-Variable | Description | required |
 | -------------| ------------| ---------|
 | DOCKER_[COUNT]_IMAGE | e.g. ubuntu | x |
 | DOCKER_[COUNT]_LOGIN | e.g. docker login url.your-repo.de -u user -p password | - |
 | DOCKER_[COUNT]_TAG | tag (default: latest) | - |
-| DOCKER_[COUNT]_METHOD | method   for synchronizing data (default: TAR) | - |
+| DOCKER_[COUNT]_METHOD | method for synchronizing data (TAR,CP) | x |
 | DOCKER_[COUNT]_SRC_DIRS | dirs to extract from the container (default: DOCKER-VAR WORKSPACE) | - |
 | DOCKER_[COUNT]_EXCL | paths to exclude (e.g. proc/* dev/* sys/*) | - |
 

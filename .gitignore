@@ -354,3 +354,4 @@ MigrationBackup/
 crypt_key.env
 !/scripts/upload-webdav.sh
 !/scripts/docker-proxy_run.sh.sh
+example_*.env
