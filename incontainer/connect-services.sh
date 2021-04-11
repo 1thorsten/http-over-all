@@ -258,15 +258,15 @@ function connect_or_update_docker() {
         echo "start rsync at $(date +'%T')"
         rsync -rtu --delete "${tmp_dir}"/ "${DOCKER_MOUNT}"
         rm -rf "${tmp_dir}"
-      elif [ "$METHOD" == "CP" ]; then
+      elif [ "$METHOD" == "COPY" ]; then
         # usage of docker cp
-        local tmp_dir=$(mktemp -d -t docker-cp-XXXXXXXXXXXX)
+        local tmp_dir=$(mktemp -d -t docker-copy-XXXXXXXXXXXX)
         # handle excludes
         local exclude_list
         local tmp_exclude_file
         if [ "$EXCLUDES" != "nil" ]; then
           echo "$METHOD: path excludes: $EXCLUDES (after copying data from container -> via rsync)"
-          tmp_exclude_file=$(mktemp /tmp/docker-cp-excludes.XXXXXX)
+          tmp_exclude_file=$(mktemp /tmp/docker-copy-excludes.XXXXXX)
           exclude_list="--exclude-from=$tmp_exclude_file"
           for excl in $EXCLUDES; do
             echo "- $excl" >> "$tmp_exclude_file"
