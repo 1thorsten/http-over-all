@@ -320,8 +320,8 @@ function connect_or_update_git_repos() {
     local ACCESSIBLE
     parse_url "${REPO_URL%/}/"
     local URL_STRICT="${PARSED_PROTO}${PARSED_HOST}${PARSED_PORT}"
-    if [[ -n $PARSED_USER ]]; then
-      local CURL_CREDENTIALS="--user ${PARSED_USER}"
+    if [ -n "$PARSED_USER" ]; then
+      local CURL_CREDENTIALS="--user ${PARSED_USER%@}"
     fi
     # shellcheck disable=SC2086
     local HTTP_STATUS="$(curl ${CURL_CREDENTIALS} -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${URL_STRICT}")"
@@ -333,19 +333,19 @@ function connect_or_update_git_repos() {
       echo "resource ('${REPO_URL}' -> '${URL_STRICT}') is not accessible -> ${HTTP_STATUS}"
     fi
 
-    if [[ ! -d "${GIT_MOUNT}" ]]; then
+    if [ ! -d "${GIT_MOUNT}" ]; then
       if ! ${ACCESSIBLE}; then
         echo "${GIT_MOUNT} not exists -> ignore"
         continue
       fi
       clone_git_repo "${GIT_REPO_PATH}" "${REPO_URL}" "$RESOURCE_NAME"
-    elif [[ -e "${GIT_REPO_PATH}.error" ]]; then
+    elif [ -e "${GIT_REPO_PATH}.error" ]; then
       echo "detect previous error: ${GIT_REPO_PATH}.error"
       if ${ACCESSIBLE}; then
         clone_git_repo_safe "${GIT_REPO_PATH}" "${REPO_URL}" "$RESOURCE_NAME"
       fi
       # if error file still exists, go with the existing local repo
-      if [[ -e "${GIT_REPO_PATH}.error" ]]; then
+      if [ -e "${GIT_REPO_PATH}.error" ]; then
         if [[ "${TYPE}" != "update" ]] && [[ -d "${GIT_MOUNT}" ]]; then
           initial_create_symlinks_for_resources "${RESOURCE_NAME}" "GIT_${COUNT}" "${GIT_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
           rm -f "${GIT_REPO_PATH}.error"
@@ -401,7 +401,7 @@ function connect_or_update_git_repos() {
       echo "last_commit_log: ${git_log}"
     fi
     # update -> call from periodic_jobs
-    if [[ "${TYPE}" != "update" ]]; then
+    if [ "${TYPE}" != "update" ]; then
       echo
       initial_create_symlinks_for_resources "${RESOURCE_NAME}" "GIT_${COUNT}" "${GIT_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     fi
@@ -419,7 +419,7 @@ function handle_local_paths() {
     echo
     echo "$(date +'%T'): local: ${LOCAL_NAME}"
 
-    if [[ ! -d "${LOCAL_PATH}" ]]; then
+    if [ ! -d "${LOCAL_PATH}" ]; then
       echo "LOCAL_${COUNT}_PATH: ${LOCAL_PATH}: not exists -> ignore"
     else
       # no subdir supported so far, so "LOCAL_${COUNT}" always points to a non existing location
@@ -442,7 +442,7 @@ function handle_proxy() {
 
     parse_url "${PROXY_URL%/}/"
     local STATUS
-    if [ "${PARSED_HOST,,}" = "unix" ]; then
+    if [ "${PARSED_HOST,,}" == "unix" ]; then
       PROXY_MODE_DEFAULT="direct"
       # PARSED_PATH = :/var/run/docker.sock:/ -> /var/run/docker.sock
       SOCKET_FILE=$(echo "$PARSED_PATH" | awk -F ':' '{print $2}')
@@ -466,13 +466,13 @@ function handle_proxy() {
       if [[ ${IP_RESTRICTION,,} != *"satisfy"* ]]; then
         IP_RESTRICTION="satisfy all; $IP_RESTRICTION"
       fi
-      if [ "${PROXY_CACHE}" = "nil" ]; then
+      if [ "${PROXY_CACHE}" == "nil" ]; then
         SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|;"
       else
         SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|; s|__PROXY_CACHE_TIME__|${PROXY_CACHE}|;  s|#proxy_cache|proxy_cache|;"
       fi
 
-      if [ "${PROXY_MODE,,}" = "direct" ]; then
+      if [ "${PROXY_MODE,,}" == "direct" ]; then
         PROXY_MODE="direct"
       else
         PROXY_MODE="cache"
@@ -484,7 +484,7 @@ function handle_proxy() {
       handle_log "${TEMP_FILE}" "PROXY_${COUNT}_LOG_ACCESS" "PROXY_${COUNT}_LOG_ERROR"
       handle_basic_auth "PROXY_${COUNT}_AUTH" "proxy_${PROXY_NAME}" "${TEMP_FILE}"
 
-      if [ "${HTTP_ROOT_SHOW}" = "true" ]; then
+      if [ "${HTTP_ROOT_SHOW}" == "true" ]; then
         echo "HTTP: root show active"
         echo "mkdir -p ${HTDOCS%/}/${PROXY_NAME%/}"
         mkdir -p "${HTDOCS%/}/${PROXY_NAME%/}"
@@ -511,7 +511,7 @@ function start_http_server() {
   touch ${PHP_LOG_FILE}
   chown "www-data:www-data" ${PHP_LOG_FILE}
   # https://unix.stackexchange.com/questions/261531/how-to-send-output-from-one-terminal-to-another-without-making-any-new-pipe-or-f
-  if [[ "$PHP_LOG_SYSOUT" == "false" ]]; then
+  if [ "$PHP_LOG_SYSOUT" == "false" ]; then
     echo "avoid redirecting ${PHP_LOG_FILE} to stdout (PHP_LOG_SYSOUT: $PHP_LOG_SYSOUT)"
   else
     echo "redirect ${PHP_LOG_FILE} to stdout from main_process (PHP_LOG_SYSOUT: $PHP_LOG_SYSOUT)"
