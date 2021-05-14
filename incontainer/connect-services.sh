@@ -17,6 +17,11 @@ function mount_dav_shares() {
     echo "$(date +'%T'): dav: ${RESOURCE_NAME}"
 
     local DAV_MOUNT="${DATA}/dav/${COUNT}"
+
+    if [ -e "${DAV_MOUNT}" ] && [ ! -e "${DAV_MOUNT}/${RESOURCE_NAME}" ]; then
+      echo "delete orphaned data"
+      rm -rf "${DAV_MOUNT:?}/*"
+    fi
     mkdir -p "${DAV_MOUNT}"
 
     # umount share if already mounted
@@ -63,6 +68,12 @@ function mount_ssh_shares() {
     echo "$(date +'%T'): ssh: ${RESOURCE_NAME}"
 
     local SSH_MOUNT="${DATA}/ssh/${COUNT}"
+
+    if [ -e "${SSH_MOUNT}" ] && [ ! -e "${SSH_MOUNT}/${RESOURCE_NAME}" ]; then
+      echo "delete orphaned data"
+      rm -rf "${SSH_MOUNT:?}/*"
+    fi
+
     mkdir -p "${SSH_MOUNT}"
 
     # umount share if already mounted
@@ -97,6 +108,10 @@ function mount_nfs_shares() {
     echo "$(date +'%T'): nfs: ${RESOURCE_NAME}"
 
     local NFS_MOUNT="${DATA}/nfs/${COUNT}"
+    if [ -e "${NFS_MOUNT}" ] && [ ! -e "${NFS_MOUNT}/${RESOURCE_NAME}" ]; then
+      echo "delete orphaned data"
+      rm -rf "${NFS_MOUNT:?}/*"
+    fi
     mkdir -p "${NFS_MOUNT}"
 
     # umount share if already mounted
@@ -133,6 +148,10 @@ function mount_smb_shares() {
     echo "$(date +'%T'): smb: ${RESOURCE_NAME}"
 
     local SMB_MOUNT="${DATA}/smb/${COUNT}"
+    if [ -e "${SMB_MOUNT}" ] && [ ! -e "${SMB_MOUNT}/${RESOURCE_NAME}" ]; then
+      echo "delete orphaned data"
+      rm -rf "${SMB_MOUNT:?}/*"
+    fi
     mkdir -p "${SMB_MOUNT}"
 
     # umount share if already mounted
@@ -180,7 +199,12 @@ function connect_or_update_docker() {
     echo
     echo "$(date +'%T'): docker ($TYPE): ${RESOURCE_NAME} (${IMAGE}) | ${DOCKER_MOUNT}"
 
+    if [ -e "${DOCKER_MOUNT}" ] && [ ! -e "${DOCKER_MOUNT}/${RESOURCE_NAME}" ]; then
+      echo "delete orphaned data"
+      rm -rf "${DOCKER_MOUNT:?}/*"
+    fi
     mkdir -p "${DOCKER_MOUNT}"
+
     chown "www-data:www-data" "${DOCKER_MOUNT}"
 
     if [ "$LOGIN" != "nil" ]; then
@@ -315,6 +339,11 @@ function connect_or_update_git_repos() {
 
     echo
     echo "$(date +'%T'): git ($TYPE): ${RESOURCE_NAME} (${REPO_BRANCH}) | ${GIT_MOUNT}"
+
+    if [ -e "${GIT_REPO_PATH}" ] && [ ! -e "${GIT_MOUNT}" ]; then
+      echo "delete orphaned data"
+      rm -rf "${GIT_REPO_PATH:?}/*"
+    fi
 
     # check accessibility
     local ACCESSIBLE
