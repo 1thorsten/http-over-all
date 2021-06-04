@@ -7,7 +7,7 @@ LABEL maintainer="Thorsten Winkler"
 LABEL description="http-over-all"
 
 # os part
-ARG DOCKER_CLI_VERSION="20.10.5"
+ARG DOCKER_CLI_VERSION="20.10.6"
 ARG DOWNLOAD_URL="https://download.docker.com/linux/static/stable/x86_64/docker-$DOCKER_CLI_VERSION.tgz"
 
 ENV WEBDAV=/var/www/dav
@@ -42,7 +42,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.0.22"
+ARG RELEASE="1.0.23"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
