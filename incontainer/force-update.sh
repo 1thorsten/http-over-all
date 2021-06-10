@@ -10,8 +10,8 @@ source "/scripts/connect-services.sh"
 echo "$(date +'%T'): http-over-all -> RELEASE: ${RELEASE}"
 
 handle_update_jobs_lock "/var/run/force-update.lock" "handle-trap"
-
-connect_or_update_git_repos "update" 
+connect_or_update_git_repos "update"
 connect_or_update_docker "update"
 
 periodic_job_update_permitted_resources
+touch /var/run/force-update.last
