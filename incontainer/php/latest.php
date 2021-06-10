@@ -1,6 +1,6 @@
 <?php
 
-# rm /scripts/php/latest.php ; nano /scripts/php/latest.php
+# rm -f /scripts/php/latest.php ; nano /scripts/php/latest.php
 # ./scripts/docker-exec.sh bash
 # tail -f /tmp/php.log
 
@@ -27,7 +27,7 @@ if (strstr($uptoDate->lastHttpStatus,'301') === '301 Moved Permanently') {
 
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 
-$log = false;
+$log = true;
 $debugOut = '';
 if (isset($_SERVER['HTTP_X_DEBUG_OUT'])) {
     $log = true;

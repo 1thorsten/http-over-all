@@ -24,7 +24,7 @@ class UnsafeCrypto {
      * @param boolean $encode - set to TRUE to return a base64-encoded 
      * @return string (raw binary)
      */
-    public static function encrypt($message, $encode = false) {
+    public static function encrypt(string $message, bool $encode = false): string {
         $nonceSize = openssl_cipher_iv_length(self::METHOD);
         $nonce = openssl_random_pseudo_bytes($nonceSize);
 
