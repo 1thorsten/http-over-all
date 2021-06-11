@@ -17,8 +17,8 @@ $cmdOutput = "";
 if (file_exists("/var/run/force-update.last")) {
     $file_mtime = filemtime("/var/run/force-update.last");
     list($usec, $sec) = explode(" ", microtime());
-    if ($sec - $file_mtime < 11) {
-        $cmdOutput = "avoid calling force-update (previous call was ".($sec - $file_mtime)." second(s) ago)";
+    if ($sec - $file_mtime < 16) {
+        $cmdOutput = "avoid executing force-update.sh (previous call was ".($sec - $file_mtime)." second(s) ago)";
         LOG::write("force-update.php", $cmdOutput);
         $callForceUpdate = false;
     }
