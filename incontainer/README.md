@@ -61,13 +61,12 @@ You can do this by defining the CRYPT_KEY in a different configuration file (for
 
 ## SMB
 ### Options
-
 | ENV-Variable | Description | required |
 | -------------| ------------| ---------|
 | SMB_[COUNT]_USER | - | x | 
 | SMB_[COUNT]_PASS | - | x | 
 | SMB_[COUNT]_SHARE | e.g. //10.23.4.161/data | x | 
-| SMB_[COUNT]_OPTS | e.g. vers=3.0 | - |
+| SMB_[COUNT]_OPTS | e.g. vers=3.0,noserverino  | - |
 
 General Options: yes
 
