@@ -2,7 +2,8 @@
 
 # rm /scripts/php/include/Log.php ; nano /scripts/php/include/Log.php
 
-function endsWith($string, $endString) { 
+function endsWith(string $string, string $endString): bool
+{
     $len = strlen($endString); 
     if ($len == 0) { 
         return true; 

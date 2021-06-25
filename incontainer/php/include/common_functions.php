@@ -13,14 +13,16 @@ function denyAccessFromExternal($callingScript) {
     }
 }
 
-function accessFromBrowser() {
+function accessFromBrowser(): bool
+{
     if ($_SERVER['HTTP_ACCEPT'] == "*/*") {
         return false;
     }
     return true;
 }
 
-function forwardRequest($url) {
+function forwardRequest($url): array
+{
     // http://php.net/manual/de/function.parse-url.php
     $parsedUrl = parse_url($url);
     $host = $parsedUrl["host"];
@@ -88,7 +90,8 @@ function forwardRequest($url) {
 }
 
 # https://prismjs.com/#supported-languages
-function determineLanguage($basename) {
+function determineLanguage($basename): string
+{
     $n = strtolower($basename);
     if(strpos($n,".css") !== false) return "lang-css";
     if(strpos($n,"dockerfile") !== false) return "lang-docker";
@@ -115,4 +118,4 @@ function determineLanguage($basename) {
     if(strpos($n,".yaml") !== false) return "lang-yaml";
     return "lang-markup";
 }
-?>
+
