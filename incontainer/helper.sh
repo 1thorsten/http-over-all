@@ -126,8 +126,9 @@ function link_permitted_resource() {
   # remove leading and trailing whitespaces and tabs
   local PERMITTED_RESOURCE=$(echo "${3}" | awk '{$1=$1}1')
 
-  local SRC="${START_PATH%/}/${PERMITTED_RESOURCE}"
-  local DST="${DST_PATH%/}/${PERMITTED_RESOURCE}"
+  # START_PATH w/o trailing slash, PERMITTED_RESOURCE w/o leading slash
+  local SRC="${START_PATH%/}/${PERMITTED_RESOURCE#/}"
+  local DST="${DST_PATH%/}/${PERMITTED_RESOURCE#/}"
 
   # echo "link_permitted_resource: SRC=${SRC} DST=${DST}"
 
@@ -251,7 +252,7 @@ function create_symlinks_for_resources() {
     echo "DAV: active"
     if [ -e "${WEBDAV}/${RESOURCE_NAME}" ]; then
       echo "rm -rf ${WEBDAV}/${RESOURCE_NAME}"
-      rm -rf "${WEBDAV}/${RESOURCE_NAME}"
+      rm -rf "${WEBDAV:?}/${RESOURCE_NAME}"
     fi
     echo "ln -fs ${MAIN_PATH}/${RESOURCE_NAME} ${WEBDAV}/${RESOURCE_NAME}"
     ln -fs "${MAIN_PATH}/${RESOURCE_NAME}" "${WEBDAV}/${RESOURCE_NAME}"
@@ -295,7 +296,7 @@ function process_permitted_resources() {
   local PERMITTED_RESOURCES_DIR="/tmp/permitted_resources"
   local RESOURCES_FILE="resources.txt"
 
-  echo "process_permitted_resources (${TYPE}}: ${PERMISSION_FILE}"
+  echo "process_permitted_resources (${TYPE}): ${PERMISSION_FILE}"
 
   # if SUB_DIR (Scanner) than modify START_PATH (/) -> /Scanner
   if [ -n "$SUB_DIR" ]; then START_PATH="${START_PATH}/${SUB_DIR}"; fi
@@ -386,7 +387,11 @@ function create_nginx_location() {
 
   local RESOURCE_NAME="$(var_exp "${BASE_VAR}_NAME")"
   local TEMPLATE_TYPE=${TYPE_LC}
-  if [ "${CACHE_ACTIVE}" = "false" ]; then TEMPLATE_TYPE="${TYPE_LC}-no-cache"; fi
+  if [ "${CACHE_ACTIVE}" = "false" ]; then
+    TEMPLATE_TYPE="${TYPE_LC}-no-cache"
+  else
+    echo "$@" >> /tmp/nginx_proxy_cache_active.check
+  fi
   echo "location $TYPE_LC: $RESOURCE_NAME | CACHE: ${CACHE_ACTIVE}"
 
   local TEMPLATE="nginx-config/location-${TEMPLATE_TYPE}.template"

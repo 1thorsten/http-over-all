@@ -237,7 +237,7 @@ function connect_or_update_docker() {
     elif [[ "${pull_output}" == *"Status: Image is up to date"* ]]; then
       DIGEST=$(docker images --no-trunc --quiet "${IMAGE}:${TAG}" | tr ':' '_')
       if [ "${TYPE}" != "connect" ] && [ ! -e "/tmp/docker-digests/$DIGEST" ]; then
-        echo "recognize usage of known but unprocessed image, declare it to NEW (digest: $DIGEST)"
+        echo "recognize usage of known but unused image, declare it to NEW (digest: $DIGEST)"
         IMAGE_STATUS="NEW"
       else
         IMAGE_STATUS="OLD"
@@ -552,6 +552,11 @@ function start_http_server() {
   # remove the __INCLUDE_README__ line
   sed -i "/__INCLUDE_README__/d" "/scripts/nginx-config/README.html"
   ln -fs "/scripts/nginx-config/README.html" "${HTDOCS}/README.html"
+
+  if [ -e "/tmp/nginx_proxy_cache_active.check" ]; then
+    echo "activate proxy cache"
+    sed -i "s|#proxy_cache_path|proxy_cache_path|;" "/etc/nginx/nginx.conf"
+  fi
 
   echo "service ${PHP7_SERVICE} start"
   service "${PHP7_SERVICE}" "start"
