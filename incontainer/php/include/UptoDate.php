@@ -26,7 +26,12 @@ class UptoDate
         $this->path = $path;
     }
 
-    public function header($url)
+    /**
+     * determine Last-Modified and X-Proxy-Cache HTTP-Header
+     * @return array Last-Modified as DateTime and X-Proxy-Cache
+     * @throws Exception
+     */
+    public function header($url): ?array
     {
         # if the resource is not in the cache already, the HEAD request (/cached_internal)
         # triggers also a GET request (/internal) to save the resource in the proxy cache
@@ -38,7 +43,7 @@ class UptoDate
         if ($h) {
             $this->resourceHeaders = $h;
             if (strstr($h[0], '200') === "200 OK") {
-                $array['Last-Modified'] = new \DateTime($h['Last-Modified']);
+                $array['Last-Modified'] = new DateTime($h['Last-Modified']);
                 if (isset ($h['X-Proxy-Cache'])) {
                     $array['X-Proxy-Cache'] = $h['X-Proxy-Cache'];
                 }
@@ -52,13 +57,12 @@ class UptoDate
         return NULL;
     }
 
-    public function url($invalidateCache)
+    public function url($invalidateCache): string
     {
         if ($invalidateCache === true && $this->isCacheInvalid()) {
             $this->cleanUpCache();
         }
 
-        $baseUrl;
         switch ($this->cacheStatus) {
             case 'CACHE_NO':
                 $baseUrl = self::INTERNAL;
@@ -69,16 +73,16 @@ class UptoDate
         return $baseUrl . $this->path;
     }
 
-    public function isCacheInvalid()
+    public function isCacheInvalid(): bool
     {
         if (!$this->cacheStatus) {
-            $this->getCacheStatus($this->path);
+            $this->getCacheStatus();
         }
         return $this->cacheStatus === "CACHE_OLD";
     }
 
     // $path = path from Webserve (/ibe_and_more/java/security/README.txt)
-    public function getCacheStatus()
+    public function getCacheStatus(): string
     {
         if (substr($this->path, -1) === '/') {
             return $this->cacheStatus = "CACHE_NO";
@@ -102,7 +106,7 @@ class UptoDate
         return $this->cacheStatus = "CACHE_OLD";
     }
 
-    public function cleanUpCache()
+    public function cleanUpCache(): bool
     {
         $this->getDirContents(self::CACHE_PATH);
         $len = strlen($this->path);
@@ -128,7 +132,7 @@ class UptoDate
         return $found_files;
     }
 
-    public function getDirContents($path)
+    public function getDirContents($path): array
     {
         $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
 
@@ -141,19 +145,15 @@ class UptoDate
         return $this->cachedFiles = $files;
     }
 
-    public function readCacheKeyFromFile($filename)
+    public function readCacheKeyFromFile($filename): string
     {
         $file = new SplFileObject($filename);
-        $contents = "";
         $lineNumber = 1;
         do {
             $file->seek($lineNumber++);
             $contents = $file->current();
         } while ($file->eof() || !strstr($contents, "KEY:"));
-        $contents = substr($contents, 0, -1);
-        return $contents;
+        return substr($contents, 0, -1);
 
     }
 }
-
-?>

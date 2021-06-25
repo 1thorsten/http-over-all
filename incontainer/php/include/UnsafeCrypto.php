@@ -46,12 +46,14 @@ class UnsafeCrypto {
 
     /**
      * Decrypts (but does not verify) a message
-     * 
+     *
      * @param string $message - ciphertext message
      * @param boolean $encoded - are we expecting an encoded string?
      * @return string
+     * @throws Exception
      */
-    public static function decrypt($message, $encoded = false) {
+    public static function decrypt(string $message, bool $encoded = false): string
+    {
         if ($encoded) {
             $message = self::base64_urldecode($message);
             if ($message === false) {
@@ -63,15 +65,13 @@ class UnsafeCrypto {
         $nonce = mb_substr($message, 0, $nonceSize, '8bit');
         $ciphertext = mb_substr($message, $nonceSize, null, '8bit');
 
-        $plaintext = openssl_decrypt(
+        return openssl_decrypt(
             $ciphertext,
             self::METHOD,
             KEY,
             OPENSSL_RAW_DATA,
             $nonce
         );
-
-        return $plaintext;
     }
 }
-?>
+
