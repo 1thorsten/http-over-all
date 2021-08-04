@@ -35,7 +35,8 @@ if ($_SERVER['HTTP_ACCEPT'] == "application/json") {
     $responseArray = array('url' => $encryptedUrl, 'path' => '/decrypt', 'cipher' => $encrypted, 'resourceName' => $filename);
     echo json_encode($responseArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     return; 
-} else if (!accessFromBrowser()) {
+}
+if (!accessFromBrowser()) {
     echo $encryptedUrl;
     return;
 }
@@ -55,4 +56,4 @@ $linkDecryptionUrl="{$_REQUEST['scheme']}://{$_REQUEST['http_host']}/decrypt-lin
         <a href="<?php echo $linkDecryptionUrl; ?>" target="_blank"><?php echo "decrypt link"; ?></a>
     </p>
 </body>
-</html> 
+</html>

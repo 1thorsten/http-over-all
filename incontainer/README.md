@@ -219,6 +219,8 @@ URL (relative): /resource/folder1/folder2/file.suffix?view
 
 The content will be shown highlighted and with line numbers. Thanks to Prism.js.
 
+It is also possible to highlight specific lines -> ?view&l=1,5-10
+
 ## encrypt resources
 URL (relative): /resource/folder1/folder2/file.suffix?share
 
