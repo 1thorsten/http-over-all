@@ -253,6 +253,12 @@ Only the requesting host is able to decrypt the encrypted message.
 ```bash
 curl http://[http-over-all:8338]/func/encrypt?m=message2encrypt
 ```
+
+It is also possible to create an encrypted message for another host. Then the decryption works only on that host
+```bash
+curl http://[http-over-all:8338]/func/encrypt?h=192.168.15.14&m=message2encrypt
+```
+
 ## func/decrypt-ip
 decrypt the given message.
 Only the requesting host is able to decrypt the encrypted message.
