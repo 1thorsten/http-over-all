@@ -246,3 +246,17 @@ Sometime you need to know your real internal ip address (e.g. if you are in a co
 ```bash
 curl http://[http-over-all:8338]/func/remote-ip
 ```
+## func/encrypt-ip
+encrypt the given message depending on the requesting host. 
+Only the requesting host is able to decrypt the encrypted message. 
+
+```bash
+curl http://[http-over-all:8338]/func/encrypt?m=message2encrypt
+```
+## func/decrypt-ip
+decrypt the given message.
+Only the requesting host is able to decrypt the encrypted message.
+
+```bash
+curl http://[http-over-all:8338]/func/decrypt?m=encryptedMessage
+```

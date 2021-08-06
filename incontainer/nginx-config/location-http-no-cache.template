@@ -25,7 +25,7 @@
                 ngx.req.set_uri(ngx.escape_uri(ngx.var.uri));
             }
 
-            proxy_pass http://127.0.0.1/php/highlight.php?uri=$uri&remote_addr=$remote_addr$args;
+            proxy_pass http://127.0.0.1/php/highlight.php?uri=$uri&remote_addr=$remote_addr&$args;
             break;
         }        
 
