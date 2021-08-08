@@ -26,7 +26,7 @@ Enables access restriction on different layers.
   - windows clients
     - to secure your content with basic authentication you should enable it ([EN](https://www.webdavsystem.com/server/prev/v2/documentation/authentication/basic_auth_vista/), [DE](https://www.windowspage.de/tipps/022703.html))
     - remove download size limit ([EN](https://blogs.objectsharp.com/post/2011/01/27/SharePoint-2010-and-Error-0x800700DF-The-file-size-exceeds-the-limit-allowed-and-cannot-be-saved.aspx#:~:text=When%20you%20upload%20a%20large,and%20cannot%20be%20saved%22%20message.&text=By%20default%2C%20Web%20Client%20file,Windows%20Registry%20using%20regedit%20command), [DE](https://www.strato.de/faq/cloud-speicher/so-erhoehen-sie-die-maximale-dateigroesze-fuer-downloads-bei-webdav-nutzung-unter-windows/))
-    - network folder: 
+    - network folder:
       ```bash
       browser: 192.168.1.1:8338/dav/smb_share
       folder:  \\192.168.1.1@8338\DavWWWRoot\dav\smb_share
@@ -107,7 +107,7 @@ CACHE is set to false, because the resources are on the local drive.
 
 The docker image should be better a pure data image.
 For METHOD 'TAR' the base image has to  be a Linux OS. Entrypoint and Cmd will be overwritten. It is important to know that a shell is executed, the defaults (.bashrc) as well.
-METHOD 'COPY' uses docker cp, so no operating system is required (should be faster that TAR). EXCL is applied after the content is copied. 
+METHOD 'COPY' uses docker cp, so no operating system is required (should be faster that TAR). EXCL is applied after the content is copied.
 
 | ENV-Variable | Description | required |
 | -------------| ------------| ---------|
@@ -247,8 +247,8 @@ Sometime you need to know your real internal ip address (e.g. if you are in a co
 curl http://[http-over-all:8338]/func/remote-ip
 ```
 ## func/encrypt-msg
-encrypt the given message depending on the requesting host. 
-Only the requesting host is able to decrypt the encrypted message. 
+encrypt the given message depending on the requesting host.
+Only the requesting host is able to decrypt the encrypted message.
 
 ```bash
 curl http://[http-over-all:8338]/func/encrypt-msg?m=message2encrypt
@@ -256,8 +256,9 @@ curl http://[http-over-all:8338]/func/encrypt-msg?m=message2encrypt
 
 Options:
 
-*h*: create an encrypted message that can be decrypted only by the specified host (?h=10.30.1.43)
-*v*: set a maximum validity (?v=now +10 min) 
+*h* (optional): create an encrypted message that can be decrypted only by the specified host (?h=10.30.1.43)
+
+*v* (optional): set a maximum validity (?v=now +10 min)
 
 ```bash
 curl http://[http-over-all:8338]/func/encrypt-msg?h=192.168.15.14&m=message2encrypt&v=now +10 min
