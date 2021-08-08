@@ -9,7 +9,7 @@ $remote_addr = $_REQUEST['remote_addr'];
 $passphrase = strrev(str_replace('.','',$remote_addr)) . KEY;
 if (isset($_REQUEST['m'])) {
     try {
-        $dec = UnsafeCrypto::decrypt_p($passphrase, $_REQUEST['m'], true);
+        $dec = UnsafeCrypto::decrypt_ext($passphrase, $_REQUEST['m'], true);
     } catch (Exception $e) {
         header("Status: 400 Bad Request");
         $dec = $e->getMessage();

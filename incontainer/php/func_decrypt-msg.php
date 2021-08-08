@@ -15,7 +15,7 @@ $remote_addr = $_REQUEST['remote_addr'];
 
 $object = null;
 try {
-    $dec = UnsafeCrypto::decrypt_p(strrev($remote_addr), UnsafeCrypto::decrypt($_REQUEST['m'], true));
+    $dec = UnsafeCrypto::decrypt_ext(strrev($remote_addr), 'BF-ECB', UnsafeCrypto::decrypt($_REQUEST['m'], true));
     $object = json_decode($dec);
 } catch (Exception $e) {
     http_response_code(400);

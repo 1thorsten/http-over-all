@@ -30,25 +30,26 @@ class UnsafeCrypto
      */
     public static function encrypt(string $message, bool $encode = false): string
     {
-        return self::encrypt_p(KEY, $message, $encode);
+        return self::encrypt_ext(KEY, self::METHOD, $message, $encode);
     }
 
     /**
      * Encrypts (but does not authenticate) a message
      *
      * @param string $passphrase - passphrase
+     * @param string $cipher_algo - cipher_algo (http://micmap.org/php-by-example/de/function/openssl_get_cipher_methods)
      * @param string $message - plaintext message
      * @param boolean $encode - set to TRUE to return a base64-encoded
      * @return string (raw binary)
      */
-    public static function encrypt_p(string $passphrase, string $message, bool $encode = false): string
+    public static function encrypt_ext(string $passphrase, string $cipher_algo, string $message, bool $encode = false): string
     {
-        $nonceSize = openssl_cipher_iv_length(self::METHOD);
+        $nonceSize = openssl_cipher_iv_length($cipher_algo);
         $nonce = openssl_random_pseudo_bytes($nonceSize);
 
         $ciphertext = openssl_encrypt(
             $message,
-            self::METHOD,
+            $cipher_algo,
             $passphrase,
             OPENSSL_RAW_DATA,
             $nonce
@@ -72,19 +73,20 @@ class UnsafeCrypto
      */
     public static function decrypt(string $message, bool $encoded = false): string
     {
-        return self::decrypt_p(KEY, $message, $encoded);
+        return self::decrypt_ext(KEY, self::METHOD, $message, $encoded);
     }
 
     /**
      * Decrypts (but does not verify) a message
      *
      * @param string $passphrase - passphrase
+     * @param string $cipher_algo - cipher_algo (http://micmap.org/php-by-example/de/function/openssl_get_cipher_methods)
      * @param string $message - ciphertext message
      * @param boolean $encoded - are we expecting an encoded string?
      * @return string
      * @throws Exception
      */
-    public static function decrypt_p(string $passphrase, string $message, bool $encoded = false): string
+    public static function decrypt_ext(string $passphrase, string $cipher_algo, string $message, bool $encoded = false): string
     {
         if ($encoded) {
             $message = self::base64_urldecode($message);
@@ -93,13 +95,13 @@ class UnsafeCrypto
             }
         }
 
-        $nonceSize = openssl_cipher_iv_length(self::METHOD);
+        $nonceSize = openssl_cipher_iv_length($cipher_algo);
         $nonce = mb_substr($message, 0, $nonceSize, '8bit');
         $ciphertext = mb_substr($message, $nonceSize, null, '8bit');
 
         return openssl_decrypt(
             $ciphertext,
-            self::METHOD,
+            $cipher_algo,
             $passphrase,
             OPENSSL_RAW_DATA,
             $nonce

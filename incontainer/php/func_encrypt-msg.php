@@ -32,4 +32,4 @@ if (isset($_REQUEST['v'])) {
 }
 
 $json = json_encode((array)$object);
-echo UnsafeCrypto::encrypt(UnsafeCrypto::encrypt_p(strrev($remote_addr),$json), true);
+echo UnsafeCrypto::encrypt(UnsafeCrypto::encrypt_ext(strrev($remote_addr), 'BF-ECB', $json), true);
