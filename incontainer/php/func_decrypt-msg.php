@@ -29,7 +29,7 @@ if ($object === null) {
     return;
 }
 if ($object->v) {
-    header("valid: " . date('F j, Y, g:i a', $object->v));
+    header("Valid: " . date('F j, Y, g:i a', $object->v));
     if (strtotime("now") > $object->v) {
         http_response_code(400);
         echo "not valid";
