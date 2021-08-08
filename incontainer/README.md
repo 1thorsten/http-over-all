@@ -246,23 +246,27 @@ Sometime you need to know your real internal ip address (e.g. if you are in a co
 ```bash
 curl http://[http-over-all:8338]/func/remote-ip
 ```
-## func/encrypt-ip
+## func/encrypt-msg
 encrypt the given message depending on the requesting host. 
 Only the requesting host is able to decrypt the encrypted message. 
 
 ```bash
-curl http://[http-over-all:8338]/func/encrypt?m=message2encrypt
+curl http://[http-over-all:8338]/func/encrypt-msg?m=message2encrypt
 ```
 
-It is also possible to create an encrypted message for another host. Then the decryption works only on that host
+Options:
+
+*h*: create an encrypted message that can be decrypted only by the specified host (?h=10.30.1.43)
+*v*: set a maximum validity (?v=now +10 min) 
+
 ```bash
-curl http://[http-over-all:8338]/func/encrypt?h=192.168.15.14&m=message2encrypt
+curl http://[http-over-all:8338]/func/encrypt-msg?h=192.168.15.14&m=message2encrypt&v=now +10 min
 ```
 
-## func/decrypt-ip
+## func/decrypt-msg
 decrypt the given message.
 Only the requesting host is able to decrypt the encrypted message.
 
 ```bash
-curl http://[http-over-all:8338]/func/decrypt?m=encryptedMessage
+curl http://[http-over-all:8338]/func/decrypt-msg?m=encryptedMessage
 ```

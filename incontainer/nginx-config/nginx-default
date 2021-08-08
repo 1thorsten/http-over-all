@@ -64,19 +64,31 @@ server {
     }
 
     # return base64 encoded encrypted message (key ip address and crypt-key)
+    location /func/encrypt-msg {
+        default_type	text/plain;
+        add_header	X-Remote-Addr $remote_addr;
+        add_header	X-Forwarded-For $http_x_forwarded_for;
+        proxy_pass http://127.0.0.1/php/func_encrypt-msg.php?remote_addr=$real_remote_addr&$args;
+    }
     location /func/encrypt-ip {
         default_type	text/plain;
         add_header	X-Remote-Addr $remote_addr;
         add_header	X-Forwarded-For $http_x_forwarded_for;
-        proxy_pass http://127.0.0.1/php/func_encrypt-by-ip.php?remote_addr=$real_remote_addr&$args;
+        proxy_pass http://127.0.0.1/php/func_encrypt-ip.php?remote_addr=$real_remote_addr&$args;
     }
 
     # return decrypted message (key ip address and crypt-key)
+    location /func/decrypt-msg {
+        default_type	text/plain;
+        add_header	X-Remote-Addr $remote_addr;
+        add_header	X-Forwarded-For $http_x_forwarded_for;
+        proxy_pass http://127.0.0.1/php/func_decrypt-msg.php?remote_addr=$real_remote_addr&$args;
+    }
     location /func/decrypt-ip {
         default_type	text/plain;
         add_header	X-Remote-Addr $remote_addr;
         add_header	X-Forwarded-For $http_x_forwarded_for;
-        proxy_pass http://127.0.0.1/php/func_decrypt-by-ip.php?remote_addr=$real_remote_addr&$args;
+        proxy_pass http://127.0.0.1/php/func_decrypt-ip.php?remote_addr=$real_remote_addr&$args;
     }
 
     location = /dav/ {

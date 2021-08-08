@@ -1,5 +1,5 @@
 <?php
-# rm /scripts/php/func_decrypt-by-ip.php ; nano /scripts/php/func_decrypt-by-ip.php
+# rm /scripts/php/func_decrypt-ip.php ; nano /scripts/php/func_decrypt-ip.php
 
 include "UnsafeCrypto.php";
 
