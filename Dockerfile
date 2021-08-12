@@ -7,7 +7,7 @@ LABEL maintainer="Thorsten Winkler"
 LABEL description="http-over-all"
 
 # os part
-ARG DOCKER_CLI_VERSION="20.10.7"
+ARG DOCKER_CLI_VERSION="20.10.8"
 ARG DOWNLOAD_URL="https://download.docker.com/linux/static/stable/x86_64/docker-$DOCKER_CLI_VERSION.tgz"
 
 ENV WEBDAV=/var/www/dav
@@ -42,7 +42,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.0.30"
+ARG RELEASE="1.0.31"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
@@ -56,12 +56,11 @@ ENV HTDOCS=/var/www/html
 ENV START_CMD="/bin/bash http-over-all.sh"
 ENV DATA=/remote
 
-VOLUME [ "/remote/git", "/local-data", "/nginx-cache" ]
 ADD incontainer /scripts
 WORKDIR /scripts
 
 RUN set -x && \
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx-selfsigned.key -out /etc/ssl/certs/nginx-selfsigned.crt -subj "/C=${SSL_COUNTRY}/ST=${SSL_STATE}/L=${SSL_LOCALITY}/O=${SSL_ORGANIZATION}/OU=${SSL_ORGANIZATIONALUNIT}/CN=${SSL_COMMONNAME}/emailAddress=${SSL_EMAILADDRESS}" && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt -subj "/C=${SSL_COUNTRY}/ST=${SSL_STATE}/L=${SSL_LOCALITY}/O=${SSL_ORGANIZATION}/OU=${SSL_ORGANIZATIONALUNIT}/CN=${SSL_COMMONNAME}/emailAddress=${SSL_EMAILADDRESS}" && \
     # https://wiki.ubuntuusers.de/sudo/Konfiguration/
     # https://kofler.info/sudo-ohne-passwort/
     printf '\nwww-data  ALL=(ALL) NOPASSWD: /scripts/force-update.sh\n' >> /etc/sudoers && \
