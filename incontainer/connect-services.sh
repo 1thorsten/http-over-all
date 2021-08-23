@@ -199,7 +199,7 @@ function connect_or_update_docker() {
     echo
     echo "$(date +'%T'): docker ($TYPE): ${RESOURCE_NAME} (${IMAGE}) | ${DOCKER_MOUNT}"
 
-    if [ -e "${DOCKER_MOUNT}" ] && [ ! -e "${DOCKER_MOUNT}/${RESOURCE_NAME}" ]; then
+    if [ -e "${DOCKER_MOUNT}" ] && [ ! -e "${DOCKER_MOUNT%/}/${RESOURCE_NAME}" ]; then
       echo "delete orphaned data"
       rm -rf "${DOCKER_MOUNT:?}/*"
     fi
