@@ -199,16 +199,12 @@ function connect_or_update_docker() {
     echo
     echo "$(date +'%T'): docker ($TYPE): ${RESOURCE_NAME} (${IMAGE}) | ${DOCKER_MOUNT}"
 
-    if [ -e "${DOCKER_MOUNT}" ] && [ ! -e "${DOCKER_MOUNT%/}/${RESOURCE_NAME}" ]; then
-      echo "delete orphaned data"
-      rm -rf "${DOCKER_MOUNT:?}/*"
+    if [ "${TYPE}" = "connect" ] || [ ! -e "${DOCKER_MOUNT}" ]; then
+      mkdir -p "${DOCKER_MOUNT}"
+      chown "www-data:www-data" "${DOCKER_MOUNT}"
     fi
-    mkdir -p "${DOCKER_MOUNT}"
-
-    chown "www-data:www-data" "${DOCKER_MOUNT}"
 
     if [ "$LOGIN" != "nil" ]; then
-      echo "login"
       if ! login_output="$($LOGIN 2>&1)"; then
         echo "login not succeeded ($LOGIN)"
         echo "ERR: ${login_output}"
@@ -221,8 +217,8 @@ function connect_or_update_docker() {
     local IMAGE_STATUS="NEW"
     local DIGEST
 
-    echo "$PULL"
     if ! pull_output=$(docker pull "${IMAGE}:${TAG}" 2>&1); then
+      echo "$PULL"
       echo "ERR (pull): ${pull_output}"
 
       # check if the image exists at all, if not then ignore resource
@@ -244,11 +240,11 @@ function connect_or_update_docker() {
       fi
     fi
 
-    if [ "$IMAGE_STATUS" == "NEW" ] || [ "${TYPE}" == "connect" ]; then
+    if [ "$IMAGE_STATUS" = "NEW" ] || [ "${TYPE}" = "connect" ]; then
       # for better update detecting get the digest for the image
       if [ -z "$DIGEST" ]; then DIGEST=$(docker images --no-trunc --quiet "${IMAGE}":"${TAG}" | tr ':' '_'); fi
       echo "digest: $DIGEST"
-      echo "${IMAGE}:${TAG}" >"/tmp/docker-digests/$DIGEST"
+      echo "${IMAGE}:${TAG}" > "/tmp/docker-digests/$DIGEST"
 
       # remove <none> images (one backup should be fine)
       if none_images=$(docker images | grep "$IMAGE.*<none>" | awk '{print $3}'); then
