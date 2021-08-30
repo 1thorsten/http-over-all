@@ -18,10 +18,6 @@ function mount_dav_shares() {
 
     local DAV_MOUNT="${DATA}/dav/${COUNT}"
 
-    if [ -e "${DAV_MOUNT}" ] && [ ! -e "${DAV_MOUNT}/${RESOURCE_NAME}" ]; then
-      echo "delete orphaned data"
-      rm -rf "${DAV_MOUNT:?}/*"
-    fi
     mkdir -p "${DAV_MOUNT}"
 
     # umount share if already mounted
@@ -69,11 +65,6 @@ function mount_ssh_shares() {
 
     local SSH_MOUNT="${DATA}/ssh/${COUNT}"
 
-    if [ -e "${SSH_MOUNT}" ] && [ ! -e "${SSH_MOUNT}/${RESOURCE_NAME}" ]; then
-      echo "delete orphaned data"
-      rm -rf "${SSH_MOUNT:?}/*"
-    fi
-
     mkdir -p "${SSH_MOUNT}"
 
     # umount share if already mounted
@@ -108,10 +99,7 @@ function mount_nfs_shares() {
     echo "$(date +'%T'): nfs: ${RESOURCE_NAME}"
 
     local NFS_MOUNT="${DATA}/nfs/${COUNT}"
-    if [ -e "${NFS_MOUNT}" ] && [ ! -e "${NFS_MOUNT}/${RESOURCE_NAME}" ]; then
-      echo "delete orphaned data"
-      rm -rf "${NFS_MOUNT:?}/*"
-    fi
+
     mkdir -p "${NFS_MOUNT}"
 
     # umount share if already mounted
@@ -148,10 +136,7 @@ function mount_smb_shares() {
     echo "$(date +'%T'): smb: ${RESOURCE_NAME}"
 
     local SMB_MOUNT="${DATA}/smb/${COUNT}"
-    if [ -e "${SMB_MOUNT}" ] && [ ! -e "${SMB_MOUNT}/${RESOURCE_NAME}" ]; then
-      echo "delete orphaned data"
-      rm -rf "${SMB_MOUNT:?}/*"
-    fi
+
     mkdir -p "${SMB_MOUNT}"
 
     # umount share if already mounted
@@ -199,13 +184,10 @@ function connect_or_update_docker() {
     echo
     echo "$(date +'%T'): docker ($TYPE): ${RESOURCE_NAME} (${IMAGE}) | ${DOCKER_MOUNT}"
 
-    if [ -e "${DOCKER_MOUNT}" ] && [ ! -e "${DOCKER_MOUNT}/${RESOURCE_NAME}" ]; then
-      echo "delete orphaned data"
-      rm -rf "${DOCKER_MOUNT:?}/*"
+    if [ "${TYPE}" = "connect" ] || [ ! -e "${DOCKER_MOUNT}" ]; then
+      mkdir -p "${DOCKER_MOUNT}"
+      chown "www-data:www-data" "${DOCKER_MOUNT}"
     fi
-    mkdir -p "${DOCKER_MOUNT}"
-
-    chown "www-data:www-data" "${DOCKER_MOUNT}"
 
     if [ "$LOGIN" != "nil" ]; then
       echo "login"

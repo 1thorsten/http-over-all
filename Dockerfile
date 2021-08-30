@@ -1,6 +1,3 @@
-#FROM debian:bullseye-slim
-#ENV PHP_VERSION=7.4
-
 FROM debian:buster-slim
 ENV PHP_VERSION=7.3
 LABEL maintainer="Thorsten Winkler"
@@ -42,7 +39,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.0.31"
+ARG RELEASE="1.0.32"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
