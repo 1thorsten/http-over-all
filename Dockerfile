@@ -1,8 +1,8 @@
-#FROM debian:bullseye-slim
-#ENV PHP_VERSION=7.4
+FROM debian:bullseye-slim
+ENV PHP_VERSION=7.4
 
-FROM debian:buster-slim
-ENV PHP_VERSION=7.3
+#FROM debian:buster-slim
+#ENV PHP_VERSION=7.3
 LABEL maintainer="Thorsten Winkler"
 LABEL description="http-over-all"
 
@@ -18,7 +18,7 @@ RUN set -x && \
     apt-get update -y && \
     apt-get dist-upgrade -y && \
     APT_SYSTEM="sudo tzdata ca-certificates" && \
-    APT_HTTP="nginx nginx-extras lua5.3" && \
+    APT_HTTP="nginx nginx-extras" && \
     APT_PHP="php-curl php-fpm php-mbstring" && \
     APT_SERVICES="openssl sshfs nfs-common davfs2 cifs-utils git" && \
     APT_TOOLS="iputils-ping curl rsync" && \
@@ -42,7 +42,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.0.31"
+ARG RELEASE="1.1.2"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
