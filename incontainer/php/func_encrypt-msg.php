@@ -4,13 +4,13 @@
 include_once "Log.php";
 include "UnsafeCrypto.php";
 
-if (!isset($_REQUEST['m'])) {
+if (!isset($_REQUEST['m1'])) {
     http_response_code(400);
-    LOG::writeHost("func_encrypt-msg.php", $_REQUEST['remote_addr'], "param 'm' is missing.");
+    LOG::writeHost("func_encrypt-msg.php", $_REQUEST['remote_addr'], "param 'm1' is missing.");
     return;
 }
 
-$message = $_REQUEST['m'];
+$message = $_REQUEST['m1'];
 $remote_addr = $_REQUEST['remote_addr'];
 
 if (isset($_REQUEST['h'])) {

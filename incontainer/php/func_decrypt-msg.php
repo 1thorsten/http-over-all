@@ -4,18 +4,26 @@
 include_once "Log.php";
 include "UnsafeCrypto.php";
 
-if (!isset($_REQUEST['m'])) {
+if (!isset($_REQUEST['m']) && !isset($_REQUEST['m1'])) {
     http_response_code(400);
-    LOG::writeHost("func_decrypt-msg.php", $_REQUEST['remote_addr'], "param 'm' is missing.");
+    LOG::writeHost("func_decrypt-msg.php", $_REQUEST['remote_addr'], "param 'm' or 'm1' is missing.");
     return;
 }
 
-$message = $_REQUEST['m'];
+$cipher_algo = null;
+$message = null;
+if (isset($_REQUEST['m'])) {
+    $cipher_algo = 'BF-ECB';
+    $message = $_REQUEST['m'];
+} else if (isset($_REQUEST['m1'])) {
+    $cipher_algo = 'BF-OFB';
+    $message = $_REQUEST['m1'];
+}
 $remote_addr = $_REQUEST['remote_addr'];
 
 $object = null;
 try {
-    $dec = UnsafeCrypto::decrypt_ext(strrev($remote_addr), 'BF-ECB', UnsafeCrypto::decrypt($_REQUEST['m'], true));
+    $dec = UnsafeCrypto::decrypt_ext(strrev($remote_addr), $cipher_algo, UnsafeCrypto::decrypt($message, true));
     $object = json_decode($dec);
 } catch (Exception $e) {
     http_response_code(400);
