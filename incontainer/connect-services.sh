@@ -182,7 +182,7 @@ function connect_or_update_docker() {
     local DOCKER_MOUNT="${REPO_PATH}/${REPO_DIR}"
 
     echo
-    echo "$(date +'%T'): docker ($TYPE): ${RESOURCE_NAME} (${IMAGE}) | ${DOCKER_MOUNT}"
+    echo "$(date +'%T'): docker ($TYPE): ${RESOURCE_NAME} (${IMAGE}:${TAG}) | ${DOCKER_MOUNT}"
 
     if [ "${TYPE}" = "connect" ] || [ ! -e "${DOCKER_MOUNT}" ]; then
       mkdir -p "${DOCKER_MOUNT}"
@@ -207,12 +207,12 @@ function connect_or_update_docker() {
       echo "ERR (pull): ${pull_output}"
 
       # check if the image exists at all, if not then ignore resource
-      if ! docker history "${IMAGE}:${TAG}" 2>&1; then
+      if ! docker history "${IMAGE}:${TAG}" > /dev/null 2>&1; then
         echo "ignore ${RESOURCE_NAME}"
         continue
       else
         # could not pull, but image exists
-        echo "image exists, so take this old one."
+        echo "image exists, so take the old one."
         IMAGE_STATUS="OLD"
       fi
     elif [[ "${pull_output}" == *"Status: Image is up to date"* ]]; then
