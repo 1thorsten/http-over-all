@@ -182,7 +182,7 @@ function connect_or_update_docker() {
     local DOCKER_MOUNT="${REPO_PATH}/${REPO_DIR}"
 
     echo
-    echo "$(date +'%T'): docker ($TYPE): ${RESOURCE_NAME} (${IMAGE}) | ${DOCKER_MOUNT}"
+    echo "$(date +'%T'): docker ($TYPE): ${RESOURCE_NAME} (${IMAGE}:${TAG}) | ${DOCKER_MOUNT}"
 
     if [ "${TYPE}" = "connect" ] || [ ! -e "${DOCKER_MOUNT}" ]; then
       mkdir -p "${DOCKER_MOUNT}"
@@ -190,7 +190,6 @@ function connect_or_update_docker() {
     fi
 
     if [ "$LOGIN" != "nil" ]; then
-      echo "login"
       if ! login_output="$($LOGIN 2>&1)"; then
         echo "login not succeeded ($LOGIN)"
         echo "ERR: ${login_output}"
@@ -203,17 +202,17 @@ function connect_or_update_docker() {
     local IMAGE_STATUS="NEW"
     local DIGEST
 
-    echo "$PULL"
     if ! pull_output=$(docker pull "${IMAGE}:${TAG}" 2>&1); then
+      echo "$PULL"
       echo "ERR (pull): ${pull_output}"
 
       # check if the image exists at all, if not then ignore resource
-      if ! docker history "${IMAGE}:${TAG}" 2>&1; then
+      if ! docker history "${IMAGE}:${TAG}" > /dev/null 2>&1; then
         echo "ignore ${RESOURCE_NAME}"
         continue
       else
         # could not pull, but image exists
-        echo "image exists, so take this old one."
+        echo "image exists, so take the old one."
         IMAGE_STATUS="OLD"
       fi
     elif [[ "${pull_output}" == *"Status: Image is up to date"* ]]; then
@@ -226,11 +225,11 @@ function connect_or_update_docker() {
       fi
     fi
 
-    if [ "$IMAGE_STATUS" == "NEW" ] || [ "${TYPE}" == "connect" ]; then
+    if [ "$IMAGE_STATUS" = "NEW" ] || [ "${TYPE}" = "connect" ]; then
       # for better update detecting get the digest for the image
       if [ -z "$DIGEST" ]; then DIGEST=$(docker images --no-trunc --quiet "${IMAGE}":"${TAG}" | tr ':' '_'); fi
       echo "digest: $DIGEST"
-      echo "${IMAGE}:${TAG}" >"/tmp/docker-digests/$DIGEST"
+      echo "${IMAGE}:${TAG}" > "/tmp/docker-digests/$DIGEST"
 
       # remove <none> images (one backup should be fine)
       if none_images=$(docker images | grep "$IMAGE.*<none>" | awk '{print $3}'); then
@@ -262,7 +261,7 @@ function connect_or_update_docker() {
           fi
         done
         echo "start rsync at $(date +'%T')"
-        rsync -rtu --delete "${tmp_dir}"/ "${DOCKER_MOUNT}"
+        rsync -rtu --links --delete --ignore-errors --stats --human-readable "${tmp_dir}"/ "${DOCKER_MOUNT}"
         rm -rf "${tmp_dir}"
       elif [ "$METHOD" == "COPY" ]; then
         # usage of docker cp
@@ -288,7 +287,7 @@ function connect_or_update_docker() {
         docker rm "$TMP_CNT" > /dev/null
         echo "start rsync at $(date +'%T')"
         # shellcheck disable=SC2086
-        rsync -rtu --links --delete $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
+        rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
         if [ "$tmp_exclude_file" != "" ]; then
           rm -f "$tmp_exclude_file"
         fi

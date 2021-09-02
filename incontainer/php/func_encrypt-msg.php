@@ -9,6 +9,7 @@ if (!isset($_REQUEST['m'])) {
     LOG::writeHost("func_encrypt-msg.php", $_REQUEST['remote_addr'], "param 'm' is missing.");
     return;
 }
+header('Content-Type: text/plain; charset=utf-8');
 
 $message = $_REQUEST['m'];
 $remote_addr = $_REQUEST['remote_addr'];
@@ -32,4 +33,5 @@ if (isset($_REQUEST['v'])) {
 }
 
 $json = json_encode((array)$object);
-echo UnsafeCrypto::encrypt(UnsafeCrypto::encrypt_ext(strrev($remote_addr), 'BF-ECB', $json), true);
+$cipher_algo = 'BF-OFB';
+echo UnsafeCrypto::encrypt_ext(strrev($remote_addr), $cipher_algo, $json, true);
