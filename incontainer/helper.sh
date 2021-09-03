@@ -56,7 +56,9 @@ function initialize() {
   cp "/scripts/nginx-config/mime.types" "/etc/nginx/mime.types"
 
   echo "cp /scripts/nginx-config/php/php.ini ${PHP7_ETC}/fpm/php.ini"
+  mv -f "${PHP7_ETC}/fpm/php.ini" "${PHP7_ETC}/fpm/php.ini_orig"
   cp "/scripts/nginx-config/php/php.ini" "${PHP7_ETC}/fpm/php.ini"
+
 
   echo "cp /scripts/nginx-config/nginx.conf /etc/nginx/nginx.conf"
   cp "/scripts/nginx-config/nginx.conf" "/etc/nginx/nginx.conf"

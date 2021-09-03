@@ -261,7 +261,7 @@ function connect_or_update_docker() {
           fi
         done
         echo "start rsync at $(date +'%T')"
-        rsync -rtu --delete "${tmp_dir}"/ "${DOCKER_MOUNT}"
+        rsync -rtu --links --delete --ignore-errors --stats --human-readable "${tmp_dir}"/ "${DOCKER_MOUNT}"
         rm -rf "${tmp_dir}"
       elif [ "$METHOD" == "COPY" ]; then
         # usage of docker cp
@@ -287,7 +287,7 @@ function connect_or_update_docker() {
         docker rm "$TMP_CNT" > /dev/null
         echo "start rsync at $(date +'%T')"
         # shellcheck disable=SC2086
-        rsync -rtu --links --delete $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
+        rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
         if [ "$tmp_exclude_file" != "" ]; then
           rm -f "$tmp_exclude_file"
         fi
