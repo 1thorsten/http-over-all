@@ -251,7 +251,7 @@ encrypt the given message depending on the requesting host.
 Only the requesting host is able to decrypt the encrypted message.
 
 ```bash
-curl http://[http-over-all:8338]/func/encrypt-msg?m1=message2encrypt
+curl http://[http-over-all:8338]/func/encrypt-msg?m=message2encrypt
 ```
 
 Options:
@@ -261,7 +261,7 @@ Options:
 *v* (optional): set a maximum validity (?v=now +10 min)
 
 ```bash
-curl http://[http-over-all:8338]/func/encrypt-msg?h=192.168.15.14&m1=message2encrypt&v=now +10 min
+curl http://[http-over-all:8338]/func/encrypt-msg?h=192.168.15.14&m=message2encrypt&v=now +10 min
 ```
 
 ## func/decrypt-msg
@@ -269,5 +269,5 @@ decrypt the given message.
 Only the requesting host is able to decrypt the encrypted message.
 
 ```bash
-curl http://[http-over-all:8338]/func/decrypt-msg?m1=encryptedMessage
+curl http://[http-over-all:8338]/func/decrypt-msg?m=encryptedMessage
 ```

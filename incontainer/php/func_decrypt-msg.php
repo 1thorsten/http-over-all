@@ -35,7 +35,7 @@ if ($object === null) {
     return;
 }
 header('Content-Type: text/plain; charset=utf-8');
-if ($object->v) {
+if (property_exists($object, 'v')) {
     header("Valid: " . date('F j, Y, g:i a', $object->v));
     if (strtotime("now") > $object->v) {
         http_response_code(400);
@@ -44,7 +44,7 @@ if ($object->v) {
     }
 }
 
-if ($object->m) {
+if (property_exists($object, 'm')) {
     echo $object->m;
 }
 
