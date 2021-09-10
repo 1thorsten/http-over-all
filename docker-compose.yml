@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.9'
 
 services:
 
@@ -6,9 +6,19 @@ services:
     container_name: http-over-all
     image: 1thorsten/http-over-all
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    labels:
+      # value (false,all,admin)
+      - docon.v1={"console":"admin","control":"all"}
     env_file:
-      - example.env
-      # - crypt_key.env
+      #- example.env
+      - example_test.env
+      #- example_smb.env
+      #- example_proxy.env
+      #- crypt_key.env
     ports:
       # http/1.1
       - "8338:80"
@@ -27,7 +37,7 @@ services:
       - git-repos:/remote/git
       - local-data:/local-data
       - nginx-cache:/nginx-cache
-volumes: 
+volumes:
   git-repos:
   local-data:
   nginx-cache:
