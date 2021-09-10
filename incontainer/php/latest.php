@@ -27,7 +27,7 @@ if (strstr($uptoDate->lastHttpStatus,'301') === '301 Moved Permanently') {
 
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 
-$log = true;
+$log = false;
 $debugOut = '';
 if (isset($_SERVER['HTTP_X_DEBUG_OUT'])) {
     $log = true;
