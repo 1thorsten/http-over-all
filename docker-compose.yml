@@ -1,6 +1,10 @@
 version: '3.9'
 
 services:
+  build-with-tools:
+    image: 1thorsten/http-over-all
+    build:
+      dockerfile: tools/doclig/Dockerfile
 
   http-over-all:
     container_name: http-over-all
