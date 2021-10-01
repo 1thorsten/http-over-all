@@ -1,5 +1,5 @@
-FROM golang:alpine as doclig-build
-COPY doclig /doclig
+FROM golang:1.17-alpine as doclig-build
+COPY tools/doclig /doclig
 
 WORKDIR /doclig
 RUN set +x && \
