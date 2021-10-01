@@ -165,7 +165,6 @@ function mount_smb_shares() {
 function connect_or_update_docker() {
   local TYPE="${1}"
   for COUNT in $(env | grep -o "^DOCKER_[0-9]*_IMAGE" | awk -F '_' '{print $2}' | sort -nu); do
-
     local IMAGE="$(var_exp "DOCKER_${COUNT}_IMAGE")"
     local TAG="$(var_exp "DOCKER_${COUNT}_TAG" "latest")"
     local USER="$(var_exp "DOCKER_${COUNT}_USER")"
@@ -194,9 +193,8 @@ function connect_or_update_docker() {
     local IMAGE_STATUS="NEW"
     local DIGEST
 
-#    if ! pull_output=$(doclig -action pull -image "${IMAGE}:${TAG}" -user= -password= 2>&1); then
     if ! pull_output=$(doclig -action pull -image "${IMAGE}:${TAG}" -user="${USER}" -password="${PASS}"); then
-      echo "doclig -action pull -image ${IMAGE}:${TAG} -user=${USER} -password=..."
+      echo "doclig -action pull -image ${IMAGE}:${TAG} -user=${USER} -password=obfuscated"
       echo "ERR (pull): ${pull_output}"
 
       # check if the image exists at all, if not then ignore resource
@@ -228,36 +226,38 @@ function connect_or_update_docker() {
       # remove dangling images (one backup should be fine)
       doclig -action prune > /dev/null
 
+      set -x
       if [ "$METHOD" == "COPY" ]; then
         # usage of docker cp
         local tmp_dir=$(mktemp -d -t docker-copy-XXXXXXXXXXXX)
         # handle excludes
-        local exclude_list
-        local tmp_exclude_file
+        local exclude_list=""
+        local tmp_exclude_file=""
         if [ "$EXCLUDES" != "nil" ]; then
           echo "$METHOD: path excludes: $EXCLUDES (after copying data from container -> via rsync)"
           tmp_exclude_file=$(mktemp /tmp/docker-copy-excludes.XXXXXX)
           exclude_list="--exclude-from=$tmp_exclude_file"
-          for excl in $EXCLUDES; do
+          for excl in ${EXCLUDES//,/ }; do
             echo "- $excl" >> "$tmp_exclude_file"
           done
         fi
         # extract the data
-        doclig -action copy -image "${IMAGE}:${TAG}" -srcPaths="$SRC_DIRS" -dst="$tmp_dir"
-        echo "start rsync at $(date +'%T')"
-        # shellcheck disable=SC2086
-        rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
-        if [ "$tmp_exclude_file" != "" ]; then
-          rm -f "$tmp_exclude_file"
+        if doclig -action copy -image "${IMAGE}:${TAG}" -srcPaths="$SRC_DIRS" -dst="$tmp_dir"; then
+          echo "start rsync at $(date +'%T')"
+          # shellcheck disable=SC2086
+          rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
+          if [ "$tmp_exclude_file" != "" ]; then
+            rm -f "$tmp_exclude_file"
+          fi
         fi
         rm -rf "$tmp_dir"
       else
         echo "unknown method: $METHOD | ignore"
         continue
       fi
+      unset DIGEST
+      set +x
     fi
-
-    set +x
 
     # update -> call from periodic_jobs
     if [ "${TYPE}" != "update" ]; then
