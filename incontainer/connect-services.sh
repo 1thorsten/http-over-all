@@ -165,10 +165,12 @@ function mount_smb_shares() {
 function connect_or_update_docker() {
   local TYPE="${1}"
   for COUNT in $(env | grep -o "^DOCKER_[0-9]*_IMAGE" | awk -F '_' '{print $2}' | sort -nu); do
+
     local IMAGE="$(var_exp "DOCKER_${COUNT}_IMAGE")"
     local TAG="$(var_exp "DOCKER_${COUNT}_TAG" "latest")"
-    local LOGIN="$(var_exp "DOCKER_${COUNT}_LOGIN")"
-    local METHOD="$(var_exp "DOCKER_${COUNT}_METHOD" "TAR")"
+    local USER="$(var_exp "DOCKER_${COUNT}_USER")"
+    local PASS="$(var_exp "DOCKER_${COUNT}_PASS")"
+    local METHOD="$(var_exp "DOCKER_${COUNT}_METHOD" "COPY")"
     local SRC_DIRS="$(var_exp "DOCKER_${COUNT}_SRC_DIRS" "./")"
     local EXCLUDES="$(var_exp "DOCKER_${COUNT}_EXCL")"
     local RESOURCE_NAME="$(var_exp "DOCKER_${COUNT}_NAME")"
@@ -189,25 +191,17 @@ function connect_or_update_docker() {
       chown "www-data:www-data" "${DOCKER_MOUNT}"
     fi
 
-    if [ "$LOGIN" != "nil" ]; then
-      if ! login_output="$($LOGIN 2>&1)"; then
-        echo "login not succeeded ($LOGIN)"
-        echo "ERR: ${login_output}"
-        echo "ignore ${RESOURCE_NAME}"
-        continue
-      fi
-    fi
-
-    local PULL="docker pull ${IMAGE}:${TAG}"
     local IMAGE_STATUS="NEW"
     local DIGEST
 
-    if ! pull_output=$(docker pull "${IMAGE}:${TAG}" 2>&1); then
-      echo "$PULL"
+#    if ! pull_output=$(doclig -action pull -image "${IMAGE}:${TAG}" -user= -password= 2>&1); then
+    if ! pull_output=$(doclig -action pull -image "${IMAGE}:${TAG}" -user="${USER}" -password="${PASS}"); then
+      echo "doclig -action pull -image ${IMAGE}:${TAG} -user=${USER} -password=..."
       echo "ERR (pull): ${pull_output}"
 
       # check if the image exists at all, if not then ignore resource
-      if ! docker history "${IMAGE}:${TAG}" > /dev/null 2>&1; then
+#      if ! doclig -action check-image -image "${IMAGE}:${TAG}" > /dev/null 2>&1; then
+      if ! doclig -action check-image -image "${IMAGE}:${TAG}"; then
         echo "ignore ${RESOURCE_NAME}"
         continue
       else
@@ -216,7 +210,7 @@ function connect_or_update_docker() {
         IMAGE_STATUS="OLD"
       fi
     elif [[ "${pull_output}" == *"Status: Image is up to date"* ]]; then
-      DIGEST=$(docker images --no-trunc --quiet "${IMAGE}:${TAG}" | tr ':' '_')
+      DIGEST=$(doclig -action check-image -image "${IMAGE}:${TAG}" | grep Digest | awk -F 'sha256:' '{print $2}')
       if [ "${TYPE}" != "connect" ] && [ ! -e "/tmp/docker-digests/$DIGEST" ]; then
         echo "recognize usage of known but unused image, declare it to NEW (digest: $DIGEST)"
         IMAGE_STATUS="NEW"
@@ -227,43 +221,14 @@ function connect_or_update_docker() {
 
     if [ "$IMAGE_STATUS" = "NEW" ] || [ "${TYPE}" = "connect" ]; then
       # for better update detecting get the digest for the image
-      if [ -z "$DIGEST" ]; then DIGEST=$(docker images --no-trunc --quiet "${IMAGE}":"${TAG}" | tr ':' '_'); fi
+      if [ -z "$DIGEST" ]; then DIGEST=$(doclig -action check-image -image "${IMAGE}:${TAG}" | grep Digest | awk -F 'sha256:' '{print $2}'); fi
       echo "digest: $DIGEST"
       echo "${IMAGE}:${TAG}" > "/tmp/docker-digests/$DIGEST"
 
-      # remove <none> images (one backup should be fine)
-      if none_images=$(docker images | grep "$IMAGE.*<none>" | awk '{print $3}'); then
-        if [ "$none_images" != "" ]; then
-          echo "remove old images: $none_images"
-          docker rmi -f "$none_images"
-        fi
-      fi
+      # remove dangling images (one backup should be fine)
+      doclig -action prune > /dev/null
 
-      if [ "$METHOD" == "TAR" ]; then
-        local tmp_dir=$(mktemp -d -t docker-tar-XXXXXXXXXXXX)
-        # handle excludes
-        local exclude_list
-        if [ "$EXCLUDES" != "nil" ]; then
-          echo "$METHOD: path excludes: $EXCLUDES"
-          for excl in $EXCLUDES; do
-            exclude_list="$exclude_list --exclude=$excl"
-          done
-        fi
-        for dir in $SRC_DIRS; do
-          # without slashes (/usr/lib/ -> usr/lib, ./ -> .)
-          local DIR_BASE=${dir#/}
-          DIR_BASE=${DIR_BASE%/}
-          echo "$METHOD: $dir (base: $DIR_BASE) start at $(date +'%T')"
-          if [ "$DIR_BASE" == "." ]; then
-            docker run --rm --entrypoint "" "${IMAGE}:${TAG}" /bin/sh -c "tar c -h $exclude_list * -f -" | tar Chxf "$tmp_dir" -
-          else
-            docker run --rm --entrypoint "" "${IMAGE}:${TAG}" /bin/sh -c "tar c -h $exclude_list -C/ ${DIR_BASE}/* -f -" | tar Chxf "$tmp_dir" -
-          fi
-        done
-        echo "start rsync at $(date +'%T')"
-        rsync -rtu --links --delete --ignore-errors --stats --human-readable "${tmp_dir}"/ "${DOCKER_MOUNT}"
-        rm -rf "${tmp_dir}"
-      elif [ "$METHOD" == "COPY" ]; then
+      if [ "$METHOD" == "COPY" ]; then
         # usage of docker cp
         local tmp_dir=$(mktemp -d -t docker-copy-XXXXXXXXXXXX)
         # handle excludes
@@ -277,14 +242,8 @@ function connect_or_update_docker() {
             echo "- $excl" >> "$tmp_exclude_file"
           done
         fi
-        # create a container from the image (for data extraction)
-        local TMP_CNT=$(docker create "${IMAGE}:${TAG}")
-        for dir in $SRC_DIRS; do
-          echo "$METHOD: $dir | start at $(date +'%T')"
-          docker cp -L "$TMP_CNT":"$dir" "$tmp_dir"
-        done
-        # remove container after copying data
-        docker rm "$TMP_CNT" > /dev/null
+        # extract the data
+        doclig -action copy -image "${IMAGE}:${TAG}" -srcPaths="$SRC_DIRS" -dst="$tmp_dir"
         echo "start rsync at $(date +'%T')"
         # shellcheck disable=SC2086
         rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
@@ -297,6 +256,9 @@ function connect_or_update_docker() {
         continue
       fi
     fi
+
+    set +x
+
     # update -> call from periodic_jobs
     if [ "${TYPE}" != "update" ]; then
       initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DOCKER_${COUNT}" "${DOCKER_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
@@ -410,6 +372,7 @@ function connect_or_update_git_repos() {
       local git_log=$(git -C "${GIT_MOUNT}" log -1 --pretty=format:'%s')
       echo "last_commit_log: ${git_log}"
     fi
+
     # update -> call from periodic_jobs
     if [ "${TYPE}" != "update" ]; then
       echo
