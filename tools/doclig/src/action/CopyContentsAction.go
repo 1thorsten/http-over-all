@@ -115,6 +115,7 @@ func CopyContents(image *string, srcPaths []string, dst *string) {
 		panic(err)
 	}
 
+	fmt.Printf("CopyContents: %s -> %s\n", srcPaths, *dst)
 	for _, srcPath := range srcPaths {
 		trimmedPath := strings.TrimSpace(srcPath)
 		reader, _, err := cli.CopyFromContainer(ctx, resp.ID, trimmedPath)
@@ -125,10 +126,10 @@ func CopyContents(image *string, srcPaths []string, dst *string) {
 
 		start := time.Now()
 		untar(*dst, reader)
-		timeTrack(start, fmt.Sprintf("untar %s -> %s", trimmedPath, *dst), time.Millisecond)
+		timeTrack(start, fmt.Sprintf("Untar %s", trimmedPath), time.Microsecond)
 	}
 
-	defer timeTrack(time.Now(), "stop container", time.Millisecond)
+	defer timeTrack(time.Now(), "Stop container", time.Millisecond)
 	timeout := 2 * time.Second
 	if err := cli.ContainerStop(ctx, resp.ID, &timeout); err == nil {
 		err := cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
