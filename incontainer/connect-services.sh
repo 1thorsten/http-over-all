@@ -328,6 +328,7 @@ function connect_or_update_docker() {
         echo "unknown method: $METHOD | ignore"
         continue
       fi
+      unset DIGEST
     fi
 
     # update -> call from periodic_jobs
