@@ -8,7 +8,6 @@ function mount_dav_shares() {
   for COUNT in $(env | grep -o "^DAV_[0-9]*_NAME" | awk -F '_' '{print $2}' | sort -nu); do
     local PASS="$(var_exp "DAV_${COUNT}_PASS")"
     local USER="$(var_exp "DAV_${COUNT}_USER")"
-    local USER="$(var_exp "DAV_${COUNT}_USER")"
     local SHARE="$(var_exp "DAV_${COUNT}_SHARE")"
     local RESOURCE_NAME="$(var_exp "DAV_${COUNT}_NAME")"
     local DAV_ACTIVE="$(var_exp "DAV_${COUNT}_DAV" "false")"
@@ -147,7 +146,7 @@ function mount_smb_shares() {
     fi
 
     local SMB_OPTS=''
-    if [[ "$OPTS" != "nil" ]]; then
+    if [ "$OPTS" != "nil" ]; then
       echo "additional options detected: $OPTS"
       SMB_OPTS=",$OPTS"
     fi
@@ -169,7 +168,7 @@ function connect_or_update_docker() {
     local IMAGE="$(var_exp "DOCKER_${COUNT}_IMAGE")"
     local TAG="$(var_exp "DOCKER_${COUNT}_TAG" "latest")"
     local LOGIN="$(var_exp "DOCKER_${COUNT}_LOGIN")"
-    local METHOD="$(var_exp "DOCKER_${COUNT}_METHOD" "TAR")"
+    local METHOD="$(var_exp "DOCKER_${COUNT}_METHOD" "COPY")"
     local SRC_DIRS="$(var_exp "DOCKER_${COUNT}_SRC_DIRS" "./")"
     local EXCLUDES="$(var_exp "DOCKER_${COUNT}_EXCL")"
     local RESOURCE_NAME="$(var_exp "DOCKER_${COUNT}_NAME")"
@@ -202,6 +201,7 @@ function connect_or_update_docker() {
     local PULL="docker pull ${IMAGE}:${TAG}"
     local IMAGE_STATUS="NEW"
     local DIGEST
+    local MODIFIED_FILES="0"
 
     if ! pull_output=$(docker pull "${IMAGE}:${TAG}" 2>&1); then
       echo "$PULL"
@@ -240,17 +240,17 @@ function connect_or_update_docker() {
         fi
       fi
 
-      if [ "$METHOD" == "TAR" ]; then
+      if [ "$METHOD" = "TAR" ]; then
         local tmp_dir=$(mktemp -d -t docker-tar-XXXXXXXXXXXX)
         # handle excludes
         local exclude_list=""
         if [ "$EXCLUDES" != "nil" ]; then
           echo "$METHOD: path excludes: $EXCLUDES"
-          for excl in $EXCLUDES; do
+          for excl in ${EXCLUDES//,/ }; do
             exclude_list="$exclude_list --exclude=$excl"
           done
         fi
-        for dir in $SRC_DIRS; do
+        for dir in ${SRC_DIRS//,/ }; do
           # without slashes (/usr/lib/ -> usr/lib, ./ -> .)
           local DIR_BASE=${dir#/}
           DIR_BASE=${DIR_BASE%/}
@@ -262,11 +262,21 @@ function connect_or_update_docker() {
           fi
         done
         if [ $? -eq 0 ]; then
-          echo "start rsync at $(date +'%T')"
-          rsync -rtu --links --delete --ignore-errors --stats --human-readable "${tmp_dir}"/ "${DOCKER_MOUNT}"
+          # align creation date of the syncing directories
+          local ORIGTS=$(stat -c "%Y" "${DOCKER_MOUNT}")
+          touch -d "@$ORIGTS" "${tmp_dir}"/
+
+          # shellcheck disable=SC2086
+          MODIFIED_FILES=$(rsync -rtu --dry-run --out-format="%f" $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}" | wc -l)
+          if [ "$MODIFIED_FILES" = "0" ]; then
+            echo "INFO (rsync): no files changed"
+          else
+            echo "start rsync at $(date +'%T')"
+            rsync -rtu --links --delete --ignore-errors --stats --human-readable "${tmp_dir}"/ "${DOCKER_MOUNT}"
+          fi
           rm -rf "${tmp_dir}"
         fi
-      elif [ "$METHOD" == "COPY" ]; then
+      elif [ "$METHOD" = "COPY" ]; then
         # usage of docker cp
         local tmp_dir=$(mktemp -d -t docker-copy-XXXXXXXXXXXX)
         # handle excludes
@@ -276,27 +286,39 @@ function connect_or_update_docker() {
           echo "$METHOD: path excludes: $EXCLUDES (after copying data from container -> via rsync)"
           tmp_exclude_file=$(mktemp /tmp/docker-copy-excludes.XXXXXX)
           exclude_list="--exclude-from=$tmp_exclude_file"
-          for excl in $EXCLUDES; do
+          for excl in ${EXCLUDES//,/ }; do
             echo "- $excl" >> "$tmp_exclude_file"
           done
         fi
         # create a container from the image (for data extraction)
         local TMP_CNT=$(docker create "${IMAGE}:${TAG}")
-        local status_cp="OK"
-        for dir in $SRC_DIRS; do
+        local STATUS_DOCKER_CP="OK"
+        for dir in ${SRC_DIRS//,/ }; do
           echo "$METHOD: $dir | start at $(date +'%T')"
           if ! docker cp -L "$TMP_CNT":"$dir" "$tmp_dir"; then
-            status_cp="ERROR"
+            STATUS_DOCKER_CP="ERROR"
+            break
           fi
         done
         # remove container after copying data
         docker rm "$TMP_CNT" > /dev/null
-        if [ "$status_cp" = "ERROR" ]; then
-          echo "ERROR: avoid syncing content (copying from container failed)"
+
+        if [ "$STATUS_DOCKER_CP" = "ERROR" ]; then
+          echo "ERR (cp): avoid syncing content"
         else
-          echo "start rsync at $(date +'%T')"
+          # align creation date of the syncing directories
+          local ORIGTS=$(stat -c "%Y" "${DOCKER_MOUNT}")
+          touch -d "@$ORIGTS" "${tmp_dir}"/
+
           # shellcheck disable=SC2086
-          rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
+          MODIFIED_FILES=$(rsync -rtu --dry-run --out-format="%f" $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}" | wc -l)
+          if [ "$MODIFIED_FILES" = "0" ]; then
+            echo "INFO (rsync): no files changed"
+          else
+            echo "start rsync at $(date +'%T')"
+            # shellcheck disable=SC2086
+            rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
+          fi
           if [ "$tmp_exclude_file" != "" ]; then
             rm -f "$tmp_exclude_file"
           fi
@@ -307,8 +329,9 @@ function connect_or_update_docker() {
         continue
       fi
     fi
+
     # update -> call from periodic_jobs
-    if [ "${TYPE}" != "update" ]; then
+    if [ "${TYPE}" != "update" ] || [ "$MODIFIED_FILES" != "0" ]; then
       initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DOCKER_${COUNT}" "${DOCKER_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     fi
   done
