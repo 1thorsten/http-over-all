@@ -146,7 +146,7 @@ function mount_smb_shares() {
     fi
 
     local SMB_OPTS=''
-    if [[ "$OPTS" != "nil" ]]; then
+    if [ "$OPTS" != "nil" ]; then
       echo "additional options detected: $OPTS"
       SMB_OPTS=",$OPTS"
     fi
@@ -192,14 +192,16 @@ function connect_or_update_docker() {
 
     local IMAGE_STATUS="NEW"
     local DIGEST
+    local MODIFIED_FILES="0"
 
-    if ! pull_output=$(doclig -action pull -image "${IMAGE}:${TAG}" -user="${USER}" -password="${PASS}"); then
+    if [ "$USER" = "nil" ]; then USER=""; fi
+    if [ "$PASS" = "nil" ]; then PASS=""; fi
+    if ! pull_output=$(doclig -action pull -image "${IMAGE}:${TAG}" -user="${USER}" -password="${PASS}" 2>&1); then
       echo "doclig -action pull -image ${IMAGE}:${TAG} -user=${USER} -password=obfuscated"
       echo "ERR (pull): ${pull_output}"
 
       # check if the image exists at all, if not then ignore resource
-#      if ! doclig -action check-image -image "${IMAGE}:${TAG}" > /dev/null 2>&1; then
-      if ! doclig -action check-image -image "${IMAGE}:${TAG}"; then
+      if ! doclig -action check-image -image "${IMAGE}:${TAG}" > /dev/null 2>&1; then
         echo "ignore ${RESOURCE_NAME}"
         continue
       else
@@ -208,7 +210,7 @@ function connect_or_update_docker() {
         IMAGE_STATUS="OLD"
       fi
     elif [[ "${pull_output}" == *"Status: Image is up to date"* ]]; then
-      DIGEST=$(doclig -action check-image -image "${IMAGE}:${TAG}" | grep Digest | awk -F 'sha256:' '{print $2}')
+      DIGEST=$(doclig -action check-image -image "${IMAGE}:${TAG}" 2>&1 | grep Digest | awk -F 'sha256:' '{print $2}')
       if [ "${TYPE}" != "connect" ] && [ ! -e "/tmp/docker-digests/$DIGEST" ]; then
         echo "recognize usage of known but unused image, declare it to NEW (digest: $DIGEST)"
         IMAGE_STATUS="NEW"
@@ -219,16 +221,15 @@ function connect_or_update_docker() {
 
     if [ "$IMAGE_STATUS" = "NEW" ] || [ "${TYPE}" = "connect" ]; then
       # for better update detecting get the digest for the image
-      if [ -z "$DIGEST" ]; then DIGEST=$(doclig -action check-image -image "${IMAGE}:${TAG}" | grep Digest | awk -F 'sha256:' '{print $2}'); fi
+      if [ -z "$DIGEST" ]; then DIGEST=$(doclig -action check-image -image "${IMAGE}:${TAG}" 2>&1 | grep Digest | awk -F 'sha256:' '{print $2}'); fi
       echo "digest: $DIGEST"
       echo "${IMAGE}:${TAG}" > "/tmp/docker-digests/$DIGEST"
 
       # remove dangling images (one backup should be fine)
       doclig -action prune > /dev/null
 
-      set -x
-      if [ "$METHOD" == "COPY" ]; then
-        # usage of docker cp
+      if [ "$METHOD" = "COPY" ]; then
+        # copyign files from container
         local tmp_dir=$(mktemp -d -t docker-copy-XXXXXXXXXXXX)
         # handle excludes
         local exclude_list=""
@@ -242,25 +243,32 @@ function connect_or_update_docker() {
           done
         fi
         # extract the data
-        if doclig -action copy -image "${IMAGE}:${TAG}" -srcPaths="$SRC_DIRS" -dst="$tmp_dir"; then
-          echo "start rsync at $(date +'%T')"
+        if doclig -action copy -image "${IMAGE}:${TAG}" -srcPaths="$SRC_DIRS" -dst="$tmp_dir" > /dev/null; then
+          # align creation date of the syncing directories
+          local ORIGTS=$(stat -c "%Y" "${DOCKER_MOUNT}")
+          touch -d "@$ORIGTS" "${tmp_dir}"/
+
           # shellcheck disable=SC2086
-          rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
-          if [ "$tmp_exclude_file" != "" ]; then
-            rm -f "$tmp_exclude_file"
+          MODIFIED_FILES=$(rsync -rtu --dry-run --out-format="%f" $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}" | wc -l)
+          if [ "$MODIFIED_FILES" = "0" ]; then
+            echo "INFO (rsync): no files changed"
+          else
+            echo "start rsync at $(date +'%T')"
+            # shellcheck disable=SC2086
+            rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
           fi
         fi
+        if [ "$tmp_exclude_file" != "" ]; then rm -f "$tmp_exclude_file"; fi
         rm -rf "$tmp_dir"
       else
         echo "unknown method: $METHOD | ignore"
         continue
       fi
       unset DIGEST
-      set +x
     fi
 
     # update -> call from periodic_jobs
-    if [ "${TYPE}" != "update" ]; then
+    if [ "${TYPE}" != "update" ] || [ "$MODIFIED_FILES" != "0" ]; then
       initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DOCKER_${COUNT}" "${DOCKER_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     fi
   done

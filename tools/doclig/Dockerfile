@@ -5,9 +5,6 @@ LABEL maintainer="Thorsten Winkler"
 LABEL description="http-over-all"
 
 # os part
-ARG DOCKER_CLI_VERSION="20.10.8"
-ARG DOWNLOAD_URL="https://download.docker.com/linux/static/stable/x86_64/docker-$DOCKER_CLI_VERSION.tgz"
-
 ENV WEBDAV=/var/www/dav
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
@@ -18,21 +15,12 @@ RUN set -x && \
     APT_SYSTEM="sudo tzdata ca-certificates" && \
     APT_HTTP="nginx nginx-extras" && \
     APT_PHP="php-curl php-fpm php-mbstring" && \
-#    APT_PYTHON="python3-pip python3-distutils" && \
     APT_SERVICES="openssl sshfs nfs-common davfs2 cifs-utils git" && \
     APT_TOOLS="iputils-ping curl rsync" && \
     APT_ETC="nano" && \
-    apt-get install -y --no-install-recommends ${APT_SYSTEM} ${APT_HTTP} ${APT_PHP} ${APT_PYTHON:-} ${APT_SERVICES} ${APT_TOOLS} ${APT_ETC} && \
+    apt-get install -y --no-install-recommends ${APT_SYSTEM} ${APT_HTTP} ${APT_PHP} ${APT_SERVICES} ${APT_TOOLS} ${APT_ETC} && \
     rm -f /var/www/html/index.nginx-debian.html ; rm -f /etc/nginx/mime.types && \
-    # python docker sdk
-#    pip install docker && \
-    # docker-cli
-    mkdir -p /tmp/download && \
-    curl -L $DOWNLOAD_URL | tar -xz -C /tmp/download && \
-    mv /tmp/download/docker/docker /usr/local/bin/ && \
-    rm -rf /tmp/download && \
     # debian cleanup \
-#    apt-get purge -y python3-pip && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* ; rm -f /var/lib/dpkg/*-old ; rm -rf /usr/share/doc && \
     echo "OS part successfully terminated" && \
