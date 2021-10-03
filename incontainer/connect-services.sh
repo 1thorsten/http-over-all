@@ -319,10 +319,8 @@ function connect_or_update_docker() {
             # shellcheck disable=SC2086
             rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
           fi
-          if [ "$tmp_exclude_file" != "" ]; then
-            rm -f "$tmp_exclude_file"
-          fi
         fi
+        if [ "$tmp_exclude_file" != "" ]; then rm -f "$tmp_exclude_file"; fi
         rm -rf "$tmp_dir"
       else
         echo "unknown method: $METHOD | ignore"
