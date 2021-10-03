@@ -1,7 +1,6 @@
 # HTTP over all
-A unified interface for accessing various resources (nfs, smb, ssh, http/dav, git, docker) through a http endpoint.
-Integrates a proxy that always delivers the latest content.
-Enables access restriction on different layers.
+Http-over-all is a unified interface for accessing various resources (nfs, smb, ssh, http/dav, git, docker) through a http endpoint.
+It integrates a proxy that always delivers the latest content and  enables access restriction on different layers.
 - http: basic auth, ip address
 - resources: acl per resource
 
@@ -198,7 +197,7 @@ Options for all resources
 | ENV-Variable | Description | required |
 | -------------| ------------| ---------|
 | CRYPT_KEY | key for encrypting and decrypting | x |
-| PERIODIC_JOB_INTERVAL | interval in minutes for processing periodic jobs (default: 5) | - |
+| PERIODIC_JOB_INTERVAL | interval for processing periodic jobs (default: 5m). Infinity = inf  | - |
 | PROXY_MAX_SIZE | maximum size of the proxy cache (default: 10g) | - |
 | PROXY_INACTIVE | data that are not accessed during the time get removed (default: 1d) | - |
 

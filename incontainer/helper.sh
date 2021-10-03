@@ -488,11 +488,13 @@ function clone_git_repo_safe() {
 }
 
 function periodic_jobs() {
-  local WAIT_IN_MINUTES="$(var_exp "PERIODIC_JOB_INTERVAL" "5")"
+  local WAIT="$(var_exp "PERIODIC_JOB_INTERVAL" "5m")"
+  # assume minutes are meant if only digits are given
+  if [[ ! $WAIT =~ [^[:digit:]] ]]; then WAIT="${WAIT}m"; fi
   local LOCK_FILE="/var/run/force-update.lock"
-  echo "$(date +'%T'): periodic_jobs -> interval ${WAIT_IN_MINUTES} minute(s)"
+  echo "$(date +'%T'): periodic_jobs -> interval ${WAIT}"
   while true; do
-    sleep "${WAIT_IN_MINUTES}m"
+    sleep "$WAIT"
     echo "$(date +'%T'): periodic_jobs start"
     handle_update_jobs_lock "${LOCK_FILE}" "no-trap"
     connect_or_update_git_repos "update"
