@@ -112,8 +112,9 @@ METHOD 'COPY' uses docker cp, so no operating system is required (should be fast
 | ENV-Variable | Description | required |
 | -------------| ------------| ---------|
 | DOCKER_[COUNT]_IMAGE | e.g. ubuntu | x |
-| DOCKER_[COUNT]_LOGIN | e.g. docker login url.your-repo.de -u user -p password | - |
 | DOCKER_[COUNT]_TAG | tag (default: latest) | - |
+| DOCKER_[COUNT]_USER | if access to registry requires authentication | - |
+| DOCKER_[COUNT]_PASS | if access to registry requires authentication | - |
 | DOCKER_[COUNT]_METHOD | method for synchronizing data (TAR,COPY) | x |
 | DOCKER_[COUNT]_SRC_DIRS | dirs to extract from the container (default: DOCKER-VAR WORKSPACE) | - |
 | DOCKER_[COUNT]_EXCL | paths to exclude (e.g. proc/* dev/* sys/*) | - |
