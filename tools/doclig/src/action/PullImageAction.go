@@ -27,6 +27,7 @@ func PullImage(image *string, username *string, password *string) *PulledImage {
 
 	pullOptions := types.ImagePullOptions{}
 
+	auth := ""
 	// registry authentication
 	if *username != "" {
 		authConfig := types.AuthConfig{
@@ -39,7 +40,7 @@ func PullImage(image *string, username *string, password *string) *PulledImage {
 		}
 		authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 		pullOptions.RegistryAuth = authStr
-		fmt.Println("User:", *username)
+		auth = fmt.Sprintf("(User:%s)", *username)
 	}
 
 	events, err := cli.ImagePull(ctx, *image, types.ImagePullOptions{})
@@ -48,7 +49,7 @@ func PullImage(image *string, username *string, password *string) *PulledImage {
 		panic(err)
 	}
 
-	fmt.Println("PulledImage:", *image)
+	fmt.Printf("PulledImage%s: %s\n", auth, *image)
 	defer events.Close()
 
 	d := json.NewDecoder(events)
