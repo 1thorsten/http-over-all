@@ -39,6 +39,7 @@ func PullImage(image *string, username *string, password *string) *PulledImage {
 		}
 		authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 		pullOptions.RegistryAuth = authStr
+		fmt.Println("User:", *username)
 	}
 
 	events, err := cli.ImagePull(ctx, *image, types.ImagePullOptions{})
