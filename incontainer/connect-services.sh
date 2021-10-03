@@ -8,6 +8,7 @@ function mount_dav_shares() {
   for COUNT in $(env | grep -o "^DAV_[0-9]*_NAME" | awk -F '_' '{print $2}' | sort -nu); do
     local PASS="$(var_exp "DAV_${COUNT}_PASS")"
     local USER="$(var_exp "DAV_${COUNT}_USER")"
+    local USER="$(var_exp "DAV_${COUNT}_USER")"
     local SHARE="$(var_exp "DAV_${COUNT}_SHARE")"
     local RESOURCE_NAME="$(var_exp "DAV_${COUNT}_NAME")"
     local DAV_ACTIVE="$(var_exp "DAV_${COUNT}_DAV" "false")"
@@ -242,7 +243,7 @@ function connect_or_update_docker() {
       if [ "$METHOD" == "TAR" ]; then
         local tmp_dir=$(mktemp -d -t docker-tar-XXXXXXXXXXXX)
         # handle excludes
-        local exclude_list
+        local exclude_list=""
         if [ "$EXCLUDES" != "nil" ]; then
           echo "$METHOD: path excludes: $EXCLUDES"
           for excl in $EXCLUDES; do
@@ -260,15 +261,17 @@ function connect_or_update_docker() {
             docker run --rm --entrypoint "" "${IMAGE}:${TAG}" /bin/sh -c "tar c -h $exclude_list -C/ ${DIR_BASE}/* -f -" | tar Chxf "$tmp_dir" -
           fi
         done
-        echo "start rsync at $(date +'%T')"
-        rsync -rtu --links --delete --ignore-errors --stats --human-readable "${tmp_dir}"/ "${DOCKER_MOUNT}"
-        rm -rf "${tmp_dir}"
+        if [ $? -eq 0 ]; then
+          echo "start rsync at $(date +'%T')"
+          rsync -rtu --links --delete --ignore-errors --stats --human-readable "${tmp_dir}"/ "${DOCKER_MOUNT}"
+          rm -rf "${tmp_dir}"
+        fi
       elif [ "$METHOD" == "COPY" ]; then
         # usage of docker cp
         local tmp_dir=$(mktemp -d -t docker-copy-XXXXXXXXXXXX)
         # handle excludes
-        local exclude_list
-        local tmp_exclude_file
+        local exclude_list=""
+        local tmp_exclude_file=""
         if [ "$EXCLUDES" != "nil" ]; then
           echo "$METHOD: path excludes: $EXCLUDES (after copying data from container -> via rsync)"
           tmp_exclude_file=$(mktemp /tmp/docker-copy-excludes.XXXXXX)
@@ -279,17 +282,24 @@ function connect_or_update_docker() {
         fi
         # create a container from the image (for data extraction)
         local TMP_CNT=$(docker create "${IMAGE}:${TAG}")
+        local status_cp="OK"
         for dir in $SRC_DIRS; do
           echo "$METHOD: $dir | start at $(date +'%T')"
-          docker cp -L "$TMP_CNT":"$dir" "$tmp_dir"
+          if ! docker cp -L "$TMP_CNT":"$dir" "$tmp_dir"; then
+            status_cp="ERROR"
+          fi
         done
         # remove container after copying data
         docker rm "$TMP_CNT" > /dev/null
-        echo "start rsync at $(date +'%T')"
-        # shellcheck disable=SC2086
-        rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
-        if [ "$tmp_exclude_file" != "" ]; then
-          rm -f "$tmp_exclude_file"
+        if [ "$status_cp" = "ERROR" ]; then
+          echo "ERROR: avoid syncing content (copying from container failed)"
+        else
+          echo "start rsync at $(date +'%T')"
+          # shellcheck disable=SC2086
+          rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
+          if [ "$tmp_exclude_file" != "" ]; then
+            rm -f "$tmp_exclude_file"
+          fi
         fi
         rm -rf "$tmp_dir"
       else
