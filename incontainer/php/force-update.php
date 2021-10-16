@@ -30,7 +30,7 @@ if ($callForceUpdate) {
 if (accessFromBrowser()) {
     echo "<pre>$cmdOutput</pre>";
 } else {
-    echo $cmdOutput;
+    LOG::write("force-update.php", "CMD: /scripts/force-update.sh\n" . rtrim($cmdOutput));
 }
 
 $debugOut = '';
