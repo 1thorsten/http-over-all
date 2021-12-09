@@ -26,6 +26,9 @@ RUN set -x && \
     echo "OS part successfully terminated" && \
     set +x
 
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
 ENV PHP7_ETC=/etc/php/$PHP_VERSION
 ENV PHP7_SERVICE=php${PHP_VERSION}-fpm
 ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock

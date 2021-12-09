@@ -18,8 +18,8 @@ services:
       # value (false,all,admin)
       - docon.v1={"console":"admin","control":"all"}
     env_file:
-      #- example.env
-      - example_test.env
+      - example.env
+      # - example_test.env
       #- example_smb.env
       #- example_proxy.env
       #- crypt_key.env
