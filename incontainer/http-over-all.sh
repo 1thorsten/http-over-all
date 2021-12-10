@@ -3,6 +3,7 @@ SDS_READY="/tmp/sds.ready"
 rm -f ${SDS_READY}
 
 source /scripts/connect-services.sh
+TINY_INSTANCE="$(var_exp "TINY_INSTANCE" "false")"
 
 _ENV=$(env)
 

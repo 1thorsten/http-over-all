@@ -35,12 +35,12 @@ function decrypt() {
 function initialize() {
   echo "initialize"
 
-  if [[ -d "/local-data" ]]; then
+  if [ -d "/local-data" ]; then
     echo "chown www-data:www-data /local-data"
     chown "www-data:www-data" "/local-data"
   fi
 
-  if [[ -e "/var/run/force-update.lock" ]]; then
+  if [ -e "/var/run/force-update.lock" ]; then
     echo "rm -f /var/run/force-update.lock"
     rm -f /var/run/force-update.lock
   fi
@@ -55,6 +55,11 @@ function initialize() {
   echo "cp /scripts/nginx-config/mime.types /etc/nginx/mime.types"
   cp "/scripts/nginx-config/mime.types" "/etc/nginx/mime.types"
 
+  echo "cp /scripts/nginx-config/nginx.conf /etc/nginx/nginx.conf"
+  cp "/scripts/nginx-config/nginx.conf" "/etc/nginx/nginx.conf"
+
+  configure_nginx_proxy "/etc/nginx/nginx.conf"
+
   echo "cp /scripts/nginx-config/php/php.ini ${PHP7_ETC}/fpm/php.ini"
   mv -f "${PHP7_ETC}/fpm/php.ini" "${PHP7_ETC}/fpm/php.ini_orig"
   cp "/scripts/nginx-config/php/php.ini" "${PHP7_ETC}/fpm/php.ini"
@@ -62,10 +67,23 @@ function initialize() {
   echo "adjust date.timezone from ${PHP7_ETC}/fpm/php.ini -> $TZ"
   sed -i "s|^date\.timezone.*$|date.timezone = \"$TZ\"|g" "${PHP7_ETC}/fpm/php.ini"
 
-  echo "cp /scripts/nginx-config/nginx.conf /etc/nginx/nginx.conf"
-  cp "/scripts/nginx-config/nginx.conf" "/etc/nginx/nginx.conf"
+  echo "cp /scripts/nginx-config/php/fpm/pool.d/www.conf ${PHP7_ETC}/fpm/pool.d/www.conf"
+  mv -f "${PHP7_ETC}/fpm/pool.d/www.conf" "${PHP7_ETC}/fpm/pool.d/www.conf_orig"
+  cp /scripts/nginx-config/php/fpm/pool.d/www.conf "${PHP7_ETC}/fpm/pool.d/www.conf"
 
-  configure_nginx_proxy "/etc/nginx/nginx.conf"
+  if [ "$TINY_INSTANCE" = "true" ]; then
+    echo "configure for tiny instance"
+    # fpm
+    # cat /etc/php/7.4/fpm/pool.d/www.conf | grep "^pm"
+    sed -i "s|^pm =.*$|pm = static|g" "${PHP7_ETC}/fpm/pool.d/www.conf"
+    # for pm = static
+    sed -i "s|^pm.max_children.*$|pm.max_children = 1|g" "${PHP7_ETC}/fpm/pool.d/www.conf"
+    # php
+    sed -i "s|^output_buffering.*$|output_buffering = Off|g" "${PHP7_ETC}/fpm/php.ini"
+    sed -i "s|^memory_limit.*$|memory_limit = 32M|g" "${PHP7_ETC}/fpm/php.ini"
+    # nginx.conf
+    sed -i "s|worker_connections.*$|worker_connections 10;|g" "/etc/nginx/nginx.conf"
+  fi
 
   echo "sed -i \"s|__PHP7_SOCK__|${PHP7_SOCK}|g\" /etc/nginx/sites-enabled/default"
   sed -i "s|__PHP7_SOCK__|${PHP7_SOCK}|g" "/etc/nginx/sites-enabled/default"
