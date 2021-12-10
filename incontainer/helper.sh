@@ -82,7 +82,7 @@ function initialize() {
     sed -i "s|^output_buffering.*$|output_buffering = Off|g" "${PHP7_ETC}/fpm/php.ini"
     sed -i "s|^memory_limit.*$|memory_limit = 32M|g" "${PHP7_ETC}/fpm/php.ini"
     # nginx.conf
-    sed -i "s|worker_connections.*$|worker_connections 10;|g" "/etc/nginx/nginx.conf"
+    sed -i "s|worker_connections.*$|worker_connections 25;|g" "/etc/nginx/nginx.conf"
   fi
 
   echo "sed -i \"s|__PHP7_SOCK__|${PHP7_SOCK}|g\" /etc/nginx/sites-enabled/default"
