@@ -1,6 +1,7 @@
     location /__PROXY_NAME__/ {
         autoindex on;
 
+        proxy_no_cache 1;
         proxy_pass __PROXY_URL__;
         proxy_http_version  1.1;
         proxy_set_header Host $host;
