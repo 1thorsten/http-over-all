@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-SDS_READY="/tmp/sds.ready"
+SDS_READY="/var/run/sds.ready"
 rm -f ${SDS_READY}
 
 source /scripts/connect-services.sh
@@ -48,6 +48,9 @@ handle_local_paths
 
 connect_or_update_docker "connect"
 
+echo touch /var/run/force-update.last
+touch /var/run/force-update.last
+
 start_http_server
 
 touch ${SDS_READY}
@@ -55,7 +58,6 @@ touch ${SDS_READY}
 echo
 source /etc/os-release
 echo "$(date +'%T'): ready -> ${PRETTY_NAME}"
-
 echo "$(date +'%T'): http-over-all -> RELEASE: ${RELEASE}"
 
 trap "term_handler" EXIT

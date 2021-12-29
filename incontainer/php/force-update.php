@@ -1,6 +1,7 @@
 <?php
 
 # rm -f /scripts/php/force-update.php ; nano /scripts/php/force-update.php
+include_once "globals.php";
 include_once "Log.php";
 include "common_functions.php";
 
@@ -13,12 +14,13 @@ $time_start = microtime(true);
 $remote_addr = $_REQUEST['remote_addr'] ?? $_SERVER['REMOTE_ADDR'];
 
 $callForceUpdate = true;
+$forcUpdateLock = is_int(FORCE_UPDATE_LOCK) ? FORCE_UPDATE_LOCK : 16;
 $cmdOutput = "";
 if (file_exists("/var/run/force-update.last")) {
     $file_mtime = filemtime("/var/run/force-update.last");
     list($usec, $sec) = explode(" ", microtime());
-    if ($sec - $file_mtime < 16) {
-        $cmdOutput = "avoid executing force-update.sh (previous call was ".($sec - $file_mtime)." second(s) ago)";
+    if ($sec - $file_mtime <= $forcUpdateLock) {
+        $cmdOutput = "avoid executing force-update.sh (previous call was ".($sec - $file_mtime)." second(s) ago; lock_sec: $forcUpdateLock)";
         LOG::write("force-update.php", $cmdOutput);
         $callForceUpdate = false;
     }
