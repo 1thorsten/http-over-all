@@ -55,6 +55,12 @@ server {
         return 200 "Don't index this drive!";
     }
 
+    location /func/nginx_status {
+        allow 127.0.0.1;
+        deny all;
+        stub_status;
+    }
+
     # return ip address from the requestor
     location /func/remote-ip {
         default_type	text/plain;
