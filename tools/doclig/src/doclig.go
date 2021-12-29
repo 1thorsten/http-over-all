@@ -24,5 +24,7 @@ func main() {
 		action.CheckImage(args.Image)
 	} else if *args.Action == "prune" {
 		action.PruneImages()
+	} else if *args.Action == "serve" {
+		action.Serve(args.ListenAddr)
 	}
 }
