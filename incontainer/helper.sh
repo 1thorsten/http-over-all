@@ -105,6 +105,14 @@ function initialize() {
   echo "sed -i \"s|__CRYPT_KEY__|obfuscated|g\" /scripts/php/include/globals.php"
   sed -i "s|__CRYPT_KEY__|${CRYPT_KEY}|g" "/scripts/php/include/globals.php"
 
+  # handle timeout for force-update operations (default are 16 seconds)
+  if [ -z "${FORCE_UPDATE_LOCK##*[!0-9]*}" ]; then
+    echo FORCE_UPDATE_LOCK="16"
+    FORCE_UPDATE_LOCK="16"
+  fi
+  echo "sed -i \"s|'__FORCE_UPDATE_LOCK__'|${FORCE_UPDATE_LOCK}|g\" /scripts/php/include/globals.php"
+  sed -i "s|'__FORCE_UPDATE_LOCK__'|${FORCE_UPDATE_LOCK}|g" "/scripts/php/include/globals.php"
+
   echo "adjust davfs2 (/etc/davfs2/davfs2.conf)"
   {
     echo "ignore_dav_header 1"

@@ -201,7 +201,7 @@ Options for all resources
 | PROXY_MAX_SIZE | maximum size of the proxy cache (default: 10g)                             | - |
 | PROXY_INACTIVE | data that are not accessed during the time get removed (default: 1d)       | - |
 | TINY_INSTANCE | configure for low requirements and low memory consumption (default: false) | - |
-
+| FORCE_UPDATE_LOCK | timeout in seconds for repetitive call (default: 16)                       | - |
 # <a name="special-functions"></a>Special functions
 ## periodic jobs
 ENV: PERIODIC_JOB_INTERVAL
