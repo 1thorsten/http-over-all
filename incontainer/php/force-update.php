@@ -25,13 +25,14 @@ if (file_exists("/var/run/force-update.last")) {
         $callForceUpdate = false;
     }
 }
+
 if ($callForceUpdate) {
     $cmdOutput = shell_exec('sudo /scripts/force-update.sh');
 }
 
 if (accessFromBrowser()) {
     echo "<pre>$cmdOutput</pre>";
-} else {
+} else if ($callForceUpdate) {
     LOG::write("force-update.php", "CMD: /scripts/force-update.sh\n" . rtrim($cmdOutput));
 }
 
