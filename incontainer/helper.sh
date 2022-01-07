@@ -121,8 +121,6 @@ function initialize() {
     echo "use_locks 0"
   } >>/etc/davfs2/davfs2.conf
 
-  # docker digests (put all docker-digests from processed images into this dir)
-  mkdir -p /tmp/docker-digests/
 }
 
 function configure_nginx_proxy() {

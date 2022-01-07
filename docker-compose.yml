@@ -1,4 +1,4 @@
-version: '3.9'
+version: '2.4'
 
 services:
   build-with-tools:
@@ -10,22 +10,19 @@ services:
     container_name: http-over-all
     image: 1thorsten/http-over-all
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 100M
     labels:
       # value (false,all,admin)
       - docon.v1={"console":"admin","control":"all"}
     env_file:
-      - example.env
-      # - example_test.env
-      #- example_smb.env
+      # - example.env
+      - example_test.env
+      # - example_smb.env
       #- example_proxy.env
       #- crypt_key.env
     ports:
       # http/1.1
       - "8338:80"
+      - "7227:3000"
       # http/2 ssl
       - "4334:443"
     cap_add:
@@ -38,10 +35,12 @@ services:
     volumes: 
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /var/run/docker.sock:/var/run/docker.sock
+      - docker-data:/remote/docker
       - git-repos:/remote/git
       - local-data:/local-data
       - nginx-cache:/nginx-cache
 volumes:
+  docker-data:
   git-repos:
   local-data:
   nginx-cache:
