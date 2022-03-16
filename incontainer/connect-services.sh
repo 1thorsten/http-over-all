@@ -203,7 +203,7 @@ function connect_or_update_docker() {
       # check if the image exists at all, if not then ignore resource
       if ! CHECK_IMAGE=$(doclig -action check-image -image "${IMAGE}:${TAG}" 2>&1); then
         echo "doclig -action check-image -image ${IMAGE}:${TAG}"
-        echo "ERR (check-image): ${CHECK_IMAGE}"
+        echo "ERR (check-image): No such image: ${IMAGE}:${TAG}"
         echo "ignore ${RESOURCE_NAME}"
         continue
       else
