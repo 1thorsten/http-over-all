@@ -1,14 +1,14 @@
 update_dependencies:
-	go get -u all
+	/usr/local/opt/go/libexec/bin/go get -u all
 
 build:
 	mkdir -p bin
-	go build -ldflags="-s -w" -o bin/doclig ./src
+	/usr/local/opt/go/libexec/bin/go build -ldflags="-s -w" -o bin/doclig ./src
 	ls -alh bin/doclig
 
 docker-build:
 	mkdir -p bin
-	GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bin/doclig_lnx ./src
+	GOOS=linux GOARCH=amd64 /usr/local/opt/go/libexec/bin/go build -ldflags="-s -w" -o bin/doclig_lnx ./src
 	docker-compose -f ../../docker-compose.yml build build-with-tools
 
 format:
