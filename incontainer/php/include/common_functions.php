@@ -13,16 +13,14 @@ function denyAccessFromExternal($callingScript) {
     }
 }
 
-function accessFromBrowser(): bool
-{
-    if ($_SERVER['HTTP_ACCEPT'] == "*/*") {
+function accessFromBrowser(): bool {
+    if (isset ($_SERVER['HTTP_ACCEPT']) && $_SERVER['HTTP_ACCEPT'] == "*/*") {
         return false;
     }
     return true;
 }
 
-function forwardRequest($url): array
-{
+function forwardRequest($url): array {
     // http://php.net/manual/de/function.parse-url.php
     $parsedUrl = parse_url($url);
     $host = $parsedUrl["host"];
