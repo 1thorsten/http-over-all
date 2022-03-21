@@ -20,3 +20,9 @@ docker-compose-up:
 docker-compose-down:
 	docker-compose -f ../../docker-compose.yml down http-over-all
 
+docker-compose-exec-bash:
+	docker exec -ti http-over-all bash
+
+
+
+

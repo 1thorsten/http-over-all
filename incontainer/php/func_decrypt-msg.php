@@ -5,14 +5,20 @@ include_once "Log.php";
 include "UnsafeCrypto.php";
 
 $remote_addr = $_REQUEST['remote_addr'];
-if (!isset($_REQUEST['m'])) {
+$message = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $message = file_get_contents('php://input');
+} else if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_REQUEST['m'])) {
+    $message = $_REQUEST['m'];
+}
+
+if ($message === null) {
     http_response_code(400);
     LOG::writeHost("func_decrypt-msg.php", $remote_addr, "param 'm' is missing.");
     return;
 }
 
 $rev_remote_addr = strrev($remote_addr);
-$message = $_REQUEST['m'];
 $object = null;
 
 try {
