@@ -22,12 +22,17 @@ $rev_remote_addr = strrev($remote_addr);
 $object = null;
 
 try {
-    // first try new OFB (than old ECB)
+    // first try OFB (than encryption for multiple hosts)
     $dec = UnsafeCrypto::decrypt_ext($rev_remote_addr, 'BF-OFB', $message, true);
     $object = json_decode($dec);
+
     if ($object === null) {
-        $dec = UnsafeCrypto::decrypt_ext($rev_remote_addr, 'BF-ECB', UnsafeCrypto::decrypt($message, true));
+        $dec = UnsafeCrypto::decrypt($message, true);
         $object = json_decode($dec);
+        if ($object !== null && !evaluateResponseForHosts($object, $remote_addr)) {
+            // querying host not valid
+            $object = null;
+        }
     }
 } catch (Exception $e) {
     http_response_code(400);
@@ -40,6 +45,7 @@ if ($object === null) {
     http_response_code(400);
     return;
 }
+
 header('Content-Type: text/plain; charset=utf-8');
 if (property_exists($object, 'v')) {
     header("Valid: " . date('F j, Y, g:i a', $object->v));
@@ -52,5 +58,41 @@ if (property_exists($object, 'v')) {
 
 if (property_exists($object, 'm')) {
     echo $object->m;
+}
+
+/**
+ * evaluate response and check if host value suits for the querying host
+ * @param object $object
+ * @param string $remote_addr
+ * @return bool
+ */
+function evaluateResponseForHosts(object $object, string $remote_addr): bool
+{
+    if (property_exists($object, 'h')) {
+        $for_hosts = $object->h;
+
+        // for ALL = *
+        if ($for_hosts === "*") {
+            header("For-hosts: ALL");
+            return true;
+        }
+
+        // for equality and existing
+        $host_array = explode(",", $for_hosts);
+
+        foreach ($host_array as $value) {
+            if ($value === $remote_addr) {
+                header("For-hosts: $remote_addr");
+                return true;
+            }
+            $value = trim($value, " ");
+            if (substr($remote_addr, 0, strlen($value)) === $value) {
+                header("For-hosts: $remote_addr ($value)");
+                return true;
+            }
+        }
+    }
+    header("For-hosts: not found");
+    return false;
 }
 

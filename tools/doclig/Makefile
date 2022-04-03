@@ -14,6 +14,9 @@ docker-build:
 	GOOS=linux GOARCH=amd64 /usr/local/opt/go/libexec/bin/go build -ldflags="-s -w" -o bin/doclig_lnx ./src
 	docker-compose -f ../../docker-compose.yml build build-with-tools
 
+docker-compose-build:
+	docker-compose -f ../../docker-compose.yml build --no-cache build-all
+
 docker-compose-up:
 	docker-compose -f ../../docker-compose.yml up http-over-all
 

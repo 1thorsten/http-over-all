@@ -258,7 +258,13 @@ curl -X POST -H "Content-Type: text/plain" --data "this is the message" http://[
 
 Options:
 
-*h* (optional): create an encrypted message that can be decrypted only by the specified host (?h=10.30.1.43)
+*h* (optional): create an encrypted message that can be decrypted  
+
+- by the specified host (?h=10.30.1.43)
+- by all hosts (?h=*)
+- by multiple hosts 
+  - ?h=10.30.1.43,10.30.2.32
+  - ?h=10.30.1.
 
 *v* (optional): set a maximum validity (?v=now +10 min)
 

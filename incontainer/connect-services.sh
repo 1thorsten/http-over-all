@@ -403,7 +403,7 @@ function connect_or_update_git_repos() {
 
     if ${ACCESSIBLE}; then
       # all works well / show subject of last commit
-      local git_log=$(git -C "${GIT_MOUNT}" log -1 --pretty=format:'%s')
+      local git_log=$(git -C "${GIT_MOUNT}" log -1 --pretty=format:'%s (%ar, %an)')
       echo "last_commit_log: ${git_log}"
     fi
 
