@@ -15,11 +15,11 @@ class UptoDate
     const INTERNAL = "http://127.0.0.1/internal";
     const CACHED_INTERNAL = "http://127.0.0.1/cached_internal";
     const CACHE_PATH = "/nginx-cache/";
-    public $path;
-    public $lastHttpStatus;
-    public $cacheStatus;
-    public $cachedFiles;
-    public $resourceHeaders;
+    public string $path;
+    public string $lastHttpStatus;
+    public string $cacheStatus;
+    public array $cachedFiles;
+    public array $resourceHeaders;
 
     public function __construct($path)
     {

@@ -23,7 +23,7 @@ $encrypt_for_hosts = false;
 if (isset($_REQUEST['h'])) {
     $remote_addr = $_REQUEST['h'];
     if (filter_var($remote_addr, FILTER_VALIDATE_IP)) {
-        header("Remote-addr: $remote_addr");
+        header("For-host: $remote_addr");
     } else {
         // encryption with global CRYPT_KEY and validate after decryption whether the host is allowed or not
         $encrypt_for_hosts = true;
