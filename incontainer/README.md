@@ -262,9 +262,9 @@ Options:
 
 - by the specified host (?h=10.30.1.43)
 - by all hosts (?h=*)
-- by multiple hosts 
+- by multiple hosts (! for excluding)
   - ?h=10.30.1.43,10.30.2.32
-  - ?h=10.30.1.
+  - ?h=10.30.1.10-10.30.2.9,!10.30.1.12
 
 *v* (optional): set a maximum validity (?v=now +10 min)
 

@@ -3,6 +3,7 @@
 
 include_once "Log.php";
 include "UnsafeCrypto.php";
+include "Ip4Range.php";
 
 $remote_addr = $_REQUEST['remote_addr'];
 $message = null;
@@ -77,19 +78,10 @@ function evaluateResponseForHosts(object $object, string $remote_addr): bool
             return true;
         }
 
-        // for equality and existing
-        $host_array = explode(",", $for_hosts);
-
-        foreach ($host_array as $value) {
-            if ($value === $remote_addr) {
-                header("For-hosts: $remote_addr");
-                return true;
-            }
-            $value = trim($value, " ");
-            if (substr($remote_addr, 0, strlen($value)) === $value) {
-                header("For-hosts: $remote_addr ($value)");
-                return true;
-            }
+        $validHost = (new Ip4Range($for_hosts))->isIncluded($remote_addr);
+        if ($validHost) {
+            header("For-hosts: $remote_addr");
+            return true;
         }
     }
     header("For-hosts: not found");

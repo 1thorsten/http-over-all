@@ -6,13 +6,17 @@ services:
     build:
       dockerfile: tools/doclig/Dockerfile
 
+  build-all:
+    image: 1thorsten/http-over-all
+    build:
+      dockerfile: Dockerfile
   http-over-all:
     container_name: http-over-all
     image: 1thorsten/http-over-all
     restart: unless-stopped
     labels:
       # value (false,all,admin)
-      - docon.v1={"console":"admin","control":"all"}
+      - docon.v1={"console":"all","control":"all"}
     env_file:
       # - example.env
       - example_test.env
