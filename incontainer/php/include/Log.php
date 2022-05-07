@@ -14,12 +14,12 @@ function endsWith(string $string, string $endString): bool
 Class LOG { 
     const LOG_DIR = '/tmp/php.log';
 
-    public static function writeTime($caller, $host, $msg, $time_start) {
+    public static function writeTime(string $caller, string $host, string $msg, float $time_start) {
         $executionTime = (microtime(true) - $time_start);
         LOG::writeHost($caller, $host, "$msg (pt: $executionTime s)");
     }
 
-    public static function writeHost($caller, $remote_addr, $msg) {
+    public static function writeHost(string $caller, string $remote_addr, string $msg) {
         if(!endsWith($caller,".php")) {
             $caller = $caller.".php";
         }
@@ -28,7 +28,7 @@ Class LOG {
         error_log($entry, 3, self::LOG_DIR); 
     } 
 
-    public static function write($caller, $msg) { 
+    public static function write(string $caller, string $msg) {
         if(!endsWith($caller,".php")) {
             $caller = $caller.".php";
         }

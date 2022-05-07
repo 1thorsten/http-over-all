@@ -60,32 +60,34 @@ You can do this by defining the CRYPT_KEY in a different configuration file (for
 
 ## SMB
 ### Options
-| ENV-Variable | Description | required |
-| -------------| ------------| ---------|
-| SMB_[COUNT]_USER | - | x | 
-| SMB_[COUNT]_PASS | - | x | 
-| SMB_[COUNT]_SHARE | e.g. //10.23.4.161/data | x | 
-| SMB_[COUNT]_OPTS | e.g. vers=3.0,noserverino  | - |
+| ENV-Variable      | Description               | required |
+|-------------------|---------------------------|----------|
+| SMB_[COUNT]_USER  | -                         | x        | 
+| SMB_[COUNT]_PASS  | -                         | x        | 
+| SMB_[COUNT]_SHARE | e.g. //10.23.4.161/data   | x        | 
+| SMB_[COUNT]_OPTS  | e.g. vers=3.0,noserverino | -        |
 
 General Options: yes
 
 ## SSH
 ### Options
-| ENV-Variable | Description | required |
-| -------------| ------------| ---------|
-| SSH_[COUNT]_PASS | - | x | 
-| SSH_[COUNT]_SHARE | e.g. rute@10.23.4.161:/ | x | 
-| SSH_[COUNT]_PORT | default: 22 | - | 
+
+| ENV-Variable      | Description             | required |
+|-------------------|-------------------------|----------|
+| SSH_[COUNT]_PASS  | -                       | x        | 
+| SSH_[COUNT]_SHARE | e.g. rute@10.23.4.161:/ | x        | 
+| SSH_[COUNT]_PORT  | default: 22             | -        | 
 
 General Options: yes
 
 ## DAV
 ### Options
-| ENV-Variable | Description | required |
-| -------------| ------------| ---------|
-| DAV_[COUNT]_USER | - | x | 
-| DAV_[COUNT]_PASS | - | x | 
-| DAV_[COUNT]_SHARE | e.g. http://x.x.x.x/dav | x | 
+
+| ENV-Variable      | Description             | required |
+|-------------------|-------------------------|----------|
+| DAV_[COUNT]_USER  | -                       | x        | 
+| DAV_[COUNT]_PASS  | -                       | x        | 
+| DAV_[COUNT]_SHARE | e.g. http://x.x.x.x/dav | x        | 
 
 General Options: yes
 
@@ -93,10 +95,10 @@ General Options: yes
 ### Options
 CACHE is set to false, because the resources are lying on the local drive.
 
-| ENV-Variable | Description | required |
-| -------------| ------------| ---------|
-| GIT_[COUNT]_REPO_URL | e.g. https://[user]:[pass]@bitbucket.company.de/scm/sof/repo.git | x | 
-| GIT_[COUNT]_REPO_BRANCH | branch name (default: master) | - |
+| ENV-Variable            | Description                                                      | required |
+|-------------------------|------------------------------------------------------------------|----------|
+| GIT_[COUNT]_REPO_URL    | e.g. https://[user]:[pass]@bitbucket.company.de/scm/sof/repo.git | x        | 
+| GIT_[COUNT]_REPO_BRANCH | branch name (default: master)                                    | -        |
 
 General Options: yes
 
@@ -108,15 +110,15 @@ The docker image should be better a pure data image.
 For METHOD 'TAR' the base image has to  be a Linux OS. Entrypoint and Cmd will be overwritten. It is important to know that a shell is executed, the defaults (.bashrc) as well.
 METHOD 'COPY' uses docker cp, so no operating system is required (should be faster that TAR). EXCL is applied after the content is copied.
 
-| ENV-Variable | Description | required |
-| -------------| ------------| ---------|
-| DOCKER_[COUNT]_IMAGE | e.g. ubuntu | x |
-| DOCKER_[COUNT]_TAG | tag (default: latest) | - |
-| DOCKER_[COUNT]_USER | if access to registry requires authentication | - |
-| DOCKER_[COUNT]_PASS | if access to registry requires authentication | - |
-| DOCKER_[COUNT]_METHOD | method for synchronizing data (TAR,COPY) | x |
-| DOCKER_[COUNT]_SRC_DIRS | dirs to extract from the container (default: DOCKER-VAR WORKSPACE) | - |
-| DOCKER_[COUNT]_EXCL | paths to exclude (e.g. proc/* dev/* sys/*) | - |
+| ENV-Variable            | Description                                                        | required |
+|-------------------------|--------------------------------------------------------------------|----------|
+| DOCKER_[COUNT]_IMAGE    | e.g. ubuntu                                                        | x        |
+| DOCKER_[COUNT]_TAG      | tag (default: latest)                                              | -        |
+| DOCKER_[COUNT]_USER     | if access to registry requires authentication                      | -        |
+| DOCKER_[COUNT]_PASS     | if access to registry requires authentication                      | -        |
+| DOCKER_[COUNT]_METHOD   | method for synchronizing data (TAR,COPY)                           | x        |
+| DOCKER_[COUNT]_SRC_DIRS | dirs to extract from the container (default: DOCKER-VAR WORKSPACE) | -        |
+| DOCKER_[COUNT]_EXCL     | paths to exclude (e.g. proc/* dev/* sys/*)                         | -        |
 
 General Options: yes
 ## PROXY
@@ -125,17 +127,17 @@ Proxy is allowed for http endpoints and [unix sockets](http://nginx.org/en/docs/
 The file permissions for the socket are very important. Read and write access on PROXY_[COUNT]_SOCKET_FILE will be set automatically (if possible).
 Proxy (mode: direct) supports websockets.
 
-| ENV-Variable | Description | required |
-| -------------| ------------| ---------|
-| PROXY_[COUNT]_NAME | resource name (shown in root dir) | x | 
-| PROXY_[COUNT]_URL | e.g http:/x.x.x.x/resource/ or http://unix:/var/run/docker.sock:/ | x | 
-| PROXY_[COUNT]_AUTH | user:password (basic auth) | - |
-| PROXY_[COUNT]_CACHE_TIME | cache content, and how to cache - e.g. 1d (one day) | - |
-| PROXY_[COUNT]_HTTP_ROOT_SHOW | show the content in the root directory (default: true) | - | 
-| PROXY_[COUNT]_IP_RESTRICTION | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | - | 
-| PROXY_[COUNT]_LOG_ACCESS | access_log -> file, device (/dev/stdout) off (default: off) | - | 
-| PROXY_[COUNT]_LOG_ERROR | error_log -> file, device (/dev/stdout) off (default: /dev/stdout) | - | 
-| PROXY_[COUNT]_MODE | cache (default for non unix-sockets) or direct (default for unix-sockets) | - | 
+| ENV-Variable                 | Description                                                                                      | required |
+|------------------------------|--------------------------------------------------------------------------------------------------|----------|
+| PROXY_[COUNT]_NAME           | resource name (shown in root dir)                                                                | x        | 
+| PROXY_[COUNT]_URL            | e.g http:/x.x.x.x/resource/ or http://unix:/var/run/docker.sock:/                                | x        | 
+| PROXY_[COUNT]_AUTH           | user:password (basic auth)                                                                       | -        |
+| PROXY_[COUNT]_CACHE_TIME     | cache content, and how to cache - e.g. 1d (one day)                                              | -        |
+| PROXY_[COUNT]_HTTP_ROOT_SHOW | show the content in the root directory (default: true)                                           | -        | 
+| PROXY_[COUNT]_IP_RESTRICTION | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | -        | 
+| PROXY_[COUNT]_LOG_ACCESS     | access_log -> file, device (/dev/stdout) off (default: off)                                      | -        | 
+| PROXY_[COUNT]_LOG_ERROR      | error_log -> file, device (/dev/stdout) off (default: /dev/stdout)                               | -        | 
+| PROXY_[COUNT]_MODE           | cache (default for non unix-sockets) or direct (default for unix-sockets)                        | -        | 
 
 General Options: no
 
@@ -151,9 +153,9 @@ Reload the configuration afterwards:
 exportfs -rs
 ```
 
-| ENV-Variable | Description | required |
-| -------------| ------------| ---------|
-| NFS_[COUNT]_SHARE | e.g. 10.23.4.161:/home | x | 
+| ENV-Variable      | Description            | required |
+|-------------------|------------------------|----------|
+| NFS_[COUNT]_SHARE | e.g. 10.23.4.161:/home | x        | 
 
 General Options: yes
 
@@ -161,9 +163,9 @@ General Options: yes
 ### Options
 CACHE is set to false, because the resources are on the local drive.
 
-| ENV-Variable | Description | required |
-| -------------| ------------| ---------|
-| LOCAL_[COUNT]_PATH | /local-data | x |
+| ENV-Variable       | Description | required |
+|--------------------|-------------|----------|
+| LOCAL_[COUNT]_PATH | /local-data | x        |
 
 General Options: yes
 
@@ -172,36 +174,36 @@ Options for all resources
 
 [RES] stands for Resource_[COUNT]_ (e.g. LOCAL_[COUNT])
 
-| ENV-Variable | Description | required |
-| -------------| ------------| ---------|
-| [RES]_NAME | resource name (shown in root dir) | x |
-| [RES]_CACHE | cache resources through proxy cache / true/false (default: true) | - |
-| [RES]_DAV | true/false (default: false) | - |
-| [RES]_DAV_METHODS | standard DAV methods (default: PUT DELETE MKCOL COPY MOVE) | - |
-| [RES]_DAV_AUTH | user:password (basic auth) | - |
-| [RES]_DAV_IP_RESTRICTION | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | - |
-| [RES]_DAV_LOG_ACCESS | access_log -> file, device (/dev/stdout) off (default: off) | - | 
-| [RES]_DAV_LOG_ERROR | error_log -> file, device (/dev/stdout) off (default: /dev/stdout) | - |
-| [RES]_HTTP | true/false (default: true) | - |
-| [RES]_HTTP_AUTH | user:password (basic auth) | - |
-| [RES]_HTTP_IP_RESTRICTION | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | - |
-| [RES]_HTTP_LOG_ACCESS | access_log -> file, device (/dev/stdout) off (default: off) | - | 
-| [RES]_HTTP_LOG_ERROR | error_log -> file, device (/dev/stdout) off (default: /dev/stdout) | - |
-| [RES]_PERMITTED_RESOURCES | absolute path of permitted resource file | - |
-| [RES]_SUB_DIR_PATH_1++ | restrict acccess to this path (relative) | - |
-| [RES]_SUB_DIR_NAME_1++ | accessible name | - |
-| [RES]_SUB_DIR_PERMITTED_RESOURCES_1++ | absolute path of permitted resource file | - |
+| ENV-Variable                          | Description                                                                                      | required |
+|---------------------------------------|--------------------------------------------------------------------------------------------------|----------|
+| [RES]_NAME                            | resource name (shown in root dir)                                                                | x        |
+| [RES]_CACHE                           | cache resources through proxy cache / true/false (default: true)                                 | -        |
+| [RES]_DAV                             | true/false (default: false)                                                                      | -        |
+| [RES]_DAV_METHODS                     | standard DAV methods (default: PUT DELETE MKCOL COPY MOVE)                                       | -        |
+| [RES]_DAV_AUTH                        | user:password (basic auth)                                                                       | -        |
+| [RES]_DAV_IP_RESTRICTION              | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | -        |
+| [RES]_DAV_LOG_ACCESS                  | access_log -> file, device (/dev/stdout) off (default: off)                                      | -        | 
+| [RES]_DAV_LOG_ERROR                   | error_log -> file, device (/dev/stdout) off (default: /dev/stdout)                               | -        |
+| [RES]_HTTP                            | true/false (default: true)                                                                       | -        |
+| [RES]_HTTP_AUTH                       | user:password (basic auth)                                                                       | -        |
+| [RES]_HTTP_IP_RESTRICTION             | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | -        |
+| [RES]_HTTP_LOG_ACCESS                 | access_log -> file, device (/dev/stdout) off (default: off)                                      | -        | 
+| [RES]_HTTP_LOG_ERROR                  | error_log -> file, device (/dev/stdout) off (default: /dev/stdout)                               | -        |
+| [RES]_PERMITTED_RESOURCES             | absolute path of permitted resource file                                                         | -        |
+| [RES]_SUB_DIR_PATH_1++                | restrict acccess to this path (relative)                                                         | -        |
+| [RES]_SUB_DIR_NAME_1++                | accessible name                                                                                  | -        |
+| [RES]_SUB_DIR_PERMITTED_RESOURCES_1++ | absolute path of permitted resource file                                                         | -        |
 
 ## Common options
 
-| ENV-Variable | Description                                                                | required |
-| -------------|----------------------------------------------------------------------------| ---------|
-| CRYPT_KEY | key for encrypting and decrypting                                          | x |
-| PERIODIC_JOB_INTERVAL | interval for processing periodic jobs (default: 5m). Infinity = inf        | - |
-| PROXY_MAX_SIZE | maximum size of the proxy cache (default: 10g)                             | - |
-| PROXY_INACTIVE | data that are not accessed during the time get removed (default: 1d)       | - |
-| TINY_INSTANCE | configure for low requirements and low memory consumption (default: false) | - |
-| FORCE_UPDATE_LOCK | timeout in seconds for repetitive call (default: 16)                       | - |
+| ENV-Variable          | Description                                                                | required |
+|-----------------------|----------------------------------------------------------------------------|----------|
+| CRYPT_KEY             | key for encrypting and decrypting                                          | x        |
+| PERIODIC_JOB_INTERVAL | interval for processing periodic jobs (default: 5m). Infinity = inf        | -        |
+| PROXY_MAX_SIZE        | maximum size of the proxy cache (default: 10g)                             | -        |
+| PROXY_INACTIVE        | data that are not accessed during the time get removed (default: 1d)       | -        |
+| TINY_INSTANCE         | configure for low requirements and low memory consumption (default: false) | -        |
+| FORCE_UPDATE_LOCK     | timeout in seconds for repetitive call (default: 16)                       | -        |
 # <a name="special-functions"></a>Special functions
 ## periodic jobs
 ENV: PERIODIC_JOB_INTERVAL

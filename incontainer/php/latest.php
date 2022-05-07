@@ -20,8 +20,8 @@ $uptoDate = new UptoDate($path);
 # $uptoDate->cleanUpCache();
 $url = $uptoDate->url(true);
 if (strstr($uptoDate->lastHttpStatus,'301') === '301 Moved Permanently') {
-    header("Location: {$path}/");
-    LOG::writeTime("latest.php",$remote_addr,"redirect to {$path}/ [{$uptoDate->lastHttpStatus}]", $time_start);
+    header("Location: $path/");
+    LOG::writeTime("latest.php", $remote_addr, "redirect to $path/ [$uptoDate->lastHttpStatus]", $time_start);
     exit();
 }
 
@@ -52,5 +52,5 @@ if ($requestMethod == "HEAD") {
 $res = forwardRequest($url);
 $forwaredUrlPath = parse_url($url, PHP_URL_PATH);
 if ($log) {
-    LOG::writeTime("latest.php",$remote_addr,"processed $forwaredUrlPath $debugOut | Length: {$res['Content-Length']} | Cache: {$uptoDate->cacheStatus}", $time_start);
+    LOG::writeTime("latest.php", $remote_addr, "processed $forwaredUrlPath $debugOut | Length: {$res['Content-Length']} | Cache: $uptoDate->cacheStatus", $time_start);
 }

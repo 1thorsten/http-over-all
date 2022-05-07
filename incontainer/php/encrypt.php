@@ -25,7 +25,7 @@ $filename = basename($uri);
 
 #$decryptUrl="{$_REQUEST['scheme']}://{$_REQUEST['http_host']}/php/decrypt.php?v={$encrypted}&f={$filename}";
 #echo "<br><a href='$decryptUrl'>$decryptUrl</a>";
-$encryptedUrl="{$_REQUEST['scheme']}://{$_REQUEST['http_host']}/decrypt/{$encrypted}/{$filename}";
+$encryptedUrl = "{$_REQUEST['scheme']}://{$_REQUEST['http_host']}/decrypt/$encrypted/$filename";
 
 LOG::writeTime("encrypt.php",$remote_addr,"create url: $encryptedUrl", $time_start);
 
@@ -42,7 +42,7 @@ if (!accessFromBrowser()) {
 }
 
 $encryptedLen = strlen($encryptedUrl);
-$linkDecryptionUrl="{$_REQUEST['scheme']}://{$_REQUEST['http_host']}/decrypt-link/{$encrypted}/{$filename}";
+$linkDecryptionUrl = "{$_REQUEST['scheme']}://{$_REQUEST['http_host']}/decrypt-link/$encrypted/$filename";
 
 ?>
 <html lang="en">

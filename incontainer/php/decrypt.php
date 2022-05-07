@@ -17,10 +17,10 @@ $uri = $_REQUEST['uri'];
 $remote_addr = $_REQUEST['remote_addr'];
 
 $found = preg_match('/\/decrypt\/(.*)\/(.*)/', $uri, $matches);
-if ($found == FALSE) {
+if (!$found) {
     http_response_code(400);
-    LOG::writeTime("decrypt.php",$remote_addr,"Error: could not parse cipher and filename from $uri", $time_start);
-    exit;    
+    LOG::writeTime("decrypt.php", $remote_addr, "Error: could not parse cipher and filename from $uri", $time_start);
+    exit;
 }
 
 $encrypted = $matches[1];
@@ -55,4 +55,4 @@ if ($encodedName != $name) {
 $res = forwardRequest($url);
 $forwaredUrlPath = parse_url($url, PHP_URL_PATH);
 
-LOG::writeTime("decrypt.php",$remote_addr,"processed $forwaredUrlPath | Length: {$res['Content-Length']} | Cache: {$cacheStatus}", $time_start);
+LOG::writeTime("decrypt.php", $remote_addr, "processed $forwaredUrlPath | Length: {$res['Content-Length']} | Cache: $cacheStatus", $time_start);
