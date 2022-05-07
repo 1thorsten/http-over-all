@@ -16,12 +16,12 @@ class UptoDate
     const CACHED_INTERNAL = "http://127.0.0.1/cached_internal";
     const CACHE_PATH = "/nginx-cache/";
     public string $path;
-    public string $lastHttpStatus;
-    public string $cacheStatus;
+    public ?string $lastHttpStatus = null;
+    public ?string $cacheStatus = null;
     public array $cachedFiles;
     public array $resourceHeaders;
 
-    public function __construct($path)
+    public function __construct(string $path)
     {
         $this->path = $path;
     }
@@ -31,7 +31,7 @@ class UptoDate
      * @return array Last-Modified as DateTime and X-Proxy-Cache
      * @throws Exception
      */
-    public function header($url): ?array
+    public function header(string $url): ?array
     {
         # if the resource is not in the cache already, the HEAD request (/cached_internal)
         # triggers also a GET request (/internal) to save the resource in the proxy cache
@@ -57,7 +57,7 @@ class UptoDate
         return NULL;
     }
 
-    public function url($invalidateCache): string
+    public function url(bool $invalidateCache): string
     {
         if ($invalidateCache === true && $this->isCacheInvalid()) {
             $this->cleanUpCache();
@@ -78,12 +78,14 @@ class UptoDate
         if (!$this->cacheStatus) {
             $this->getCacheStatus();
         }
+
         return $this->cacheStatus === "CACHE_OLD";
     }
 
     // $path = path from Webserve (/ibe_and_more/java/security/README.txt)
     public function getCacheStatus(): string
     {
+
         if (substr($this->path, -1) === '/') {
             return $this->cacheStatus = "CACHE_NO";
         }
