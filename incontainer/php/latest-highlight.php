@@ -22,8 +22,8 @@ $uptoDate = new UptoDate($path);
 $url = $uptoDate->url(true);
 
 if (strstr($uptoDate->lastHttpStatus,'301') === '301 Moved Permanently') {
-    header("Location: {$path}/");
-    LOG::writeTime("latest-highlight.php",$remote_addr,"redirect to {$path}/ [{$uptoDate->lastHttpStatus}]", $time_start);
+    header("Location: $path/");
+    LOG::writeTime("latest-highlight.php", $remote_addr, "redirect to $path/ [$uptoDate->lastHttpStatus]", $time_start);
     exit();
 }
 
@@ -66,6 +66,6 @@ if (isset($_REQUEST['l'])){
 </html>
 <?php
 if ($log) {
-    LOG::writeTime("latest-highlight.php",$remote_addr,"Name: {$basename} {$language} {$debugOut}| Length: ".strlen($content)." | Cache: {$uptoDate->cacheStatus}", $time_start);
+    LOG::writeTime("latest-highlight.php", $remote_addr, "Name: $basename $language $debugOut| Length: " . strlen($content) . " | Cache: $uptoDate->cacheStatus", $time_start);
 }
 ?>

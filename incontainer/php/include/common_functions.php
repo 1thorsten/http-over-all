@@ -3,7 +3,7 @@
 # rm /scripts/php/include/common_functions.php ; nano /scripts/php/include/common_functions.php
 
 include_once "Log.php";
-function denyAccessFromExternal($callingScript) {
+function denyAccessFromExternal(string $callingScript) {
     $remoteAddress=$_SERVER['REMOTE_ADDR'];
 
     if ($remoteAddress != "127.0.0.1") {
@@ -20,7 +20,7 @@ function accessFromBrowser(): bool {
     return true;
 }
 
-function forwardRequest($url): array {
+function forwardRequest(string $url): array {
     // http://php.net/manual/de/function.parse-url.php
     $parsedUrl = parse_url($url);
     $host = $parsedUrl["host"];
@@ -88,7 +88,7 @@ function forwardRequest($url): array {
 }
 
 # https://prismjs.com/#supported-languages
-function determineLanguage($basename): string
+function determineLanguage(string $basename): string
 {
     $n = strtolower($basename);
     if(strpos($n,".css") !== false) return "lang-css";

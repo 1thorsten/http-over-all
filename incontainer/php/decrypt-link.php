@@ -19,10 +19,10 @@ $uri = $_REQUEST['uri'];
 $remote_addr = $_REQUEST['remote_addr'];
 
 $found = preg_match('/\/decrypt-link\/(.*)\/(.*)/', $uri, $matches);
-if ($found == FALSE) {
+if (!$found) {
     http_response_code(400);
-    LOG::writeTime("decrypt-link.php",$remote_addr,"Error: could not parse cipher and filename from $uri", $time_start);
-    exit;    
+    LOG::writeTime("decrypt-link.php", $remote_addr, "Error: could not parse cipher and filename from $uri", $time_start);
+    exit;
 }
 
 $encrypted = $matches[1];

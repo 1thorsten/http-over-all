@@ -41,4 +41,4 @@ if (isset($_SERVER['HTTP_X_DEBUG_OUT'])) {
     $debugOut = "| Debug: {$_SERVER['HTTP_X_DEBUG_OUT']}";
 }
 
-LOG::writeTime("force-update.php", $remote_addr, "call force-update.sh {$debugOut}", $time_start);
+LOG::writeTime("force-update.php", $remote_addr, "call force-update.sh $debugOut", $time_start);

@@ -55,6 +55,6 @@ if (isset($_REQUEST['l'])){
 </html>
 <?php
 if ($log) {
-    LOG::writeTime("highlight.php",$remote_addr,"Name: {$basename} {$language} {$debugOut}| Length: ".strlen($content), $time_start);
+    LOG::writeTime("highlight.php", $remote_addr, "Name: $basename $language $debugOut| Length: " . strlen($content), $time_start);
 }
 ?>
