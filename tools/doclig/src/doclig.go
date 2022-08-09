@@ -4,6 +4,7 @@ import (
 	"doclig/src/action"
 	_ "embed"
 	"fmt"
+	"runtime"
 	"strings"
 )
 
@@ -12,7 +13,7 @@ var version string
 
 func main() {
 	version = strings.TrimSuffix(version, "\n")
-	fmt.Printf("doclig version: %s\n", version)
+	fmt.Printf("doclig version: %s (%s)\n", version, runtime.Version())
 
 	args := HandleArgs()
 
