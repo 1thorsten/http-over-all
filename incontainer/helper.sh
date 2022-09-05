@@ -614,9 +614,9 @@ function socket_permission() {
     else
       echo "$socket belongs to a group that does not exist"
       local socket_group_id=$(stat -c '%g' "$socket")
-      echo "create group $socket_group_id -> groupadd -g $socket_group_id $socket_group_id"
+      echo "create group g$socket_group_id -> groupadd -g $socket_group_id g$socket_group_id"
       # delete with gpasswd -d www-data 999
-      groupadd -g "$socket_group_id" "$socket_group_id"
+      groupadd -g "$socket_group_id" "g$socket_group_id"
       socket_group_name=$(stat -c '%G' "$socket")
     fi
 
