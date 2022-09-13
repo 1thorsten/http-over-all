@@ -4,7 +4,7 @@ update_dependencies:
 build:
 	mkdir -p bin
 	/usr/local/opt/go/libexec/bin/go build -ldflags="-s -w" -o bin/doclig ./src
-	ls -alh bin/doclig
+	ls -al bin/doclig
 
 format:
 	gofmt -w -d -s src/*.go
@@ -21,11 +21,7 @@ docker-compose-up:
 	docker-compose -f ../../docker-compose.yml up http-over-all
 
 docker-compose-down:
-	docker-compose -f ../../docker-compose.yml down http-over-all
+	docker-compose -f ../../docker-compose.yml down
 
 docker-compose-exec-bash:
 	docker exec -ti http-over-all bash
-
-
-
-

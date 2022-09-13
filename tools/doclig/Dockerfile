@@ -1,5 +1,6 @@
 FROM debian:bullseye-slim
 ENV PHP_VERSION=7.4
+ARG USER=hoa
 
 LABEL maintainer="Thorsten Winkler"
 LABEL description="http-over-all"
@@ -56,8 +57,11 @@ WORKDIR /scripts
 RUN set -x && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt -subj "/C=${SSL_COUNTRY}/ST=${SSL_STATE}/L=${SSL_LOCALITY}/O=${SSL_ORGANIZATION}/OU=${SSL_ORGANIZATIONALUNIT}/CN=${SSL_COMMONNAME}/emailAddress=${SSL_EMAILADDRESS}" && \
     # https://wiki.ubuntuusers.de/sudo/Konfiguration/
-    # https://kofler.info/sudo-ohne-passwort/
-    printf '\nwww-data  ALL=(ALL) NOPASSWD: /scripts/force-update.sh\n' >> /etc/sudoers && \
+    # https://kofler.info/sudo-ohne-passwort/ \
+    adduser $USER && \
+    echo "$USER ALL=(ALL) NOPASSWD:SETENV: /scripts//http-over-all.sh" > /etc/sudoers.d/$USER && \
+    echo '$USER ALL=(ALL) NOPASSWD: /scripts/force-update.sh\n' >> /etc/sudoers.d/$USER && \
+    chmod 0440 /etc/sudoers.d/$USER && \
     find /scripts -name "*.sh" -exec sed -i 's/\r$//' {} + && \
     echo "\nexport RELEASE=${RELEASE}\n" >> /scripts/system-helper.sh && \
     echo "source /scripts/system-helper.sh" >> /etc/bash.bashrc && \
@@ -67,4 +71,5 @@ RUN set -x && \
 ADD tools/doclig/bin/doclig_lnx /usr/local/bin/doclig
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "/scripts/healthcheck.sh" ]
-ENTRYPOINT [ "./http-over-all.sh" ]
+USER $USER
+ENTRYPOINT sudo -E /scripts/http-over-all.sh
