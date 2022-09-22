@@ -456,7 +456,7 @@ function handle_proxy() {
       echo "unix socket: $SOCKET_FILE"
       STATUS='200'
       if ! socket_permission "$SOCKET_FILE"; then
-        echo "unix socket is not accessible"
+        echo "unix socket is not accessible -> do not forget to bind the socket '$SOCKET_FILE' with write permissions"
         STATUS='404'
       fi
       local permissions=$(stat -c '%A %a %n' "$SOCKET_FILE")
