@@ -456,7 +456,7 @@ function handle_proxy() {
       echo "unix socket: $SOCKET_FILE"
       STATUS='200'
       if ! socket_permission "$SOCKET_FILE"; then
-        echo "unix socket is not accessible"
+        echo "unix socket is not accessible -> do not forget to bind the socket '$SOCKET_FILE' with write permissions"
         STATUS='404'
       fi
       local permissions=$(stat -c '%A %a %n' "$SOCKET_FILE")
@@ -522,7 +522,7 @@ function start_http_server() {
     echo "avoid redirecting ${PHP_LOG_FILE} to stdout (PHP_LOG_SYSOUT: $PHP_LOG_SYSOUT)"
   else
     echo "redirect ${PHP_LOG_FILE} to stdout from main_process (PHP_LOG_SYSOUT: $PHP_LOG_SYSOUT)"
-    tail -f ${PHP_LOG_FILE} >"/proc/1/fd/1" &
+    tail -f /tmp/php.log &
   fi
 
   echo "handle README.html (weave README.md and link to ${HTDOCS})"

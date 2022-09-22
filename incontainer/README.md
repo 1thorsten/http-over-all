@@ -103,12 +103,18 @@ CACHE is set to false, because the resources are lying on the local drive.
 General Options: yes
 
 ## DOCKER
+
 ### Options
+
 CACHE is set to false, because the resources are on the local drive.
 
+You have to mount the docker.socket into the container (/var/run/docker.sock:/var/run/docker.sock:ro is sufficient).
+
 The docker image should be better a pure data image.
-For METHOD 'TAR' the base image has to  be a Linux OS. Entrypoint and Cmd will be overwritten. It is important to know that a shell is executed, the defaults (.bashrc) as well.
-METHOD 'COPY' uses docker cp, so no operating system is required (should be faster that TAR). EXCL is applied after the content is copied.
+For METHOD 'TAR' the base image has to be a Linux OS. Entrypoint and Cmd will be overwritten. It is important to know
+that a shell is executed, the defaults (.bashrc) as well.
+METHOD 'COPY' uses docker cp, so no operating system is required (should be faster that TAR). EXCL is applied after the
+content is copied.
 
 | ENV-Variable            | Description                                                        | required |
 |-------------------------|--------------------------------------------------------------------|----------|
@@ -123,8 +129,13 @@ METHOD 'COPY' uses docker cp, so no operating system is required (should be fast
 General Options: yes
 ## PROXY
 ### Options
-Proxy is allowed for http endpoints and [unix sockets](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass) as well.
-The file permissions for the socket are very important. Read and write access on PROXY_[COUNT]_SOCKET_FILE will be set automatically (if possible).
+
+Proxy is allowed for http endpoints
+and [unix sockets](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass) as well.
+The file permissions for the socket are very important. Read and write access on PROXY_[COUNT]_SOCKET_FILE will be set
+automatically (if possible).
+Do not forget to mount the socket with write permissions (/var/run/docker.sock:/var/run/docker.sock:ro is not
+sufficient)
 Proxy (mode: direct) supports websockets.
 
 | ENV-Variable                 | Description                                                                                      | required |
@@ -243,8 +254,9 @@ docker run --rm php:cli-alpine php -r 'echo "CRYPT_KEY:".base64_encode(openssl_r
 ```
 # <a name="additions"></a>Additions
 ## func/remote-ip
+
 Show ip address from the requestor.
-Sometime you need to know your real internal ip address (e.g. if you are in a container with its own virtual network)
+Sometimes you need to know your real internal ip address (e.g. if you are in a container with its own virtual network)
 
 ```bash
 curl http://[http-over-all:8338]/func/remote-ip
