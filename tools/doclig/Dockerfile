@@ -62,7 +62,9 @@ RUN set -x && \
     useradd -d /home/$USER -u 1000 -g 1000 -m -s /bin/bash $USER && \
     echo "$USER ALL=(ALL) NOPASSWD:SETENV: /scripts/http-over-all.sh" > /etc/sudoers.d/$USER && \
     echo "$USER ALL=(ALL) NOPASSWD: /scripts/force-update.sh" >> /etc/sudoers.d/$USER && \
+    echo "www-data ALL=(ALL) NOPASSWD: /scripts/force-update.sh" >> /etc/sudoers.d/www-data && \
     chmod 0440 /etc/sudoers.d/$USER && \
+    chmod 0440 /etc/sudoers.d/www-data && \
     find /scripts -name "*.sh" -exec sed -i 's/\r$//' {} + && \
     echo "\nexport RELEASE=${RELEASE}\n" >> /scripts/system-helper.sh && \
     echo "source /scripts/system-helper.sh" >> /etc/bash.bashrc && \
