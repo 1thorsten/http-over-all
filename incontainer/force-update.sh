@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# rm /scripts/force-update.sh; nano /scripts/force-update.sh; chmod u+x /scripts/force-update.sh
 # curl -s --header "X-Debug-Out: something.meaningful" http://localhost:8338/force-update/
 # http://localhost:8338/force-update/
 
