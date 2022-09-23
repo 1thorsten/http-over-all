@@ -27,7 +27,7 @@ if (file_exists("/var/run/force-update.last")) {
 }
 
 if ($callForceUpdate) {
-    $cmdOutput = shell_exec('sudo /scripts/force-update.sh');
+    $cmdOutput = shell_exec('sudo /scripts/force-update.sh 2>&1');
 }
 
 if (accessFromBrowser()) {
