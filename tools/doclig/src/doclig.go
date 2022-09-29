@@ -20,7 +20,7 @@ func main() {
 	if *args.Action == "pull" {
 		action.PullImage(args.Image, args.User, args.Password)
 	} else if *args.Action == "copy" {
-		action.CopyContents(args.Image, args.SourcePaths, args.DestinationPath)
+		action.CopyContents(args.Image, args.SourcePaths, args.DestinationPath, args.OutFormat)
 	} else if *args.Action == "check-image" {
 		action.CheckImage(args.Image)
 	} else if *args.Action == "prune" {

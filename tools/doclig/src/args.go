@@ -13,6 +13,7 @@ type Args struct {
 	ListenAddr      *string
 	SourcePaths     []string
 	DestinationPath *string
+	OutFormat       *string
 }
 
 func HandleArgs() *Args {
@@ -26,6 +27,7 @@ func HandleArgs() *Args {
 	var sourceDirs string
 	flag.StringVar(&sourceDirs, "srcPaths", "", "comma separated source directories (action: copy)")
 	args.DestinationPath = flag.String("dst", "", "destination dir (action: copy)")
+	args.OutFormat = flag.String("out-fmt", "files", "out-format [files, tar] (action: copy)")
 	flag.Parse()
 
 	args.SourcePaths = strings.Split(sourceDirs, ",")

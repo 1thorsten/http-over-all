@@ -97,8 +97,28 @@ func untar(dst string, r io.Reader) error {
 	}
 }
 
+func copyTar(dst string, path string, r io.Reader) (*string, error) {
+	outFileName := strings.ReplaceAll(path, "/", "_")
+	if outFileName[0] == '_' {
+		outFileName = strings.Replace(outFileName, "_", "", 1)
+	}
+	target := filepath.Join(dst, outFileName+".tar")
+	fmt.Printf("Out-File: %s\n", target)
+	f, err := os.Create(target)
+	if err != nil {
+		fmt.Printf("ignore %s -> %s\n", target, err)
+		return nil, err
+	} else {
+		if _, err := io.Copy(f, r); err != nil {
+			fmt.Printf("error writing %s -> %s\n", target, err)
+		}
+		f.Close()
+	}
+	return &target, nil
+}
+
 // CopyContents copy the specified content (paths) from image to a specified destination
-func CopyContents(image *string, srcPaths []string, dst *string) {
+func CopyContents(image *string, srcPaths []string, dst *string, outFormat *string) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -127,8 +147,17 @@ func CopyContents(image *string, srcPaths []string, dst *string) {
 		}
 
 		start := time.Now()
-		untar(*dst, reader)
-		timeTrack(start, fmt.Sprintf("Untar %s", trimmedPath), time.Microsecond)
+		if *outFormat != "tar" {
+			untar(*dst, reader)
+			timeTrack(start, fmt.Sprintf("Untar [%s]", trimmedPath), time.Microsecond)
+
+		} else {
+			if target, _ := copyTar(*dst, trimmedPath, reader); target != nil {
+				timeTrack(start, fmt.Sprintf("Copy [%s] to %s", trimmedPath, *target), time.Microsecond)
+			} else {
+				fmt.Printf("Error copying [%s]\n", trimmedPath)
+			}
+		}
 	}
 
 	defer timeTrack(time.Now(), "Stop container", time.Millisecond)
