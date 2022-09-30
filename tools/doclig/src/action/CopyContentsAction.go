@@ -91,12 +91,15 @@ func untar(dst string, r io.Reader) error {
 
 			// manually close here after each file operation; defering would cause each file close
 			// to wait until all operations have completed.
-			f.Close()
+			if err := f.Close(); err != nil {
+				return err
+			}
 			timeTrack(start, "file: "+target+" ("+strconv.FormatInt(header.Size/1024, 10)+"kb)", 100*time.Millisecond)
 		}
 	}
 }
 
+// copyTar save the tar from the io.Reader as file
 func copyTar(dst string, path string, r io.Reader) (*string, error) {
 	outFileName := strings.ReplaceAll(path, "/", "_")
 	if outFileName[0] == '_' {
@@ -112,7 +115,9 @@ func copyTar(dst string, path string, r io.Reader) (*string, error) {
 		if _, err := io.Copy(f, r); err != nil {
 			fmt.Printf("error writing %s -> %s\n", target, err)
 		}
-		f.Close()
+		if err := f.Close(); err != nil {
+			return nil, err
+		}
 	}
 	return &target, nil
 }
@@ -134,6 +139,10 @@ func CopyContents(image *string, srcPaths []string, dst *string, outFormat *stri
 	}
 
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		panic(err)
+	}
+
+	if err := cli.ContainerPause(ctx, resp.ID); err != nil {
 		panic(err)
 	}
 

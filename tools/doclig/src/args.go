@@ -30,7 +30,14 @@ func HandleArgs() *Args {
 	args.OutFormat = flag.String("out-fmt", "files", "out-format [files, tar] (action: copy)")
 	flag.Parse()
 
-	args.SourcePaths = strings.Split(sourceDirs, ",")
-
+	if len(sourceDirs) > 0 {
+		if strings.Contains(sourceDirs, ",") {
+			args.SourcePaths = strings.Split(sourceDirs, ",")
+		} else if strings.Contains(sourceDirs, " ") {
+			args.SourcePaths = strings.Split(sourceDirs, " ")
+		} else {
+			args.SourcePaths = []string{sourceDirs}
+		}
+	}
 	return &args
 }
