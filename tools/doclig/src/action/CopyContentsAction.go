@@ -143,7 +143,7 @@ func CopyContents(image *string, srcPaths []string, dst *string, outFormat *stri
 	}
 
 	if err := cli.ContainerPause(ctx, resp.ID); err != nil {
-		panic(err)
+		fmt.Printf("Warn: could not pause container for image: %s\n", *image)
 	}
 
 	fmt.Printf("CopyContents: %s -> %s\n", srcPaths, *dst)

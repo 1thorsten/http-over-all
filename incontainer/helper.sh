@@ -377,7 +377,7 @@ function handle_log() {
   if [ -n "$LOG" ]; then
     SED_PATTERN="s|#LOG|${LOG%}|;"
 
-    echo "handle_log -> sed -i ${SED_PATTERN} ${TEMP_FILE}"
+    echo "handle_log -> sed -i '${SED_PATTERN}' ${TEMP_FILE}"
     sed -i "${SED_PATTERN}" "${TEMP_FILE}"
   else
     echo "handle_log -> use log directive from base"
@@ -448,6 +448,8 @@ function create_nginx_location() {
     echo "${DAV_METHODS_PATTERN}"
     SED_PATTERN="${SED_PATTERN} s|#DAV_METHODS|${DAV_METHODS_PATTERN}|;"
   fi
+
+  echo "sed '${SED_PATTERN}' ${TEMPLATE} > ${TEMP_FILE}"
   sed "${SED_PATTERN}" "${TEMPLATE}" >"${TEMP_FILE}"
 
   handle_log "${TEMP_FILE}" "${BASE_VAR}_${TYPE}_LOG_ACCESS" "${BASE_VAR}_${TYPE}_LOG_ERROR"

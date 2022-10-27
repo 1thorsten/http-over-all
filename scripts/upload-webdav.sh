@@ -34,9 +34,9 @@ function create_webdav_directory {
 function upload_files {
     local DIRNAME=$1
     local DIR_PATH=$2
-    local DAV_PATH="${BASE_DAV_PATH}/${DIRNAME}"
+    local DAV_PATH="${BASE_DAV_PATH%/}/${DIRNAME}"
 
-    create_webdav_directory "${DAV_PATH}/" "true"
+    create_webdav_directory "${DAV_PATH%/}/" "true"
 
     for file in $(ls -A "$DIR_PATH"); do
         if [ -f "${DIR_PATH}$file" ]; then

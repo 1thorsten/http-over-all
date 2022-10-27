@@ -40,6 +40,11 @@ server {
         autoindex on;
     }
 
+    location = /robots.txt {
+       add_header Content-Type text/plain;
+       return 200 "User-agent: *\nDisallow: /\n";
+    }
+
     # stop finder's garbage
     location ~ \.(_.*|DS_Store|Spotlight-V100|TemporaryItems|Trashes|hidden|localized)$ {
         access_log  off;

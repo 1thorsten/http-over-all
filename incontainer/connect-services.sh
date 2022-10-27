@@ -537,6 +537,7 @@ function start_http_server() {
   fi
 
   echo "service ${PHP7_SERVICE} start"
+  rm -rf /run/php
   service "${PHP7_SERVICE}" "start"
 
   nginx -v
