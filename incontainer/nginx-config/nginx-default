@@ -74,6 +74,21 @@ server {
         return	200	$real_remote_addr;
     }
 
+    location /func/show-headers {
+        set_by_lua_block $request_headers{
+          local h = ngx.req.get_headers()
+          local request_headers_all = ""
+          for k, v in pairs(h) do
+            local rowtext = ""
+            rowtext = string.format("%s: %s\n", k, v)
+            request_headers_all = request_headers_all .. rowtext
+          end
+          return request_headers_all
+        }
+
+        return 200 $request_headers;
+    }
+
     # return base64 encoded encrypted message (key ip address and crypt-key)
     location /func/encrypt-msg {
         default_type	text/plain;

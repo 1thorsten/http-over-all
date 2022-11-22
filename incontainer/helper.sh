@@ -360,7 +360,7 @@ function process_permitted_resources() {
   done <"$PERMISSION_FILE"
 }
 
-# overwrite log directive (default is configuration from nginx.conf )
+# overwrite log directive (default is configuration from nginx.conf)
 function handle_log() {
   local TEMP_FILE="${1}"
   local LOG_ACCESS="$(var_exp "${2}")"

@@ -253,14 +253,6 @@ Generate your own CRYPT_KEY:
 docker run --rm php:cli-alpine php -r 'echo "CRYPT_KEY:".base64_encode(openssl_random_pseudo_bytes(32))."\n";'
 ```
 # <a name="additions"></a>Additions
-## func/remote-ip
-
-Show ip address from the requestor.
-Sometimes you need to know your real internal ip address (e.g. if you are in a container with its own virtual network)
-
-```bash
-curl http://[http-over-all:8338]/func/remote-ip
-```
 ## func/encrypt-msg
 encrypt the given message depending on the requesting host.
 Only the requesting host is able to decrypt the encrypted message.
@@ -288,6 +280,7 @@ curl -X POST -H "Content-Type: text/plain" --data "this is the message" 'http://
 ```
 
 ## func/decrypt-msg
+
 decrypt the given message.
 Only the requesting host is able to decrypt the encrypted message.
 
@@ -295,4 +288,21 @@ Only the requesting host is able to decrypt the encrypted message.
 curl 'http://[http-over-all:8338]/func/decrypt-msg?m=encryptedMessage'
 curl -X POST -H "Content-Type: text/plain" --data 'encryptedMessage' 'http://[http-over-all:8338]/func/decrypt-msg'
 
+```
+
+## func/remote-ip
+
+Show ip address from the requestor.
+Sometimes you need to know your real internal ip address (e.g. if you are in a container with its own virtual network)
+
+```bash
+curl http://[http-over-all:8338]/func/remote-ip
+```
+
+## func/show-headers
+
+Show all headers from the requestor request.
+
+```bash
+curl http://[http-over-all:8338]/func/show-headers
 ```

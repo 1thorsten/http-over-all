@@ -4,7 +4,6 @@ COPY tools/doclig /doclig
 WORKDIR /doclig
 RUN set +x && \
     apk add --no-cache upx && \
-    go get -u all && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o doclig ./src && \
     time upx --brute doclig && \
     set x
@@ -49,7 +48,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.1.17-04"
+ARG RELEASE="1.1.17-05"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
