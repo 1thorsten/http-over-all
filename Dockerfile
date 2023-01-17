@@ -32,7 +32,7 @@ RUN set -x && \
     apt-get install -y --no-install-recommends ${APT_SYSTEM} ${APT_HTTP} ${APT_PHP} ${APT_SERVICES} ${APT_TOOLS} ${APT_ETC} && \
     rm -f /var/www/html/index.nginx-debian.html ; rm -f /etc/nginx/mime.types && \
     # debian cleanup \
-    apt-get autoremove -y && \
+    #apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* ; rm -f /var/lib/dpkg/*-old ; rm -rf /usr/share/doc && \
     echo "OS part successfully terminated" && \
     set +x
@@ -48,7 +48,7 @@ ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.1.17-05"
+ARG RELEASE="1.1.17-07"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
