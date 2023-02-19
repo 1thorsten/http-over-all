@@ -170,8 +170,8 @@ func CopyContents(image *string, srcPaths []string, dst *string, outFormat *stri
 	}
 
 	defer timeTrack(time.Now(), "Stop container", time.Millisecond)
-	timeout := 2 * time.Second
-	if err := cli.ContainerStop(ctx, resp.ID, &timeout); err == nil {
+	timeoutInSeconds := 2
+	if err := cli.ContainerStop(ctx, resp.ID, container.StopOptions{Timeout: &timeoutInSeconds}); err == nil {
 		err := cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
 		if err != nil {
 			return
