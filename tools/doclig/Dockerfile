@@ -74,5 +74,4 @@ RUN set -x && \
 ADD tools/doclig/bin/doclig_lnx /usr/local/bin/doclig
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "/scripts/healthcheck.sh" ]
-USER $USER
 ENTRYPOINT sudo -E /scripts/http-over-all.sh
