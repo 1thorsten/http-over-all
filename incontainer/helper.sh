@@ -72,17 +72,23 @@ function initialize() {
   cp /scripts/nginx-config/php/fpm/pool.d/www.conf "${PHP7_ETC}/fpm/pool.d/www.conf"
 
   if [ "$TINY_INSTANCE" = "true" ]; then
-    echo "configure for tiny instance"
+    if [ -z "$CONNECTED_URLS" ]; then
+      echo "configure for tiny instance (w/o CONNECTED_URLS) -> 1 process (pm.max_children, worker_processes)"
+      PROCESS_COUNT=1
+    else
+      echo "configure for tiny instance (with CONNECTED_URLS) -> 2 processes (pm.max_children, worker_processes)"
+      PROCESS_COUNT=2
+    fi
     # fpm
     # cat /etc/php/7.4/fpm/pool.d/www.conf | grep "^pm"
     sed -i "s|^pm =.*$|pm = static|g" "${PHP7_ETC}/fpm/pool.d/www.conf"
     # for pm = static
-    sed -i "s|^pm.max_children.*$|pm.max_children = 1|g" "${PHP7_ETC}/fpm/pool.d/www.conf"
+    sed -i "s|^pm.max_children.*$|pm.max_children = ${PROCESS_COUNT}|g" "${PHP7_ETC}/fpm/pool.d/www.conf"
     # php
     sed -i "s|^output_buffering.*$|output_buffering = Off|g" "${PHP7_ETC}/fpm/php.ini"
     sed -i "s|^memory_limit.*$|memory_limit = 32M|g" "${PHP7_ETC}/fpm/php.ini"
     # nginx.conf
-    sed -i "s|worker_processes.*$|worker_processes 1;|g" "/etc/nginx/nginx.conf"
+    sed -i "s|worker_processes.*$|worker_processes ${PROCESS_COUNT};|g" "/etc/nginx/nginx.conf"
     sed -i "s|worker_connections.*$|worker_connections 25;|g" "/etc/nginx/nginx.conf"
   fi
 
@@ -113,6 +119,9 @@ function initialize() {
   fi
   echo "sed -i \"s|'__FORCE_UPDATE_LOCK__'|${FORCE_UPDATE_LOCK}|g\" /scripts/php/include/globals.php"
   sed -i "s|'__FORCE_UPDATE_LOCK__'|${FORCE_UPDATE_LOCK}|g" "/scripts/php/include/globals.php"
+
+  echo "sed -i \"s|__CONNECTED_URLS__|${CONNECTED_URLS}|g\" /scripts/php/include/globals.php"
+  sed -i "s|__CONNECTED_URLS__|${CONNECTED_URLS}|g" "/scripts/php/include/globals.php"
 
   echo "adjust davfs2 (/etc/davfs2/davfs2.conf)"
   {

@@ -207,14 +207,15 @@ Options for all resources
 
 ## Common options
 
-| ENV-Variable          | Description                                                                | required |
-|-----------------------|----------------------------------------------------------------------------|----------|
-| CRYPT_KEY             | key for encrypting and decrypting                                          | x        |
-| PERIODIC_JOB_INTERVAL | interval for processing periodic jobs (default: 5m). Infinity = inf        | -        |
-| PROXY_MAX_SIZE        | maximum size of the proxy cache (default: 10g)                             | -        |
-| PROXY_INACTIVE        | data that are not accessed during the time get removed (default: 1d)       | -        |
-| TINY_INSTANCE         | configure for low requirements and low memory consumption (default: false) | -        |
-| FORCE_UPDATE_LOCK     | timeout in seconds for repetitive call (default: 16)                       | -        |
+| ENV-Variable          | Description                                                                                                                                                                            | required |
+|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| CONNECTED_URLS        | use in connected configuration, force-update via HTTP calls the URLs in parallel (e.g. https://ipaddres-other-nodeX:4334/force-update, https://ipaddres-other-nodeY:4334/force-update) | -        |
+| CRYPT_KEY             | key for encrypting and decrypting                                                                                                                                                      | x        |
+| PERIODIC_JOB_INTERVAL | interval for processing periodic jobs (default: 5m). Infinity = inf                                                                                                                    | -        |
+| PROXY_MAX_SIZE        | maximum size of the proxy cache (default: 10g)                                                                                                                                         | -        |
+| PROXY_INACTIVE        | data that are not accessed during the time get removed (default: 1d)                                                                                                                   | -        |
+| TINY_INSTANCE         | configure for low requirements and low memory consumption (default: false)                                                                                                             | -        |
+| FORCE_UPDATE_LOCK     | timeout in seconds for repetitive call (default: 16)                                                                                                                                   | -        |
 # <a name="special-functions"></a>Special functions
 ## periodic jobs
 ENV: PERIODIC_JOB_INTERVAL
