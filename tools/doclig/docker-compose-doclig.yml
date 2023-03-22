@@ -1,0 +1,43 @@
+version: '2.4'
+
+services:
+  build-with-tools:
+    image: 1thorsten/http-over-all:doclig
+    build:
+      context: ../..
+      dockerfile: tools/doclig/Dockerfile
+
+  hoa-doclig:
+    container_name: hoa-doclig
+    image: 1thorsten/http-over-all:doclig
+    restart: unless-stopped
+    labels:
+      # value (false,all,admin)
+      - docon.v1={"console":"all","control":"all"}
+    env_file:
+      - ../../example-doclig.env
+    ports:
+      # http/1.1
+      - "8338:80"
+      #- "7227:3000"
+      # http/2 ssl
+      #- "4334:443"
+    cap_add:
+      # necessary for SSH and SMB
+      - SYS_ADMIN
+      # necessary for SMB
+      - DAC_READ_SEARCH
+    devices:
+      - "/dev/fuse:/dev/fuse"
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - docker-data:/remote/docker
+      - git-repos:/remote/git
+      - local-data:/local-data
+      - nginx-cache:/nginx-cache
+volumes:
+  docker-data:
+  git-repos:
+  local-data:
+  nginx-cache:

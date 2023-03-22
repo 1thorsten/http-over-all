@@ -9,10 +9,16 @@ build:
 format:
 	gofmt -w -d -s src/*.go
 
-docker-build:
+doclig-build:
 	mkdir -p bin
 	GOOS=linux GOARCH=amd64 /usr/local/opt/go/libexec/bin/go build -ldflags="-s -w" -o bin/doclig_lnx ./src
-	docker-compose -f ../../docker-compose.yml build build-with-tools
+	docker-compose -f docker-compose-doclig.yml build build-with-tools
+
+doclig-up:
+	docker-compose -f docker-compose-doclig.yml up hoa-doclig
+
+doclig-down:
+	docker-compose -f docker-compose-doclig.yml down
 
 docker-compose-build:
 	docker-compose -f ../../docker-compose.yml build --no-cache build-all
