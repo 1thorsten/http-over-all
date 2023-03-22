@@ -1,16 +1,6 @@
 version: '2.4'
 
 services:
-  build-with-tools:
-    image: 1thorsten/http-over-all
-    build:
-      dockerfile: tools/doclig/Dockerfile
-
-  build-all:
-    image: 1thorsten/http-over-all
-    build:
-      dockerfile: Dockerfile
-
   http-over-all:
     container_name: http-over-all
     image: 1thorsten/http-over-all
