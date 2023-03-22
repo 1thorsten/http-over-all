@@ -99,5 +99,11 @@ func PullImage(image *string, username *string, password *string) *PulledImage {
 		}
 	}
 
+	inspect, _, err := cli.ImageInspectWithRaw(ctx, *image)
+	if err == nil {
+		fmt.Printf("Created: %s\n", inspect.Created)
+		fmt.Printf("Docker-Version: %s\n", inspect.DockerVersion)
+	}
+
 	return &resp
 }
