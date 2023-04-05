@@ -9,7 +9,6 @@ import (
 
 // PruneImages prune dangling images (image which are not referenced anymore)
 func PruneImages() {
-	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
@@ -18,6 +17,7 @@ func PruneImages() {
 	fmt.Println("Prune dangling images")
 	pruneFilters := filters.NewArgs()
 	pruneFilters.Add("dangling", "true")
+	ctx := context.Background()
 	pruneReport, _ := cli.ImagesPrune(ctx, pruneFilters)
 	fmt.Printf("Space Reclaimed: %d bytes", pruneReport.SpaceReclaimed)
 }

@@ -22,7 +22,7 @@ class UnsafeCrypto
     }
 
     /**
-     * Encrypts (but does not authenticate) a message
+     * Encrypt (but does not authenticate) a message
      *
      * @param string $message - plaintext message
      * @param boolean $encode - set to TRUE to return a base64-encoded
@@ -34,12 +34,12 @@ class UnsafeCrypto
     }
 
     /**
-     * Encrypts (but does not authenticate) a message
+     * Encrypt (but does not authenticate) a message
      *
      * @param string $passphrase - passphrase
      * @param string $cipher_algo - cipher_algo (http://micmap.org/php-by-example/de/function/openssl_get_cipher_methods)
      * @param string $message - plaintext message
-     * @param boolean $encode - set to TRUE to return a base64-encoded
+     * @param boolean $encode - set to TRUE to return a base64-encoded string
      * @return string (raw binary)
      */
     public static function encrypt_ext(string $passphrase, string $cipher_algo, string $message, bool $encode = false): string
@@ -64,10 +64,10 @@ class UnsafeCrypto
     }
 
     /**
-     * Decrypts (but does not verify) a message
+     * Decrypt (but does not verify) a message
      *
      * @param string $message - ciphertext message
-     * @param boolean $encoded - are we expecting an encoded string?
+     * @param boolean $encoded - are we expecting an base64-encoded string?
      * @return string
      * @throws Exception
      */
@@ -77,12 +77,12 @@ class UnsafeCrypto
     }
 
     /**
-     * Decrypts (but does not verify) a message
+     * Decrypt (but does not verify) a message
      *
      * @param string $passphrase - passphrase
      * @param string $cipher_algo - cipher_algo (http://micmap.org/php-by-example/de/function/openssl_get_cipher_methods)
      * @param string $message - ciphertext message
-     * @param boolean $encoded - are we expecting an encoded string?
+     * @param boolean $encoded - are we expecting an base64-encoded string?
      * @return string
      * @throws Exception
      */

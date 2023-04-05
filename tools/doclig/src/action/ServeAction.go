@@ -1,6 +1,7 @@
 package action
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os/exec"
@@ -24,11 +25,14 @@ func funcForceUpdate(w http.ResponseWriter, r *http.Request) {
 	output, err := runCommand()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("500 - Could run /force-update -> " + err.Error()))
+		_, _ = w.Write([]byte("500 - Could not run /force-update -> " + err.Error()))
 		return
 	}
 
-	w.Write(output)
+	if _, err := w.Write(output); err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 	log.Printf("- %v - %v (%s)\n", r.RemoteAddr, r.RequestURI, time.Since(start))
 }
 

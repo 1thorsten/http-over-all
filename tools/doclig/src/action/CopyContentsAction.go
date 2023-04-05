@@ -124,13 +124,12 @@ func copyTar(dst string, path string, r io.Reader) (*string, error) {
 
 // CopyContents copy the specified content (paths) from image to a specified destination
 func CopyContents(image *string, srcPaths []string, dst *string, outFormat *string) {
-	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
 
-	rand.Seed(time.Now().UnixNano())
+	ctx := context.Background()
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: *image,
 	}, nil, nil, nil, fmt.Sprintf("copy-contents-%s", randSeq(10)))
@@ -157,9 +156,12 @@ func CopyContents(image *string, srcPaths []string, dst *string, outFormat *stri
 
 		start := time.Now()
 		if *outFormat != "tar" {
-			untar(*dst, reader)
+			err := untar(*dst, reader)
+			if err != nil {
+				fmt.Println(err.Error())
+				break
+			}
 			timeTrack(start, fmt.Sprintf("Untar [%s]", trimmedPath), time.Microsecond)
-
 		} else {
 			if target, _ := copyTar(*dst, trimmedPath, reader); target != nil {
 				timeTrack(start, fmt.Sprintf("Copy [%s] to %s", trimmedPath, *target), time.Microsecond)

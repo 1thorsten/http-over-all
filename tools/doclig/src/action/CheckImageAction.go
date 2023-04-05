@@ -8,12 +8,11 @@ import (
 
 // CheckImage check whether the specified image exists or not
 func CheckImage(image *string) {
-	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
-
+	ctx := context.Background()
 	inspect, _, err := cli.ImageInspectWithRaw(ctx, *image)
 	if err != nil {
 		panic(err)

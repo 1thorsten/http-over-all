@@ -19,7 +19,6 @@ type PulledImage struct {
 
 // PullImage pull the specified image from the registry
 func PullImage(image *string, username *string, password *string) *PulledImage {
-	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
@@ -43,6 +42,7 @@ func PullImage(image *string, username *string, password *string) *PulledImage {
 		auth = fmt.Sprintf("(User:%s)", *username)
 	}
 
+	ctx := context.Background()
 	events, err := cli.ImagePull(ctx, *image, types.ImagePullOptions{})
 
 	if err != nil {
@@ -50,7 +50,9 @@ func PullImage(image *string, username *string, password *string) *PulledImage {
 	}
 
 	fmt.Printf("PulledImage%s: %s\n", auth, *image)
-	defer events.Close()
+	defer func(events io.ReadCloser) {
+		_ = events.Close()
+	}(events)
 
 	d := json.NewDecoder(events)
 	type Event struct {
