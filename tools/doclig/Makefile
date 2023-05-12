@@ -21,7 +21,7 @@ doclig-down:
 	docker-compose -f docker-compose-doclig.yml down
 
 docker-compose-build:
-	docker-compose -f ../../docker-compose.yml build --no-cache build-all
+	docker-compose -f ../../docker-compose.yml build
 
 docker-compose-up:
 	docker-compose -f ../../docker-compose.yml up http-over-all
