@@ -128,7 +128,7 @@ server {
     # pass PHP scripts to FastCGI server
     location ~* /php/..*.php$ {
         alias /scripts;
-        fastcgi_pass unix:__PHP7_SOCK__;
+        fastcgi_pass unix:__PHP_SOCK__;
         
         fastcgi_index index.php;
         fastcgi_buffering off;

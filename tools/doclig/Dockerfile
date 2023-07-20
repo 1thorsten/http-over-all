@@ -1,5 +1,6 @@
-FROM debian:bullseye-slim
-ENV PHP_VERSION=7.4
+FROM debian:bookworm-slim
+ENV PHP_VERSION=8.2
+
 ARG USER=hoax
 
 LABEL maintainer="Thorsten Winkler"
@@ -12,11 +13,11 @@ ENV TZ=Europe/Berlin
 
 RUN set -x && \
     apt-get update -y && \
-    apt-get upgrade -y && \
+    apt-get dist-upgrade -y && \
     APT_SYSTEM="sudo tzdata ca-certificates" && \
     APT_HTTP="nginx nginx-extras" && \
     APT_PHP="php-curl php-fpm php-mbstring" && \
-    APT_SERVICES="openssl sshfs nfs-common davfs2 cifs-utils git" && \
+    APT_SERVICES="sshfs nfs-common davfs2 cifs-utils git" && \
     APT_TOOLS="iputils-ping curl rsync" && \
     APT_ETC="nano" && \
     apt-get install -y --no-install-recommends ${APT_SYSTEM} ${APT_HTTP} ${APT_PHP} ${APT_SERVICES} ${APT_TOOLS} ${APT_ETC} && \
@@ -30,13 +31,13 @@ RUN set -x && \
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
-ENV PHP7_ETC=/etc/php/$PHP_VERSION
-ENV PHP7_SERVICE=php${PHP_VERSION}-fpm
-ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
+ENV PHP_ETC=/etc/php/$PHP_VERSION
+ENV PHP_SERVICE=php${PHP_VERSION}-fpm
+ENV PHP_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.1-doclig"
+ARG RELEASE="1.2-doclig"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
@@ -74,4 +75,4 @@ RUN set -x && \
 ADD tools/doclig/bin/doclig_lnx /usr/local/bin/doclig
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "/scripts/healthcheck.sh" ]
-ENTRYPOINT sudo -E /scripts/http-over-all.sh
+ENTRYPOINT ["/scripts/docker-run-wrapper.sh"]

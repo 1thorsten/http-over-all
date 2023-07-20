@@ -31,7 +31,7 @@ if (file_exists("/var/run/force-update.last")) {
 
 $curlHandles = initForceUpdateOnConnectedServers($remote_addr);
 
-if ($callForceUpdate) {
+if ($callForceUpdate === true) {
     $cmdOutput = shell_exec('sudo /scripts/force-update.sh 2>&1');
 }
 

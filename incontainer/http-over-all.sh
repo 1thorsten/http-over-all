@@ -60,7 +60,5 @@ source /etc/os-release
 echo "$(date +'%T'): ready -> ${PRETTY_NAME}"
 echo "$(date +'%T'): http-over-all -> RELEASE: ${RELEASE}"
 
-trap "term_handler" EXIT
-
 echo
 periodic_jobs
