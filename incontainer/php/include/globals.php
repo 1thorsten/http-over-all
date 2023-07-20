@@ -6,4 +6,5 @@
 const KEY = '__CRYPT_KEY__';
 const FORCE_UPDATE_LOCK = '__FORCE_UPDATE_LOCK__';
 const CONNECTED_URLS = '__CONNECTED_URLS__';
+const PHP_LOG_ENABLED = '__PHP_LOG_ENABLED__';
 

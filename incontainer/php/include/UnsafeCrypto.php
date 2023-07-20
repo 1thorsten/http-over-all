@@ -3,7 +3,7 @@
 # rm /scripts/php/include/UnsafeCrypto.php ; nano /scripts/php/include/UnsafeCrypto.php
 # use with php interpreter:
 # php -r "include 'UnsafeCrypto.php'; echo UnsafeCrypto::encrypt('lala', true);" ; echo
-# php -r "include 'UnsafeCrypto.php'; echo UnsafeCrypto::decrypt('tsdtPHQdtFbxdjCxaP3HclvPLxc', true);" ; echo
+# php -r "include 'UnsafeCrypto.php'; echo UnsafeCrypto::decrypt('IsoGWzW7Tem-2j-cVTIIc1BRL1g', true);" ; echo
 include_once "globals.php";
 
 class UnsafeCrypto
@@ -44,23 +44,26 @@ class UnsafeCrypto
      */
     public static function encrypt_ext(string $passphrase, string $cipher_algo, string $message, bool $encode = false): string
     {
-        $nonceSize = openssl_cipher_iv_length($cipher_algo);
-        $nonce = openssl_random_pseudo_bytes($nonceSize);
+        # docker run --rm php:8.2.0-cli-alpine php -r '$c="BF-OFB";$nonceSize=openssl_cipher_iv_length($c);$nonce=openssl_random_pseudo_bytes($nonceSize);$ciphertext=openssl_encrypt("123",$c,"ps7UDnEXq1cmrMzCvNYE5okXK6B4HlckOQWFQCbJ/Nk=",OPENSSL_RAW_DATA,$nonce); echo "nonce:".base64_encode($nonce)."\n"; echo "cipher:".base64_encode($ciphertext)."\n"; echo "all: ".base64_encode($nonce . $ciphertext)."\n";'
+        # docker run --rm php:8.2.0-cli-alpine php -r 'print_r(openssl_get_cipher_methods());'
+        # docker run --rm php:7.4.0-cli-alpine php -r 'echo "L:".openssl_cipher_iv_length("bf-ofb")."\n";'
+        # docker run --rm php:cli-alpine php -r 'echo "CRYPT_KEY:".base64_encode(openssl_random_pseudo_bytes(32))."\n";'
 
+        $iv_length = openssl_cipher_iv_length($cipher_algo);
+        $iv = openssl_random_pseudo_bytes($iv_length);
         $ciphertext = openssl_encrypt(
             $message,
             $cipher_algo,
             $passphrase,
             OPENSSL_RAW_DATA,
-            $nonce
-        );
+            $iv);
 
         // Now let's pack the IV and the ciphertext together
         // Naively, we can just concatenate
         if ($encode) {
-            return self::base64_urlencode($nonce . $ciphertext);
+            return self::base64_urlencode($iv . $ciphertext);
         }
-        return $nonce . $ciphertext;
+        return $iv . $ciphertext;
     }
 
     /**
@@ -95,16 +98,18 @@ class UnsafeCrypto
             }
         }
 
-        $nonceSize = openssl_cipher_iv_length($cipher_algo);
-        $nonce = mb_substr($message, 0, $nonceSize, '8bit');
-        $ciphertext = mb_substr($message, $nonceSize, null, '8bit');
+        $iv_length = openssl_cipher_iv_length($cipher_algo);
+        # php -r 'echo "iv: ".mb_substr(base64_decode(str_replace(["-","_"], ["+","/"], "FPkwTGnJ5stmrcHbbj4e6zwoVtuff-wL4g-c0mIN00h6Hgx6nMGko1BwOYP_2JXC"), true), 0, 8, "8bit")."\n";'
+        $iv = mb_substr($message, 0, $iv_length, '8bit');
+        # php -r 'echo "ciphertext: ".mb_substr(base64_decode(str_replace(["-","_"], ["+","/"], "FPkwTGnJ5stmrcHbbj4e6zwoVtuff-wL4g-c0mIN00h6Hgx6nMGko1BwOYP_2JXC"), true), 8, null, "8bit")."\n";'
+        $ciphertext = mb_substr($message, $iv_length, null, '8bit');
 
         return openssl_decrypt(
             $ciphertext,
             $cipher_algo,
             $passphrase,
             OPENSSL_RAW_DATA,
-            $nonce
+            $iv
         );
     }
 }

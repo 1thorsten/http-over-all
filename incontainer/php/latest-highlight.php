@@ -5,7 +5,7 @@
 # tail -f /tmp/php.log
 
 # https://cdnjs.com/libraries/prism
-
+include_once "globals.php";
 include_once "Log.php";
 include "common_functions.php";
 include "UptoDate.php";
@@ -27,7 +27,7 @@ if (strstr($uptoDate->lastHttpStatus,'301') === '301 Moved Permanently') {
     exit();
 }
 
-$log = false;
+$log = PHP_LOG_ENABLED;
 $debugOut = '';
 if (isset($_SERVER['HTTP_X_DEBUG_OUT'])) {
     $log = true;

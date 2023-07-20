@@ -538,9 +538,9 @@ function start_http_server() {
     sed -i "s|#proxy_cache_path|proxy_cache_path|;" "/etc/nginx/nginx.conf"
   fi
 
-  echo "service ${PHP7_SERVICE} start"
+  echo "service ${PHP_SERVICE} start"
   rm -rf /run/php
-  service "${PHP7_SERVICE}" "start"
+  service "${PHP_SERVICE}" "start"
 
   nginx -v
 

@@ -1,4 +1,5 @@
 <?php
+include_once "globals.php";
 include_once "Log.php";
 
 # rm /scripts/php/include/UptoDate.php ; nano /scripts/php/include/UptoDate.php
@@ -15,6 +16,7 @@ class UptoDate
     const INTERNAL = "http://127.0.0.1/internal";
     const CACHED_INTERNAL = "http://127.0.0.1/cached_internal";
     const CACHE_PATH = "/nginx-cache/";
+    private $log = PHP_LOG_ENABLED;
     public string $path;
     public ?string $lastHttpStatus = null;
     public ?string $cacheStatus = null;
@@ -37,9 +39,10 @@ class UptoDate
         # triggers also a GET request (/internal) to save the resource in the proxy cache
         $context = stream_context_create(self::OPTS_HTTP_HEAD);
         $h = get_headers($url, 1, $context);
-        #    $debug = var_export($h, true);
-        #    LOG::write(get_called_class(),"header: $debug");
-
+        if ($this->log) {
+            $debug = var_export($h, true);
+            LOG::write(get_called_class(),"header: $debug");
+        }
         if ($h) {
             $this->resourceHeaders = $h;
             if (strstr($h[0], '200') === "200 OK") {
@@ -113,9 +116,10 @@ class UptoDate
         $this->getDirContents(self::CACHE_PATH);
         $len = strlen($this->path);
 
-        #$debug = var_export($this->cachedFiles, true);
-        #LOG::write(get_called_class(),"cleanUpCache: $debug");
-
+        if ($this->log) {
+            $debug = var_export($this->cachedFiles, true);
+            LOG::write(get_called_class(),"cleanUpCache: $debug");
+        }
         $found_files = false;
 
         foreach ($this->cachedFiles as $file) {

@@ -1,8 +1,9 @@
 <?php
 
 # rm /scripts/php/include/common_functions.php ; nano /scripts/php/include/common_functions.php
-
+include_once "globals.php";
 include_once "Log.php";
+
 function denyAccessFromExternal(string $callingScript) {
     $remoteAddress=$_SERVER['REMOTE_ADDR'];
 
@@ -20,11 +21,15 @@ function accessFromBrowser(): bool {
     return true;
 }
 
-function forwardRequest(string $url): array {
+function forwardRequest(string $encoded_url): array {
     // http://php.net/manual/de/function.parse-url.php
-    $parsedUrl = parse_url($url);
+    $parsedUrl = parse_url($encoded_url);
     $host = $parsedUrl["host"];
     $path = $parsedUrl["path"];
+
+    if (PHP_LOG_ENABLED) {
+        LOG::write("forwardRequest","url: $encoded_url | host: $host | path: $path");
+    }
 
     $sock = fsockopen($host, 80, $errno, $errstr, 30);
     if (!$sock) die("$errstr ($errno)\n");
@@ -40,7 +45,7 @@ function forwardRequest(string $url): array {
     // it its not real important because it causes only a delay in the communication between SDS and the resource,
     // so it happend only once (proxy cache)
     // the content to the client will be compressed with the help of the underlying nginx
-    
+
     // if(isset($_SERVER['HTTP_ACCEPT_ENCODING'])) {
     //    fwrite($sock, "Accept-Encoding: {$_SERVER['HTTP_ACCEPT_ENCODING']}\r\n");        
     // }
@@ -52,7 +57,10 @@ function forwardRequest(string $url): array {
     while ($str = trim(fgets($sock, 4096))) {
         // LOG::write("common_functions.php","header -> $str");
         // ensure to return the correct HTTP code (otherwise it returns always HTTP/1.1 200 OK)
-        if (strncmp($str, "HTTP/", 5) === 0) {              
+        if (PHP_LOG_ENABLED) {
+            LOG::write("forwardRequest","header: $str");
+        }
+        if (strncmp($str, "HTTP/", 5) === 0) {
             header($str);
             continue;
         }
@@ -79,11 +87,18 @@ function forwardRequest(string $url): array {
     while (!feof($sock)) {
         echo fgets($sock, 4096);
     }
-    // $info = stream_get_meta_data($sock);
+
+//    $info = null;
+//    if (PHP_LOG_ENABLED) {
+//        $info = stream_get_meta_data($sock);
+//    }
+
     fclose($sock);
 
-    // $debug = var_export($info, true);
-    // LOG::write("common_functions.php","all bytes sent: $debug");
+//    if (PHP_LOG_ENABLED) {
+//        $debug = var_export($info, true);
+//        LOG::write("forwardRequest","all bytes sent: $debug");
+//    }
     return array('Content-Length' => $content_length);
 }
 

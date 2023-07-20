@@ -8,8 +8,9 @@ RUN set +x && \
     time upx --brute doclig && \
     set x
 
-FROM debian:bullseye-slim
-ENV PHP_VERSION=7.4
+FROM debian:bookworm-slim
+ENV PHP_VERSION=8.2
+
 ARG USER=hoax
 
 LABEL maintainer="Thorsten Winkler"
@@ -22,7 +23,7 @@ ENV TZ=Europe/Berlin
 
 RUN set -x && \
     apt-get update -y && \
-    apt-get upgrade -y && \
+    apt-get dist-upgrade -y && \
     APT_SYSTEM="sudo tzdata ca-certificates" && \
     APT_HTTP="nginx nginx-extras" && \
     APT_PHP="php-curl php-fpm php-mbstring" && \
@@ -42,13 +43,13 @@ COPY --from=doclig-build /doclig/doclig /usr/local/bin
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
-ENV PHP7_ETC=/etc/php/$PHP_VERSION
-ENV PHP7_SERVICE=php${PHP_VERSION}-fpm
-ENV PHP7_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
+ENV PHP_ETC=/etc/php/$PHP_VERSION
+ENV PHP_SERVICE=php${PHP_VERSION}-fpm
+ENV PHP_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.1.18-05"
+ARG RELEASE="1.2.0"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
@@ -73,6 +74,7 @@ RUN set -x && \
     useradd -d /home/$USER -u 1000 -g 1000 -m -s /bin/bash $USER && \
     echo "$USER ALL=(ALL) NOPASSWD:SETENV: /scripts/http-over-all.sh" > /etc/sudoers.d/$USER && \
     echo "$USER ALL=(ALL) NOPASSWD: /scripts/force-update.sh" >> /etc/sudoers.d/$USER && \
+    echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/umount" >> /etc/sudoers.d/$USER && \
     echo "www-data ALL=(ALL) NOPASSWD: /scripts/force-update.sh" >> /etc/sudoers.d/www-data && \
     chmod 0440 /etc/sudoers.d/$USER && \
     chmod 0440 /etc/sudoers.d/www-data && \
@@ -84,4 +86,4 @@ RUN set -x && \
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "/scripts/healthcheck.sh" ]
 USER $USER
-ENTRYPOINT sudo -E /scripts/http-over-all.sh
+ENTRYPOINT ["/scripts/docker-run-wrapper.sh"]

@@ -42,17 +42,16 @@ $filename = $matches[2];
 
 if ($name != $filename) {
     echo "Error: expected filename mismatch -> $filename is not correct";
-    LOG::writeTime("decrypt.php",$remote_addr,"Error: expected filename mismatch -> $filename is not correct (expect $name)", $time_start);
+    LOG::writeTime("decrypt.php", $remote_addr, "Error: expected filename mismatch -> $filename is not correct (expect $name)", $time_start);
     exit;
 }
 
-$encodedName = rawurlencode($name);
-if ($encodedName != $name) {
-    $url = str_replace($name,$encodedName,$url);
-}
+$encoded_url = preg_replace_callback('#://([^/]+)/([^?]+)#', function ($match) {
+    return '://' . $match[1] . '/' . join('/', array_map('rawurlencode', explode('/', $match[2])));
+}, $url);
 
 # from common_functions.php
-$res = forwardRequest($url);
-$forwaredUrlPath = parse_url($url, PHP_URL_PATH);
+$res = forwardRequest($encoded_url);
+$forwaredUrlPath = parse_url($encoded_url, PHP_URL_PATH);
 
 LOG::writeTime("decrypt.php", $remote_addr, "processed $forwaredUrlPath | Length: {$res['Content-Length']} | Cache: $cacheStatus", $time_start);

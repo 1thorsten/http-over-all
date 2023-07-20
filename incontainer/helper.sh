@@ -45,6 +45,11 @@ function initialize() {
     rm -f /var/run/force-update.lock
   fi
 
+  if [ -e "/var/run/mount.davfs" ]; then
+    echo "rm -rf /var/run/mount.davfs"
+    rm -rf /var/run/mount.davfs
+  fi
+
   echo "create ${NGINX_CONF}"
   rm -rf "${NGINX_CONF}"
   mkdir -p "${NGINX_CONF}"
@@ -60,16 +65,23 @@ function initialize() {
 
   configure_nginx_proxy "/etc/nginx/nginx.conf"
 
-  echo "cp /scripts/nginx-config/php/php.ini ${PHP7_ETC}/fpm/php.ini"
-  mv -f "${PHP7_ETC}/fpm/php.ini" "${PHP7_ETC}/fpm/php.ini_orig"
-  cp "/scripts/nginx-config/php/php.ini" "${PHP7_ETC}/fpm/php.ini"
+  VERSION_CODENAME=$(< "/etc/os-release" grep "^VERSION_CODENAME" | awk -F '=' '{print $2}')
+  if [ "$VERSION_CODENAME" = "bookworm" ]; then
+    echo "cp /scripts/ext-config/debian-bookworm/openssl.cnf /etc/ssl/ ($VERSION_CODENAME)"
+    cp /scripts/ext-config/debian-bookworm/openssl.cnf /etc/ssl/
+    chmod 644 /etc/ssl/openssl.cnf
+  fi
 
-  echo "adjust date.timezone from ${PHP7_ETC}/fpm/php.ini -> $TZ"
-  sed -i "s|^date\.timezone.*$|date.timezone = \"$TZ\"|g" "${PHP7_ETC}/fpm/php.ini"
+  echo "cp /scripts/nginx-config/php/php${PHP_VERSION}.ini ${PHP_ETC}/fpm/php.ini"
+  mv -f "${PHP_ETC}/fpm/php.ini" "${PHP_ETC}/fpm/php.ini_orig"
+  cp "/scripts/nginx-config/php/php${PHP_VERSION}.ini" "${PHP_ETC}/fpm/php.ini"
 
-  echo "cp /scripts/nginx-config/php/fpm/pool.d/www.conf ${PHP7_ETC}/fpm/pool.d/www.conf"
-  mv -f "${PHP7_ETC}/fpm/pool.d/www.conf" "${PHP7_ETC}/fpm/pool.d/www.conf_orig"
-  cp /scripts/nginx-config/php/fpm/pool.d/www.conf "${PHP7_ETC}/fpm/pool.d/www.conf"
+  echo "adjust date.timezone from ${PHP_ETC}/fpm/php.ini -> $TZ"
+  sed -i "s|^date\.timezone.*$|date.timezone = \"$TZ\"|g" "${PHP_ETC}/fpm/php.ini"
+
+  echo "cp /scripts/nginx-config/php/fpm/pool.d/www${PHP_VERSION}.conf ${PHP_ETC}/fpm/pool.d/www.conf"
+  mv -f "${PHP_ETC}/fpm/pool.d/www.conf" "${PHP_ETC}/fpm/pool.d/www.conf_orig"
+  cp "/scripts/nginx-config/php/fpm/pool.d/www${PHP_VERSION}.conf" "${PHP_ETC}/fpm/pool.d/www.conf"
 
   if [ "$TINY_INSTANCE" = "true" ]; then
     if [ -z "$CONNECTED_URLS" ]; then
@@ -80,27 +92,30 @@ function initialize() {
       PROCESS_COUNT=2
     fi
     # fpm
-    # cat /etc/php/7.4/fpm/pool.d/www.conf | grep "^pm"
-    sed -i "s|^pm =.*$|pm = static|g" "${PHP7_ETC}/fpm/pool.d/www.conf"
+    sed -i "s|^pm =.*$|pm = static|g" "${PHP_ETC}/fpm/pool.d/www.conf"
     # for pm = static
-    sed -i "s|^pm.max_children.*$|pm.max_children = ${PROCESS_COUNT}|g" "${PHP7_ETC}/fpm/pool.d/www.conf"
+    sed -i "s|^pm.max_children.*$|pm.max_children = ${PROCESS_COUNT}|g" "${PHP_ETC}/fpm/pool.d/www.conf"
     # php
-    sed -i "s|^output_buffering.*$|output_buffering = Off|g" "${PHP7_ETC}/fpm/php.ini"
-    sed -i "s|^memory_limit.*$|memory_limit = 32M|g" "${PHP7_ETC}/fpm/php.ini"
+    sed -i "s|^output_buffering.*$|output_buffering = Off|g" "${PHP_ETC}/fpm/php.ini"
+    sed -i "s|^memory_limit.*$|memory_limit = 32M|g" "${PHP_ETC}/fpm/php.ini"
     # nginx.conf
     sed -i "s|worker_processes.*$|worker_processes ${PROCESS_COUNT};|g" "/etc/nginx/nginx.conf"
     sed -i "s|worker_connections.*$|worker_connections 25;|g" "/etc/nginx/nginx.conf"
   fi
 
-  echo "sed -i \"s|__PHP7_SOCK__|${PHP7_SOCK}|g\" /etc/nginx/sites-enabled/default"
-  sed -i "s|__PHP7_SOCK__|${PHP7_SOCK}|g" "/etc/nginx/sites-enabled/default"
+  # cat /etc/php/x.x/fpm/pool.d/www.conf | grep "^pm"
+  echo "sed -i \"s|__PHP_SOCK__|${PHP_SOCK}|g\" ${PHP_ETC}/fpm/pool.d/www.conf"
+  sed -i "s|__PHP_SOCK__|${PHP_SOCK}|g" "${PHP_ETC}/fpm/pool.d/www.conf"
+
+  echo "sed -i \"s|__PHP_SOCK__|${PHP_SOCK}|g\" /etc/nginx/sites-enabled/default"
+  sed -i "s|__PHP_SOCK__|${PHP_SOCK}|g" "/etc/nginx/sites-enabled/default"
 
   echo "sed -i \"s|__WEBDAV__|${WEBDAV}|g\" /etc/nginx/sites-enabled/default"
   sed -i "s|__WEBDAV__|${WEBDAV}|g" "/etc/nginx/sites-enabled/default"
 
-  local PHP_INCLUDE_PATH="$(grep "^include_path" "/scripts/nginx-config/php/php.ini")"
-  echo "adjust include_path from ${PHP7_ETC}/cli/php.ini -> $PHP_INCLUDE_PATH"
-  sed -i "s|^;include_path = \".:/.*$|${PHP_INCLUDE_PATH}|g" "${PHP7_ETC}/cli/php.ini"
+  local PHP_INCLUDE_PATH="$(grep "^include_path" "/scripts/nginx-config/php/php${PHP_VERSION}.ini")"
+  echo "adjust include_path from ${PHP_ETC}/cli/php.ini -> $PHP_INCLUDE_PATH"
+  sed -i "s|^;include_path = \".:/.*$|${PHP_INCLUDE_PATH}|g" "${PHP_ETC}/cli/php.ini"
 
   if [ -z "$CRYPT_KEY" ]; then
     echo "no CRYPT_KEY (env) is defined. A key is defined for correct use."
@@ -111,6 +126,15 @@ function initialize() {
 
   echo "sed -i \"s|__CRYPT_KEY__|obfuscated|g\" /scripts/php/include/globals.php"
   sed -i "s|__CRYPT_KEY__|${CRYPT_KEY}|g" "/scripts/php/include/globals.php"
+
+  # control logging
+  if [ -n "$PHP_LOG_ENABLED" ]; then
+    echo "sed -i \"s|'__PHP_LOG_ENABLED__'|${PHP_LOG_ENABLED}|g\" /scripts/php/include/globals.php"
+    sed -i "s|'__PHP_LOG_ENABLED__'|${PHP_LOG_ENABLED}|g" "/scripts/php/include/globals.php"
+  else
+     echo "sed -i \"s|'__PHP_LOG_ENABLED__'|false|g\" /scripts/php/include/globals.php"
+     sed -i "s|'__PHP_LOG_ENABLED__'|false|g" "/scripts/php/include/globals.php"
+  fi
 
   # handle timeout for force-update operations (default are 16 seconds)
   if [ -z "${FORCE_UPDATE_LOCK##*[!0-9]*}" ]; then
@@ -645,15 +669,3 @@ function socket_permission() {
   return 1
 }
 
-# SIGTERM-handler
-# https://blog.codeship.com/trapping-signals-in-docker-containers/
-function term_handler() {
-  echo "$(date +'%T'): stop http server and unmount all filesystems / EXIT signal detected"
-  for i in $(mount | awk '{print $3}' | grep "^/remote/"); do
-    echo "umount --force $i"
-    umount --force "$i"
-  done
-  service nginx stop
-  echo "$(date +'%T'): all terminated"
-  exit 143 # 128 + 15 -- SIGTERM
-}

@@ -3,7 +3,7 @@
 # rm /scripts/php/highlight.php ; nano /scripts/php/highlight.php
 # ./scripts/docker-exec.sh bash
 # tail -f /tmp/php.log
-
+include_once "globals.php";
 include_once "Log.php";
 include "common_functions.php";
 include "UptoDate.php";
@@ -16,7 +16,7 @@ $time_start = microtime(true);
 $uri = $_REQUEST['uri'];
 $remote_addr = $_REQUEST['remote_addr'];
 
-$log = false;
+$log = PHP_LOG_ENABLED;
 $debugOut = '';
 if (isset($_SERVER['HTTP_X_DEBUG_OUT'])) {
     $log = true;
