@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine as doclig-build
+FROM golang:1.21-alpine as doclig-build
 COPY tools/doclig /doclig
 
 WORKDIR /doclig
