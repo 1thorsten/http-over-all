@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"fmt"
 	"github.com/docker/distribution/context"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"io"
@@ -75,6 +74,9 @@ func untar(dst string, r io.Reader) error {
 					return err
 				}
 			}
+			if err := os.Chtimes(target, header.AccessTime, header.ModTime); err != nil {
+				fmt.Printf("Warn: change access and modification times failed: %s\n", target)
+			}
 
 		// if it's a file create it
 		case tar.TypeReg:
@@ -89,10 +91,13 @@ func untar(dst string, r io.Reader) error {
 				return err
 			}
 
-			// manually close here after each file operation; defering would cause each file close
+			// manually close here after each file operation; deferring would cause each file close
 			// to wait until all operations have completed.
 			if err := f.Close(); err != nil {
 				return err
+			}
+			if err := os.Chtimes(target, header.AccessTime, header.ModTime); err != nil {
+				fmt.Printf("Warn: change access and modification times failed: %s\n", target)
 			}
 			timeTrack(start, "file: "+target+" ("+strconv.FormatInt(header.Size/1024, 10)+"kb)", 100*time.Millisecond)
 		}
@@ -137,7 +142,7 @@ func CopyContents(image *string, srcPaths []string, dst *string, outFormat *stri
 		panic(err)
 	}
 
-	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		panic(err)
 	}
 
@@ -174,7 +179,7 @@ func CopyContents(image *string, srcPaths []string, dst *string, outFormat *stri
 	defer timeTrack(time.Now(), "Stop container", time.Millisecond)
 	timeoutInSeconds := 2
 	if err := cli.ContainerStop(ctx, resp.ID, container.StopOptions{Timeout: &timeoutInSeconds}); err == nil {
-		err := cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
+		err := cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{})
 		if err != nil {
 			return
 		}

@@ -13,6 +13,7 @@ var version string
 
 func main() {
 	version = strings.TrimSuffix(version, "\n")
+	version = strings.TrimSuffix(version, "\r") // windows
 	fmt.Printf("doclig version: %s (%s)\n", version, runtime.Version())
 
 	args := HandleArgs()
