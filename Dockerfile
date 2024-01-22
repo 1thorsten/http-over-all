@@ -49,7 +49,7 @@ ENV PHP_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.2.0-06"
+ARG RELEASE="1.2.0-08"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
@@ -72,10 +72,10 @@ RUN set -x && \
     # https://kofler.info/sudo-ohne-passwort/ \
     groupadd -g 1000 $USER && \
     useradd -d /home/$USER -u 1000 -g 1000 -m -s /bin/bash $USER && \
-    echo "$USER ALL=(ALL) NOPASSWD:SETENV: /scripts/http-over-all.sh" > /etc/sudoers.d/$USER && \
-    echo "$USER ALL=(ALL) NOPASSWD: /scripts/force-update.sh" >> /etc/sudoers.d/$USER && \
-    echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/umount" >> /etc/sudoers.d/$USER && \
+    echo "$USER ALL=(ALL) NOPASSWD: /scripts/force-update.sh" > /etc/sudoers.d/$USER && \
     echo "www-data ALL=(ALL) NOPASSWD: /scripts/force-update.sh" >> /etc/sudoers.d/www-data && \
+    echo "$USER ALL=(ALL) NOPASSWD:SETENV: /scripts/http-over-all.sh" >> /etc/sudoers.d/$USER && \
+    echo "$USER ALL=(ALL) NOPASSWD:SETENV: /scripts/shutdown-services.sh" >> /etc/sudoers.d/$USER && \
     chmod 0440 /etc/sudoers.d/$USER && \
     chmod 0440 /etc/sudoers.d/www-data && \
     find /scripts -name "*.sh" -exec sed -i 's/\r$//' {} + && \

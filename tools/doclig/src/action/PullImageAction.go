@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/docker/distribution/context"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	"io"
 	"strings"
@@ -29,7 +30,8 @@ func PullImage(image *string, username *string, password *string) *PulledImage {
 	auth := ""
 	// registry authentication
 	if *username != "" {
-		authConfig := types.AuthConfig{
+
+		authConfig := registry.AuthConfig{
 			Username: *username,
 			Password: *password,
 		}

@@ -176,11 +176,13 @@ function connect_or_update_docker() {
     local DAV_ACTIVE="$(var_exp "DOCKER_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "DOCKER_${COUNT}_HTTP" "true")"
     local CACHE_ACTIVE="$(var_exp "DOCKER_${COUNT}_CACHE" "false")"
+    local DIGEST_PATH="$(var_exp "DOCKER_${COUNT}_DIGEST_PATH")"
 
     local REPO_PATH="${DATA}/docker/${COUNT}"
     local REPO_DIR="$(echo "${REPO_URL}" | awk -F '/' '{print $NF}' | cut -d '.' -f 1)"
 
     local DOCKER_MOUNT="${REPO_PATH}/${REPO_DIR}"
+
 
     echo
     echo "$(date +'%T'): docker ($TYPE): ${RESOURCE_NAME} (${IMAGE}:${TAG}) | ${DOCKER_MOUNT}"
@@ -192,6 +194,7 @@ function connect_or_update_docker() {
 
     local IMAGE_STATUS="NEW"
     local DIGEST
+    local REAL_DIGEST_PATH="$DOCKER_MOUNT"
     local MODIFIED_FILES="0"
 
     if [ "$USER" = "nil" ]; then USER=""; fi
@@ -208,8 +211,9 @@ function connect_or_update_docker() {
         continue
       else
         DIGEST=$(echo "$CHECK_IMAGE" | grep Digest | awk -F 'sha256:' '{print $2}')
+        if [ -d "${DIGEST_PATH%/}/" ]; then REAL_DIGEST_PATH="$DIGEST_PATH"; fi
         # could not pull, but image exists
-        if [ ! -e "${DOCKER_MOUNT%/}/.${DIGEST}.digest" ]; then
+        if [ ! -e "${REAL_DIGEST_PATH%/}/.${DIGEST}.digest" ]; then
           echo "image changed, declare it to NEW (digest: $DIGEST)"
           IMAGE_STATUS="NEW"
         else
@@ -219,7 +223,8 @@ function connect_or_update_docker() {
       fi
     elif [[ "${pull_output}" == *"Status: Image is up to date"* ]]; then
       DIGEST=$(doclig -action check-image -image "${IMAGE}:${TAG}" 2>&1 | grep Digest | awk -F 'sha256:' '{print $2}')
-      if [ "${TYPE}" != "connect" ] && [ ! -e "${DOCKER_MOUNT%/}/.${DIGEST}.digest" ]; then
+      if [ -d "${DIGEST_PATH%/}/" ]; then REAL_DIGEST_PATH="$DIGEST_PATH"; fi
+      if [ "${TYPE}" != "connect" ] && [ ! -e "${REAL_DIGEST_PATH%/}/.${DIGEST}.digest" ]; then
         echo "recognize usage of known but unused image, declare it to NEW (digest: $DIGEST)"
         IMAGE_STATUS="NEW"
       else
@@ -229,67 +234,77 @@ function connect_or_update_docker() {
 
     if [ "$IMAGE_STATUS" = "NEW" ] || [ "${TYPE}" = "connect" ]; then
       # for better update detecting get the digest for the image
-      if [ -z "$DIGEST" ]; then DIGEST=$(doclig -action check-image -image "${IMAGE}:${TAG}" 2>&1 | grep Digest | awk -F 'sha256:' '{print $2}'); fi
+      if [ -z "$DIGEST" ]; then
+        DIGEST=$(doclig -action check-image -image "${IMAGE}:${TAG}" 2>&1 | grep Digest | awk -F 'sha256:' '{print $2}');
+        if [ -d "${DIGEST_PATH%/}/" ]; then REAL_DIGEST_PATH="$DIGEST_PATH"; fi
+      fi
       echo "digest: $DIGEST"
 
       # check if the source of the remote mount has changed
       local content_has_changed=true
+      local remove_old_content=false
       if [ "${TYPE}" = "connect" ]; then
-        if [ ! -e "${DOCKER_MOUNT%/}/.${DIGEST}.digest" ]; then
+        if [ ! -e "${REAL_DIGEST_PATH%/}/.${DIGEST}.digest" ]; then
           echo "image content has changed -> remove old content from ${DOCKER_MOUNT}"
-          echo rm -rf "${DOCKER_MOUNT:?}*"
-          rm -rf "${DOCKER_MOUNT:?}*"
+          remove_old_content=true
         else
           content_has_changed=false
-          echo "image content has not changed"
+          echo "image content has not changed (DIGEST_PATH: ${REAL_DIGEST_PATH%/})"
         fi
       fi
 
       rm -f "${DOCKER_MOUNT%/}/*.digest"
+      if [ -d "${DIGEST_PATH%/}/" ]; then rm -f "${DIGEST_PATH%/}/*.digest"; fi
+
       if [ "$content_has_changed" = true ]; then
         # remove dangling images (one backup should be fine)
         doclig -action prune > /dev/null
 
-        if [ "$METHOD" = "COPY" ]; then
-          # copyign files from container
-          local tmp_dir=$(mktemp -d -t docker-copy-XXXXXXXXXXXX)
-          # handle excludes
-          local exclude_list=""
-          local tmp_exclude_file=""
-          if [ "$EXCLUDES" != "nil" ]; then
-            echo "$METHOD: path excludes: $EXCLUDES (after copying data from container -> via rsync)"
-            tmp_exclude_file=$(mktemp /tmp/docker-copy-excludes.XXXXXX)
-            exclude_list="--exclude-from=$tmp_exclude_file"
-            for excl in ${EXCLUDES//,/ }; do
-              echo "- $excl" >> "$tmp_exclude_file"
-            done
-          fi
-          # extract the data
-          if doclig -action copy -image "${IMAGE}:${TAG}" -srcPaths="$SRC_DIRS" -dst="$tmp_dir" > /dev/null; then
-            # align creation date of the syncing directories
-            local ORIGTS=$(stat -c "%Y" "${DOCKER_MOUNT}")
-            touch -d "@$ORIGTS" "${tmp_dir}"/
-
-            # shellcheck disable=SC2086
-            MODIFIED_FILES=$(rsync -rtu --dry-run --out-format="%f" $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}" | wc -l)
-            if [ "$MODIFIED_FILES" = "0" ]; then
-              echo "INFO (rsync): no files changed"
-            else
-              echo "start rsync at $(date +'%T')"
-              # shellcheck disable=SC2086
-              rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
-            fi
-          fi
-          if [ "$tmp_exclude_file" != "" ]; then rm -f "$tmp_exclude_file"; fi
-          rm -rf "$tmp_dir"
-        else
+        if [ "$METHOD" != "COPY" ]; then
           echo "unknown method: $METHOD | ignore"
           continue
         fi
 
+        # copying files from container
+        local tmp_dir=$(mktemp -d -t docker-copy-XXXXXXXXXXXX)
+        # handle excludes
+        local exclude_list=""
+        local tmp_exclude_file=""
+        if [ "$EXCLUDES" != "nil" ]; then
+          echo "$METHOD: path excludes: $EXCLUDES (after copying data from container -> via rsync)"
+          tmp_exclude_file=$(mktemp /tmp/docker-copy-excludes.XXXXXX)
+          exclude_list="--exclude-from=$tmp_exclude_file"
+          for excl in ${EXCLUDES//,/ }; do
+            echo "- $excl" >> "$tmp_exclude_file"
+          done
+        fi
+        # extract the data
+        if doclig -action copy -image "${IMAGE}:${TAG}" -srcPaths="$SRC_DIRS" -dst="$tmp_dir" > /dev/null; then
+          # align creation date of the syncing directories
+          local ORIGTS=$(stat -c "%Y" "${DOCKER_MOUNT}")
+          touch -d "@$ORIGTS" "${tmp_dir}"/
+
+          # shellcheck disable=SC2086
+          if [ "$remove_old_content" != true ] && [ "$(rsync -rtu --dry-run --out-format="%f" $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}" | wc -l)" = "0" ]; then
+            echo "INFO (rsync): no files changed"
+          else
+            if [ "$remove_old_content" = true ]; then
+              echo rm -rf "${DOCKER_MOUNT:?}*"
+              rm -rf "${DOCKER_MOUNT:?}*"
+            fi
+            echo "start rsync at $(date +'%T')"
+            # shellcheck disable=SC2086
+            rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
+          fi
+        fi
+        if [ "$tmp_exclude_file" != "" ]; then rm -f "$tmp_exclude_file"; fi
+        rm -rf "$tmp_dir"
       fi #content_has_changed
 
       echo "${IMAGE}:${TAG}" > "${DOCKER_MOUNT%/}/.${DIGEST}.digest"
+      if [ -d "${DIGEST_PATH%/}/" ]; then
+        echo "${IMAGE}:${TAG}" > "${DIGEST_PATH%/}/.${DIGEST}.digest"
+      fi
       unset DIGEST
     fi
 
@@ -298,6 +313,7 @@ function connect_or_update_docker() {
       initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DOCKER_${COUNT}" "${DOCKER_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     fi
   done
+  touch "${DATA}/docker/sds.ready"
 }
 
 function connect_or_update_git_repos() {

@@ -3,13 +3,11 @@
 # SIGTERM-handler
 # https://blog.codeship.com/trapping-signals-in-docker-containers/
 function term_handler() {
-  echo "$(date +'%T'): stop http server and unmount all filesystems / EXIT signal detected"
-  for i in $(mount | awk '{print $3}' | grep "^/remote/"); do
-    echo "sudo /usr/bin/umount --force $i"
-    sudo /usr/bin/umount  --force "$i"
-  done
-  service nginx stop
-  echo "$(date +'%T'): all terminated"
+  echo "$(date +'%T'): (term_handler) EXIT signal detected"
+  echo "sudo -E /scripts/shutdown-services.sh"
+  sudo -E /scripts/shutdown-services.sh
+
+  echo "$(date +'%T'): (term_handler) shutdown complete"
   exit 143 # 128 + 15 -- SIGTERM
 }
 trap "term_handler" EXIT

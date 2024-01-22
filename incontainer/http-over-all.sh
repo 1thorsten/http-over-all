@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 SDS_READY="/var/run/sds.ready"
-rm -f ${SDS_READY}
+SDS_NO_HTTP="/var/run/sds.no_http"
+rm -f ${SDS_READY} ${SDS_NO_HTTP}
 
 source /scripts/connect-services.sh
 TINY_INSTANCE="$(var_exp "TINY_INSTANCE" "false")"
-
 _ENV=$(env)
 
 SYS_ENV=/var/run/sys_env.sh
@@ -51,9 +51,17 @@ connect_or_update_docker "connect"
 echo touch /var/run/force-update.last
 touch /var/run/force-update.last
 
-start_http_server
+if [ "$(var_exp "HTTP_SERVER_START" "true")" = "true" ]; then
+  start_http_server
+else
+  echo "$(date +'%T'): do not start nginx -> (env: HTTP_SERVER_START != true)"
+  touch ${SDS_NO_HTTP}
+fi
 
 touch ${SDS_READY}
+for i in "${DATA}"/*; do
+  touch "$i/sds.ready"
+done
 
 echo
 source /etc/os-release

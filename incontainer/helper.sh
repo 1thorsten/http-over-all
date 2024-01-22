@@ -85,11 +85,11 @@ function initialize() {
 
   if [ "$TINY_INSTANCE" = "true" ]; then
     if [ -z "$CONNECTED_URLS" ]; then
-      echo "configure for tiny instance (w/o CONNECTED_URLS) -> 1 process (pm.max_children, worker_processes)"
-      PROCESS_COUNT=1
-    else
-      echo "configure for tiny instance (with CONNECTED_URLS) -> 2 processes (pm.max_children, worker_processes)"
       PROCESS_COUNT=2
+      echo "configure for tiny instance (w/o CONNECTED_URLS) -> $PROCESS_COUNT processes (pm.max_children, worker_processes)"
+    else
+      PROCESS_COUNT=3
+      echo "configure for tiny instance (with CONNECTED_URLS) -> $PROCESS_COUNT processes (pm.max_children, worker_processes)"
     fi
     # fpm
     sed -i "s|^pm =.*$|pm = static|g" "${PHP_ETC}/fpm/pool.d/www.conf"

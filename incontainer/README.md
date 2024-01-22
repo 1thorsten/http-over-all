@@ -116,15 +116,16 @@ that a shell is executed, the defaults (.bashrc) as well.
 METHOD 'COPY' uses docker cp, so no operating system is required (should be faster that TAR). EXCL is applied after the
 content is copied.
 
-| ENV-Variable            | Description                                                        | required |
-|-------------------------|--------------------------------------------------------------------|----------|
-| DOCKER_[COUNT]_IMAGE    | e.g. ubuntu                                                        | x        |
-| DOCKER_[COUNT]_TAG      | tag (default: latest)                                              | -        |
-| DOCKER_[COUNT]_USER     | if access to registry requires authentication                      | -        |
-| DOCKER_[COUNT]_PASS     | if access to registry requires authentication                      | -        |
-| DOCKER_[COUNT]_METHOD   | method for synchronizing data (TAR,COPY)                           | x        |
-| DOCKER_[COUNT]_SRC_DIRS | dirs to extract from the container (default: DOCKER-VAR WORKSPACE) | -        |
-| DOCKER_[COUNT]_EXCL     | paths to exclude (e.g. proc/* dev/* sys/*)                         | -        |
+| ENV-Variable               | Description                                                        | required |
+|----------------------------|--------------------------------------------------------------------|----------|
+| DOCKER_[COUNT]_IMAGE       | e.g. ubuntu                                                        | x        |
+| DOCKER_[COUNT]_TAG         | tag (default: latest)                                              | -        |
+| DOCKER_[COUNT]_USER        | if access to registry requires authentication                      | -        |
+| DOCKER_[COUNT]_PASS        | if access to registry requires authentication                      | -        |
+| DOCKER_[COUNT]_METHOD      | method for synchronizing data (COPY)                               | x        |
+| DOCKER_[COUNT]_DIGEST_PATH | path for persisting digest information (sha256-key of the image)   | -        |
+| DOCKER_[COUNT]_EXCL        | paths to exclude (e.g. proc/* dev/* sys/*)                         | -        |
+| DOCKER_[COUNT]_SRC_DIRS    | dirs to extract from the container (default: DOCKER-VAR WORKSPACE) | -        |
 
 General Options: yes
 ## PROXY
@@ -211,6 +212,7 @@ Options for all resources
 |-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
 | CONNECTED_URLS        | use in connected configuration, force-update via HTTP calls the URLs in parallel (e.g. https://ipaddres-other-nodeX:4334/force-update, https://ipaddres-other-nodeY:4334/force-update) | -        |
 | CRYPT_KEY             | key for encrypting and decrypting                                                                                                                                                      | x        |
+| HTTP_SERVER_START     | start nginx server (default: true)                                                                                                                                                     | -        |
 | PERIODIC_JOB_INTERVAL | interval for processing periodic jobs (default: 5m). Infinity = inf                                                                                                                    | -        |
 | PROXY_MAX_SIZE        | maximum size of the proxy cache (default: 10g)                                                                                                                                         | -        |
 | PROXY_INACTIVE        | data that are not accessed during the time get removed (default: 1d)                                                                                                                   | -        |

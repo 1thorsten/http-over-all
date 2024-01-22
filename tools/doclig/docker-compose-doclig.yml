@@ -32,12 +32,12 @@ services:
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - docker-data:/remote/docker
+      #- docker-data:/remote/docker
       - git-repos:/remote/git
       - local-data:/local-data
       - nginx-cache:/nginx-cache
 volumes:
-  docker-data:
+  #docker-data:
   git-repos:
   local-data:
   nginx-cache:
