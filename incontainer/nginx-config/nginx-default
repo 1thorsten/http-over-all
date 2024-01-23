@@ -167,6 +167,8 @@ server {
 
     location = /favicon.ico {
         alias /scripts/nginx-config/favicon.ico;
+        log_not_found off;
+        access_log off;
     }
 
    include /etc/nginx/http-over-all/*.conf;
