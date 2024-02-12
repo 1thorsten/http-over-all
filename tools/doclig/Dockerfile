@@ -69,7 +69,10 @@ RUN set -x && \
     find /scripts -name "*.sh" -exec sed -i 's/\r$//' {} + && \
     echo "\nexport RELEASE=${RELEASE}\n" >> /scripts/system-helper.sh && \
     echo "source /scripts/system-helper.sh" >> /etc/bash.bashrc && \
-    echo "http-over-all part successfully terminated" && \
+    # colors (bash)
+    sed -i 's/^# export/export/' /root/.bashrc && \
+    sed -i 's/^# alias l/alias l/g' /root/.bashrc && \
+    echo "alias grep=\"grep --color=always\"" >> /root/.bashrc && \
     set +x
 
 ADD tools/doclig/bin/doclig_lnx /usr/local/bin/doclig

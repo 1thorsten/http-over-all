@@ -49,7 +49,7 @@ ENV PHP_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.2.0-08"
+ARG RELEASE="1.2.0-09"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
@@ -81,7 +81,11 @@ RUN set -x && \
     find /scripts -name "*.sh" -exec sed -i 's/\r$//' {} + && \
     echo "\nexport RELEASE=${RELEASE}\n" >> /scripts/system-helper.sh && \
     echo "source /scripts/system-helper.sh" >> /etc/bash.bashrc && \
-    echo "http-over-all part successfully terminated" && \
+    # colors (bash)
+    sed -i 's/^# export/export/' /root/.bashrc && \
+    sed -i 's/^# alias l/alias l/g' /root/.bashrc && \
+    echo "alias grep=\"grep --color=always\"" >> /root/.bashrc && \
+    echo "alias grep=\"grep --color=always\"" >> /home/$USER/.bashrc && \
     set +x
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "/scripts/healthcheck.sh" ]

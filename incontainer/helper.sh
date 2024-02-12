@@ -512,39 +512,43 @@ function initial_create_symlinks_for_resources() {
 function clone_git_repo() {
   local GIT_REPO_PATH="${1}"
   local REPO_URL="${2}"
-  local RESOURCE_NAME="${3}"
+  local OBF_REPO_URL="${3}"
+  local RESOURCE_NAME="${4}"
 
   echo mkdir -p "${GIT_REPO_PATH}"
   mkdir -p "${GIT_REPO_PATH}"
 
-  echo git -C "${GIT_REPO_PATH}" clone "${REPO_URL}"
-  git -C "${GIT_REPO_PATH}" clone "${REPO_URL}"
+  echo git -C "${GIT_REPO_PATH}" clone "${OBF_REPO_URL}"
+  if ! git -C "${GIT_REPO_PATH}" clone "${REPO_URL}"; then
+    echo "cloning repo failed"
+  fi
 
-  echo "$(date +'%T'): git cloned: ${RESOURCE_NAME}"
+  echo "$(date +'%T'): git repo cloned: ${RESOURCE_NAME}"
 }
 
 function clone_git_repo_safe() {
   local GIT_REPO_PATH="${1}"
   local REPO_URL="${2}"
-  local RESOURCE_NAME="${3}"
+  local OBF_REPO_URL="${3}"
+  local RESOURCE_NAME="${4}"
 
   local PATH_SAFE="${GIT_REPO_PATH}_safe"
   rm -rf "${PATH_SAFE}"
   mkdir -p "${PATH_SAFE}"
 
-  echo git -C "${PATH_SAFE}" clone "${REPO_URL}"
+  echo git -C "${PATH_SAFE}" clone "${OBF_REPO_URL}"
   if git -C "${PATH_SAFE}" clone "${REPO_URL}"; then
-    echo "clone succeeded"
+    echo "cloning repo succeeded"
     rm -f "${GIT_REPO_PATH}.error"
     rm -rf "${GIT_REPO_PATH}"
     echo "mv ${PATH_SAFE} ${GIT_REPO_PATH}"
     mv "${PATH_SAFE}" "${GIT_REPO_PATH}"
   else
-    echo "clone failed"
+    echo "cloning repo failed"
     rm -rf "${PATH_SAFE}"
   fi
 
-  echo "$(date +'%T'): git safe cloned: ${RESOURCE_NAME}"
+  echo "$(date +'%T'): git repo safe cloned: ${RESOURCE_NAME}"
 }
 
 function periodic_jobs() {
