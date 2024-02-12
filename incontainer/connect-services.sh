@@ -340,10 +340,15 @@ function connect_or_update_git_repos() {
 
     # check accessibility
     local ACCESSIBLE
+
+    local OBF_REPO_URL=$REPO_URL
     parse_url "${REPO_URL%/}/"
+
     local URL_STRICT="${PARSED_PROTO}${PARSED_HOST}${PARSED_PORT}"
     if [ -n "$PARSED_USER" ]; then
       local CURL_CREDENTIALS="--user ${PARSED_USER%@}"
+      local OBF_CURL_CREDENTIALS="--user obfuscated"
+      OBF_REPO_URL=${REPO_URL//$PARSED_USER/obfuscated@}
     fi
     # shellcheck disable=SC2086
     local HTTP_STATUS="$(curl ${CURL_CREDENTIALS} -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${URL_STRICT}")"
@@ -351,8 +356,8 @@ function connect_or_update_git_repos() {
       ACCESSIBLE=true
     else
       ACCESSIBLE=false
-      echo "command: curl ${CURL_CREDENTIALS} -s -o /dev/null -I -w %{http_code} --connect-timeout 1 ${URL_STRICT}"
-      echo "resource ('${REPO_URL}' -> '${URL_STRICT}') is not accessible -> ${HTTP_STATUS}"
+      echo "command: curl ${OBF_CURL_CREDENTIALS} -s -o /dev/null -I -w %{http_code} --connect-timeout 1 ${URL_STRICT}"
+      echo "resource ('${OBF_REPO_URL}' -> '${URL_STRICT}') is not accessible -> ${HTTP_STATUS}"
     fi
 
     if [ ! -d "${GIT_MOUNT}" ]; then
@@ -360,11 +365,11 @@ function connect_or_update_git_repos() {
         echo "${GIT_MOUNT} not exists -> ignore"
         continue
       fi
-      clone_git_repo "${GIT_REPO_PATH}" "${REPO_URL}" "$RESOURCE_NAME"
+      clone_git_repo "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME"
     elif [ -e "${GIT_REPO_PATH}.error" ]; then
       echo "detect previous error: ${GIT_REPO_PATH}.error"
       if ${ACCESSIBLE}; then
-        clone_git_repo_safe "${GIT_REPO_PATH}" "${REPO_URL}" "$RESOURCE_NAME"
+        clone_git_repo_safe "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME"
       fi
       # if error file still exists, go with the existing local repo
       if [ -e "${GIT_REPO_PATH}.error" ]; then
@@ -384,7 +389,9 @@ function connect_or_update_git_repos() {
 
     if ${ACCESSIBLE}; then
       local git_checkout=$(git -C "${GIT_MOUNT}" checkout "${git_branch}" -f 2>&1)
-      if [[ "${git_checkout}" != *"Already on"* ]]; then echo "${git_checkout}"; fi
+      if [[ "${git_checkout}" != *"Already on"* ]]; then
+        echo "${git_checkout}";
+      fi
 
       git -C "${GIT_MOUNT}" clean -df
       git -C "${GIT_MOUNT}" reset --hard >/dev/null
@@ -409,6 +416,9 @@ function connect_or_update_git_repos() {
       elif [[ "${git_output}" == *"Authentication failed"* ]]; then
         echo "git repo is currently not accessible -> Authentication failed"
         ACCESSIBLE=false
+      elif [[ "${git_output}" == "fatal:"* ]]; then
+        echo "local git repo is not accessible"
+        ACCESSIBLE=false
       else
         echo "error resetting state, retrieve repo again"
         echo "touch ${GIT_REPO_PATH}.error"
@@ -421,6 +431,15 @@ function connect_or_update_git_repos() {
       # all works well / show subject of last commit
       local git_log=$(git -C "${GIT_MOUNT}" log -1 --pretty=format:'%s (%ar, %an)')
       echo "last_commit_log: ${git_log}"
+
+      # set file times
+      if pushd "$GIT_MOUNT" > /dev/null ; then
+        local num=$(/usr/share/rsync/scripts/git-set-file-times | wc -l)
+        if [ "$num" != "0" ]; then
+          echo "set time for $num files -> /usr/share/rsync/scripts/git-set-file-times"
+        fi
+        popd > /dev/null || echo "ERR: popd from '$(pwd)'"
+      fi
     fi
 
     # update -> call from periodic_jobs
