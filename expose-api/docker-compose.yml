@@ -1,0 +1,56 @@
+version: '3.6'
+
+services:
+  socat:
+    image: docker-repo.softconex.de/alpine/socat
+    container_name: socat
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+    command: "tcp-listen:2375,fork,reuseaddr unix-connect:/var/run/docker.sock"
+    labels:
+      - "traefik.enable=true"
+      # https://docs.traefik.io/getting-started/quick-start/
+      - "traefik.http.routers.socat.rule=Host(`socat.docker`)"
+      - "traefik.http.routers.socat.entrypoints=web"
+      - "traefik.http.routers.socat.tls=false"
+      # socat-direct-tls (only from central portainer instances)
+      - "traefik.http.routers.socat-direct-tls.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.socat-direct-tls.entrypoints=web"
+      - "traefik.http.routers.socat-direct-tls.tls=true"
+    ports:
+      - "127.0.0.1:2376:2375"
+    networks:
+      - exposeapi-network-name
+
+  traefik:
+    image: docker-repo.softconex.de/library/traefik:2.4
+    container_name: traefik-socat
+    restart: unless-stopped
+    command:
+      # https://doc.traefik.io/traefik/user-guides/docker-compose/basic-example/
+      - --entrypoints.web.address=:2375
+      - --providers.docker=true
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.exposedbydefault=false
+      - --api.insecure
+      - --accesslog=true
+      - --accessLog.format=json
+      # - --accesslog.filters.statuscodes=204
+      # - --accesslog.fields.defaultmode=keep
+      - --accesslog.fields.headers.defaultmode=keep
+    ports:
+      - "22375:2375"
+      - "12375:8080"
+    networks:
+      - exposeapi-network-name
+    depends_on:
+      - socat
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+networks:
+  exposeapi-network-name:
+    name: exposeapi-net

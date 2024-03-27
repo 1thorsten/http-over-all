@@ -1,0 +1,41 @@
+version: '2.4'
+
+services:
+  alpine:
+    container_name: alpine-sds
+    image: alpine
+    restart: unless-stopped
+    labels:
+      # value (false,all,admin)
+      - docon.v1={"console":"all","control":"all"}
+    volumes:
+      - docker-data:/remote/docker:ro
+    tty: true
+  http-over-all:
+    container_name: http-over-all
+    image: 1thorsten/http-over-all
+    restart: unless-stopped
+    labels:
+      # value (false,all,admin)
+      - docon.v1={"console":"all","control":"all"}
+    env_file:
+      - example_test.env
+    ports:
+      # http/1.1
+      - "8338:80"
+      # http/2 ssl
+      - "4334:443"
+    devices:
+      - "/dev/fuse:/dev/fuse"
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - docker-data:/remote/docker
+      - git-repos:/remote/git
+      - local-data:/local-data
+      - nginx-cache:/nginx-cache
+volumes:
+  docker-data:
+  git-repos:
+  local-data:
+  nginx-cache:

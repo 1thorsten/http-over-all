@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine as doclig-build
+FROM golang:1.22-alpine as doclig-build
 COPY tools/doclig /doclig
 
 WORKDIR /doclig
@@ -49,7 +49,7 @@ ENV PHP_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.2.0-09"
+ARG RELEASE="1.2.0-10"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
