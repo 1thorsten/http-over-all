@@ -1,5 +1,3 @@
-version: '2.4'
-
 services:
   build-with-tools:
     image: 1thorsten/http-over-all:doclig
@@ -13,7 +11,7 @@ services:
     restart: unless-stopped
     labels:
       # value (false,all,admin)
-      - docon.v1={"console":"all","control":"all"}
+      - docon.v1={"console":"all","control":"all","show":"http-over-all"}
     env_file:
       - ../../example-doclig.env
     ports:
