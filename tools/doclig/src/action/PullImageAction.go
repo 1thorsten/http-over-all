@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/distribution/context"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	"io"
@@ -19,13 +19,13 @@ type PulledImage struct {
 }
 
 // PullImage pull the specified image from the registry
-func PullImage(image *string, username *string, password *string) *PulledImage {
+func PullImage(imageValue *string, username *string, password *string) *PulledImage {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
 
-	pullOptions := types.ImagePullOptions{}
+	pullOptions := image.PullOptions{}
 
 	auth := ""
 	// registry authentication
@@ -45,13 +45,13 @@ func PullImage(image *string, username *string, password *string) *PulledImage {
 	}
 
 	ctx := context.Background()
-	events, err := cli.ImagePull(ctx, *image, types.ImagePullOptions{})
+	events, err := cli.ImagePull(ctx, *imageValue, image.PullOptions{})
 
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("PulledImage%s: %s\n", auth, *image)
+	fmt.Printf("PulledImage%s: %s\n", auth, *imageValue)
 	defer func(events io.ReadCloser) {
 		_ = events.Close()
 	}(events)
@@ -87,23 +87,23 @@ func PullImage(image *string, username *string, password *string) *PulledImage {
 		}
 	}
 
-	// Latest event for new image
-	// EVENT: {Status:Status: Downloaded newer image for busybox:latest Error: Progress:[==================================================>]  699.2kB/699.2kB ProgressDetail:{Current:699243 Total:699243}}
-	// Latest event for up-to-date image
-	// EVENT: {Status:Status: Image is up to date for busybox:latest Error: Progress: ProgressDetail:{Current:0 Total:0}}
+	// Latest event for new imageValue
+	// EVENT: {Status:Status: Downloaded newer imageValue for busybox:latest Error: Progress:[==================================================>]  699.2kB/699.2kB ProgressDetail:{Current:699243 Total:699243}}
+	// Latest event for up-to-date imageValue
+	// EVENT: {Status:Status: Image is up-to-date for busybox:latest Error: Progress: ProgressDetail:{Current:0 Total:0}}
 	if event != nil {
-		if strings.Contains(event.Status, fmt.Sprintf("Downloaded newer image for %s", *image)) {
+		if strings.Contains(event.Status, fmt.Sprintf("Downloaded newer imageValue for %s", *imageValue)) {
 			fmt.Println(event.Status)
 			resp.NewImage = true
-			resp.Image = image
-		} else if strings.Contains(event.Status, fmt.Sprintf("Image is up to date for %s", *image)) {
+			resp.Image = imageValue
+		} else if strings.Contains(event.Status, fmt.Sprintf("Image is up to date for %s", *imageValue)) {
 			fmt.Println(event.Status)
 			resp.NewImage = false
-			resp.Image = image
+			resp.Image = imageValue
 		}
 	}
 
-	inspect, _, err := cli.ImageInspectWithRaw(ctx, *image)
+	inspect, _, err := cli.ImageInspectWithRaw(ctx, *imageValue)
 	if err == nil {
 		fmt.Printf("Created: %s\n", inspect.Created)
 		fmt.Printf("Docker-Version: %s\n", inspect.DockerVersion)
