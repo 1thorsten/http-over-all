@@ -95,10 +95,11 @@ General Options: yes
 ### Options
 CACHE is set to false, because the resources are lying on the local drive.
 
-| ENV-Variable            | Description                                                      | required |
-|-------------------------|------------------------------------------------------------------|----------|
-| GIT_[COUNT]_REPO_URL    | e.g. https://[user]:[pass]@bitbucket.company.de/scm/sof/repo.git | x        | 
-| GIT_[COUNT]_REPO_BRANCH | branch name (default: master)                                    | -        |
+| ENV-Variable              | Description                                                      | required |
+|---------------------------|------------------------------------------------------------------|----------|
+| GIT_[COUNT]_REPO_URL      | e.g. https://[user]:[pass]@bitbucket.company.de/scm/sof/repo.git | x        | 
+| GIT_[COUNT]_REPO_BRANCH   | branch name (default: master)                                    | -        |
+| GIT_[COUNT]_SHALLOW_CLONE | true (only clone one branch) or false (default: false)           | -        |
 
 General Options: yes
 
@@ -116,16 +117,17 @@ that a shell is executed, the defaults (.bashrc) as well.
 METHOD 'COPY' uses docker cp, so no operating system is required (should be faster that TAR). EXCL is applied after the
 content is copied.
 
-| ENV-Variable               | Description                                                        | required |
-|----------------------------|--------------------------------------------------------------------|----------|
-| DOCKER_[COUNT]_IMAGE       | e.g. ubuntu                                                        | x        |
-| DOCKER_[COUNT]_TAG         | tag (default: latest)                                              | -        |
-| DOCKER_[COUNT]_USER        | if access to registry requires authentication                      | -        |
-| DOCKER_[COUNT]_PASS        | if access to registry requires authentication                      | -        |
-| DOCKER_[COUNT]_METHOD      | method for synchronizing data (COPY)                               | x        |
-| DOCKER_[COUNT]_DIGEST_PATH | path for persisting digest information (sha256-key of the image)   | -        |
-| DOCKER_[COUNT]_EXCL        | paths to exclude (e.g. proc/* dev/* sys/*)                         | -        |
-| DOCKER_[COUNT]_SRC_DIRS    | dirs to extract from the container (default: DOCKER-VAR WORKSPACE) | -        |
+| ENV-Variable               | Description                                                         | required |
+|----------------------------|---------------------------------------------------------------------|----------|
+| DOCKER_[COUNT]_IMAGE       | e.g. ubuntu                                                         | x        |
+| DOCKER_[COUNT]_TAG         | tag (default: latest)                                               | -        |
+| DOCKER_[COUNT]_USER        | if access to registry requires authentication                       | -        |
+| DOCKER_[COUNT]_PASS        | if access to registry requires authentication                       | -        |
+| DOCKER_[COUNT]_METHOD      | method for synchronizing data (COPY)                                | x        |
+| DOCKER_[COUNT]_DIGEST_PATH | path for persisting digest information (sha256-key of the image)    | -        |
+| DOCKER_[COUNT]_EXCL        | paths to exclude (e.g. proc/* dev/* sys/*)                          | -        |
+| DOCKER_[COUNT]_SRC_DIRS    | dirs to extract from the container (default: DOCKER-VAR WORKSPACE)  | -        |
+| DOCKER_[COUNT]_SYNC_ALWAYS | sync data always, if the dir is mounted externally (default: false) | -        |
 
 General Options: yes
 ## PROXY

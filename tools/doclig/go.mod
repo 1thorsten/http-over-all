@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/docker/docker v27.0.3+incompatible
+	github.com/docker/docker v27.1.1+incompatible
 )
 
 require (

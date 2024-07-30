@@ -2,6 +2,8 @@
 # shellcheck disable=SC2155,SC2181
 # SC2155: Declare and assign separately to avoid masking return values.
 # SC2181: Check exit code directly with e.g. 'if mycmd;', not indirectly with $?
+
+# nano /scripts/connect-services.sh
 source /scripts/helper.sh
 
 function mount_dav_shares() {
@@ -169,20 +171,18 @@ function connect_or_update_docker() {
     local TAG="$(var_exp "DOCKER_${COUNT}_TAG" "latest")"
     local USER="$(var_exp "DOCKER_${COUNT}_USER")"
     local PASS="$(var_exp "DOCKER_${COUNT}_PASS")"
-    local METHOD="$(var_exp "DOCKER_${COUNT}_METHOD" "COPY")"
-    local SRC_DIRS="$(var_exp "DOCKER_${COUNT}_SRC_DIRS" "./")"
-    local EXCLUDES="$(var_exp "DOCKER_${COUNT}_EXCL")"
+    local DIGEST_PATH="$(var_exp "DOCKER_${COUNT}_DIGEST_PATH")"
+    local SYNC_ALWAYS="$(var_exp "DOCKER_${COUNT}_SYNC_ALWAYS" "false")"
+
     local RESOURCE_NAME="$(var_exp "DOCKER_${COUNT}_NAME")"
     local DAV_ACTIVE="$(var_exp "DOCKER_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "DOCKER_${COUNT}_HTTP" "true")"
     local CACHE_ACTIVE="$(var_exp "DOCKER_${COUNT}_CACHE" "false")"
-    local DIGEST_PATH="$(var_exp "DOCKER_${COUNT}_DIGEST_PATH")"
 
     local REPO_PATH="${DATA}/docker/${COUNT}"
     local REPO_DIR="$(echo "${REPO_URL}" | awk -F '/' '{print $NF}' | cut -d '.' -f 1)"
 
     local DOCKER_MOUNT="${REPO_PATH}/${REPO_DIR}"
-
 
     echo
     echo "$(date +'%T'): docker ($TYPE): ${RESOURCE_NAME} (${IMAGE}:${TAG}) | ${DOCKER_MOUNT}"
@@ -232,7 +232,7 @@ function connect_or_update_docker() {
       fi
     fi
 
-    if [ "$IMAGE_STATUS" = "NEW" ] || [ "${TYPE}" = "connect" ]; then
+    if [ "$IMAGE_STATUS" = "NEW" ] || [ "${TYPE}" = "connect" ] || [ "$SYNC_ALWAYS" = "true" ]; then
       # for better update detecting get the digest for the image
       if [ -z "$DIGEST" ]; then
         DIGEST=$(doclig -action check-image -image "${IMAGE}:${TAG}" 2>&1 | grep Digest | awk -F 'sha256:' '{print $2}');
@@ -259,47 +259,10 @@ function connect_or_update_docker() {
       if [ "$content_has_changed" = true ]; then
         # remove dangling images (one backup should be fine)
         doclig -action prune > /dev/null
-
-        if [ "$METHOD" != "COPY" ]; then
-          echo "unknown method: $METHOD | ignore"
-          continue
-        fi
-
-        # copying files from container
-        local tmp_dir=$(mktemp -d -t docker-copy-XXXXXXXXXXXX)
-        # handle excludes
-        local exclude_list=""
-        local tmp_exclude_file=""
-        if [ "$EXCLUDES" != "nil" ]; then
-          echo "$METHOD: path excludes: $EXCLUDES (after copying data from container -> via rsync)"
-          tmp_exclude_file=$(mktemp /tmp/docker-copy-excludes.XXXXXX)
-          exclude_list="--exclude-from=$tmp_exclude_file"
-          for excl in ${EXCLUDES//,/ }; do
-            echo "- $excl" >> "$tmp_exclude_file"
-          done
-        fi
-        # extract the data
-        if doclig -action copy -image "${IMAGE}:${TAG}" -srcPaths="$SRC_DIRS" -dst="$tmp_dir" > /dev/null; then
-          # align creation date of the syncing directories
-          local ORIGTS=$(stat -c "%Y" "${DOCKER_MOUNT}")
-          touch -d "@$ORIGTS" "${tmp_dir}"/
-
-          # shellcheck disable=SC2086
-          if [ "$remove_old_content" != true ] && [ "$(rsync -rtu --dry-run --out-format="%f" $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}" | wc -l)" = "0" ]; then
-            echo "INFO (rsync): no files changed"
-          else
-            if [ "$remove_old_content" = true ]; then
-              echo rm -rf "${DOCKER_MOUNT:?}*"
-              rm -rf "${DOCKER_MOUNT:?}*"
-            fi
-            echo "start rsync at $(date +'%T')"
-            # shellcheck disable=SC2086
-            rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
-          fi
-        fi
-        if [ "$tmp_exclude_file" != "" ]; then rm -f "$tmp_exclude_file"; fi
-        rm -rf "$tmp_dir"
-      fi #content_has_changed
+        sync_files_from_docker_container "$remove_old_content" "$COUNT" "$DOCKER_MOUNT" "$RESOURCE_NAME"
+      elif [ "$SYNC_ALWAYS" = "true" ]; then
+        sync_files_from_docker_container "$remove_old_content" "$COUNT" "$DOCKER_MOUNT" "$RESOURCE_NAME"
+      fi
 
       echo "${IMAGE}:${TAG}" > "${DOCKER_MOUNT%/}/.${DIGEST}.digest"
       if [ -d "${DIGEST_PATH%/}/" ]; then
@@ -309,144 +272,182 @@ function connect_or_update_docker() {
     fi
 
     # update -> call from periodic_jobs
-    if [ "${TYPE}" != "update" ] || [ "$MODIFIED_FILES" != "0" ]; then
+    if [ "${TYPE}" != "update" ] || [ "$MODIFIED_FILES" != "0" ] || [ "$SYNC_ALWAYS" = "true" ]; then
       initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DOCKER_${COUNT}" "${DOCKER_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     fi
   done
-  touch "${DATA}/docker/sds.ready"
+  if [ -d "${DATA}/docker" ]; then touch "${DATA}/docker/sds.ready"; fi
 }
 
 function connect_or_update_git_repos() {
   local TYPE="${1}"
   for COUNT in $(env | grep -o "^GIT_[0-9]*_REPO_URL" | awk -F '_' '{print $2}' | sort -nu); do
-    local REPO_URL="$(var_exp "GIT_${COUNT}_REPO_URL")"
-    local REPO_BRANCH="$(var_exp "GIT_${COUNT}_REPO_BRANCH" "master")"
-    local RESOURCE_NAME="$(var_exp "GIT_${COUNT}_NAME")"
-    local DAV_ACTIVE="$(var_exp "GIT_${COUNT}_DAV" "false")"
-    local HTTP_ACTIVE="$(var_exp "GIT_${COUNT}_HTTP" "true")"
-    local CACHE_ACTIVE="$(var_exp "GIT_${COUNT}_CACHE" "false")"
+    local done=false
+    while ! $done; do
+      local REPO_URL="$(var_exp "GIT_${COUNT}_REPO_URL")"
+      local REPO_BRANCH="$(var_exp "GIT_${COUNT}_REPO_BRANCH" "master")"
+      local RESOURCE_NAME="$(var_exp "GIT_${COUNT}_NAME")"
+      local SHALLOW_CLONE="$(var_exp "GIT_${COUNT}_SHALLOW_CLONE" "false")"
 
-    local GIT_REPO_PATH="${DATA}/git/${COUNT}"
-    local REPO_DIR="$(echo "${REPO_URL}" | awk -F '/' '{print $NF}' | cut -d '.' -f 1)"
-    local GIT_MOUNT="${GIT_REPO_PATH}/${REPO_DIR}"
+      local DAV_ACTIVE="$(var_exp "GIT_${COUNT}_DAV" "false")"
+      local HTTP_ACTIVE="$(var_exp "GIT_${COUNT}_HTTP" "true")"
+      local CACHE_ACTIVE="$(var_exp "GIT_${COUNT}_CACHE" "false")"
 
-    echo
-    echo "$(date +'%T'): git ($TYPE): ${RESOURCE_NAME} (${REPO_BRANCH}) | ${GIT_MOUNT}"
+      local GIT_REPO_PATH="${DATA}/git/${COUNT}"
+      local REPO_DIR="$(echo "${REPO_URL}" | awk -F '/' '{print $NF}' | cut -d '.' -f 1)"
+      local GIT_MOUNT="${GIT_REPO_PATH}/${REPO_DIR}"
 
-    if [ -e "${GIT_REPO_PATH}" ] && [ ! -e "${GIT_MOUNT}" ]; then
-      echo "delete orphaned data"
-      rm -rf "${GIT_REPO_PATH:?}/*"
-    fi
-
-    # check accessibility
-    local ACCESSIBLE
-
-    local OBF_REPO_URL=$REPO_URL
-    parse_url "${REPO_URL%/}/"
-
-    local URL_STRICT="${PARSED_PROTO}${PARSED_HOST}${PARSED_PORT}"
-    if [ -n "$PARSED_USER" ]; then
-      local CURL_CREDENTIALS="--user ${PARSED_USER%@}"
-      local OBF_CURL_CREDENTIALS="--user obfuscated"
-      OBF_REPO_URL=${REPO_URL//$PARSED_USER/obfuscated@}
-    fi
-    # shellcheck disable=SC2086
-    local HTTP_STATUS="$(curl ${CURL_CREDENTIALS} -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${URL_STRICT}")"
-    if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' || "${HTTP_STATUS}" -eq '302' ]]; then
-      ACCESSIBLE=true
-    else
-      ACCESSIBLE=false
-      echo "command: curl ${OBF_CURL_CREDENTIALS} -s -o /dev/null -I -w %{http_code} --connect-timeout 1 ${URL_STRICT}"
-      echo "resource ('${OBF_REPO_URL}' -> '${URL_STRICT}') is not accessible -> ${HTTP_STATUS}"
-    fi
-
-    if [ ! -d "${GIT_MOUNT}" ]; then
-      if ! ${ACCESSIBLE}; then
-        echo "${GIT_MOUNT} not exists -> ignore"
-        continue
-      fi
-      clone_git_repo "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME"
-    elif [ -e "${GIT_REPO_PATH}.error" ]; then
-      echo "detect previous error: ${GIT_REPO_PATH}.error"
-      if ${ACCESSIBLE}; then
-        clone_git_repo_safe "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME"
-      fi
-      # if error file still exists, go with the existing local repo
-      if [ -e "${GIT_REPO_PATH}.error" ]; then
-        if [[ "${TYPE}" != "update" ]] && [[ -d "${GIT_MOUNT}" ]]; then
-          initial_create_symlinks_for_resources "${RESOURCE_NAME}" "GIT_${COUNT}" "${GIT_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
-          rm -f "${GIT_REPO_PATH}.error"
-        fi
-        continue
-      fi
-    else
-      # remove lock to repo since this should be an error
-      rm -f "${GIT_MOUNT}/.git/index.lock"
-    fi
-
-    # branch handling
-    local git_branch="${REPO_BRANCH}"
-
-    if ${ACCESSIBLE}; then
-      local git_checkout=$(git -C "${GIT_MOUNT}" checkout "${git_branch}" -f 2>&1)
-      if [[ "${git_checkout}" != *"Already on"* ]]; then
-        echo "${git_checkout}";
-      fi
-
-      git -C "${GIT_MOUNT}" clean -df
-      git -C "${GIT_MOUNT}" reset --hard >/dev/null
-    fi
-
-    # on error clone repo again!! avoid counting COUNT to repeat all actions
-    if ! git_output="$(git -C "${GIT_MOUNT}" pull 2>&1)"; then
-      echo "git -C ${GIT_MOUNT} pull"
-      echo "ERR: ${git_output}"
-      if [[ "${git_output}" == *"The requested URL returned error: 503"* ]]; then
-        echo "git repo is currently not accessible -> backup"
-        ACCESSIBLE=false
-      elif [[ "${git_output}" == *"Could not resolve host"* ]]; then
-        echo "git repo is currently not accessible -> host could not resolved"
-        ACCESSIBLE=false
-      elif [[ "${git_output}" == *"unable to update"* ]]; then
-        echo "git repo is currently not accessible -> unable to update"
-        ACCESSIBLE=false
-      elif [[ "${git_output}" == *"unable to access"* ]]; then
-        echo "git repo is currently not accessible -> unable to access"
-        ACCESSIBLE=false
-      elif [[ "${git_output}" == *"Authentication failed"* ]]; then
-        echo "git repo is currently not accessible -> Authentication failed"
-        ACCESSIBLE=false
-      elif [[ "${git_output}" == "fatal:"* ]]; then
-        echo "local git repo is not accessible"
-        ACCESSIBLE=false
-      else
-        echo "error resetting state, retrieve repo again"
-        echo "touch ${GIT_REPO_PATH}.error"
-        touch "${GIT_REPO_PATH}.error"
-        continue
-      fi
-    fi
-
-    if ${ACCESSIBLE}; then
-      # all works well / show subject of last commit
-      local git_log=$(git -C "${GIT_MOUNT}" log -1 --pretty=format:'%s (%ar, %an)')
-      echo "last_commit_log: ${git_log}"
-
-      # set file times
-      if pushd "$GIT_MOUNT" > /dev/null ; then
-        local num=$(/usr/share/rsync/scripts/git-set-file-times | wc -l)
-        if [ "$num" != "0" ]; then
-          echo "set time for $num files -> /usr/share/rsync/scripts/git-set-file-times"
-        fi
-        popd > /dev/null || echo "ERR: popd from '$(pwd)'"
-      fi
-    fi
-
-    # update -> call from periodic_jobs
-    if [ "${TYPE}" != "update" ]; then
       echo
-      initial_create_symlinks_for_resources "${RESOURCE_NAME}" "GIT_${COUNT}" "${GIT_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
-    fi
+      echo "$(date +'%T'): git ($TYPE): ${RESOURCE_NAME} (${REPO_BRANCH}) | ${GIT_MOUNT}"
+
+      if [ -e "${GIT_REPO_PATH}" ] && [ ! -e "${GIT_MOUNT}" ]; then
+        echo "delete orphaned data: ${GIT_REPO_PATH}"
+        rm -rf "${GIT_REPO_PATH:?}"/{.,}*
+      elif [ -d "${GIT_MOUNT}" ] && [ ! -d "${GIT_MOUNT%/}/.git" ]; then
+        echo "delete obsolete data: ${GIT_MOUNT}"
+        rm -rf "${GIT_MOUNT:?}"/{.,}*
+      elif [ -d "${GIT_MOUNT}" ] && [ -d "${GIT_MOUNT%/}/.git" ]; then
+        local remote_origin_url=$(git -C "${GIT_MOUNT}" config remote.origin.url)
+        if [ "$REPO_URL" != "$remote_origin_url" ]; then
+          echo "delete old git data: ${GIT_MOUNT}"
+          rm -rf "${GIT_MOUNT:?}"/{.,}*
+        fi
+      fi
+
+      # check accessibility
+      local ACCESSIBLE
+
+      local OBF_REPO_URL=$REPO_URL
+      parse_url "${REPO_URL%/}/"
+
+      local URL_STRICT="${PARSED_PROTO}${PARSED_HOST}${PARSED_PORT}"
+      if [ -n "$PARSED_USER" ]; then
+        local CURL_CREDENTIALS="--user ${PARSED_USER%@}"
+        local OBF_CURL_CREDENTIALS="--user obfuscated"
+        OBF_REPO_URL=${REPO_URL//$PARSED_USER/obfuscated@}
+      fi
+      # shellcheck disable=SC2086
+      local HTTP_STATUS="$(curl ${CURL_CREDENTIALS} -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${URL_STRICT}")"
+      if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' || "${HTTP_STATUS}" -eq '302' ]]; then
+        ACCESSIBLE=true
+      else
+        ACCESSIBLE=false
+        echo "command: curl ${OBF_CURL_CREDENTIALS} -s -o /dev/null -I -w %{http_code} --connect-timeout 1 ${URL_STRICT}"
+        echo "resource ('${OBF_REPO_URL}' -> '${URL_STRICT}') is not accessible -> ${HTTP_STATUS}"
+      fi
+
+      if [ ! -d "${GIT_MOUNT}" ] || [ ! -d "${GIT_MOUNT%/}/.git" ]; then
+        if ! ${ACCESSIBLE}; then
+          echo "${GIT_MOUNT} not exists -> ignore"
+          done=true
+          continue
+        fi
+        clone_git_repo "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME" "$SHALLOW_CLONE" "$REPO_BRANCH"
+      elif [ -e "${GIT_REPO_PATH}.error" ]; then
+        echo "detect previous error: ${GIT_REPO_PATH}.error"
+        if ${ACCESSIBLE}; then
+          clone_git_repo_safe "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME" "$SHALLOW_CLONE" "$REPO_BRANCH"
+        fi
+        # if error file still exists, go with the existing local repo
+        if [ -e "${GIT_REPO_PATH}.error" ]; then
+          if [ "${TYPE}" != "update" ] && [ -d "${GIT_MOUNT}" ]; then
+            initial_create_symlinks_for_resources "${RESOURCE_NAME}" "GIT_${COUNT}" "${GIT_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
+            rm -f "${GIT_REPO_PATH}.error"
+          fi
+          done=true
+          continue
+        fi
+      elif [ "${SHALLOW_CLONE}" = "true" ]; then
+        # clone repo for shallow branches when current branch is different from specified branch
+        local current_branch=$(git -C "${GIT_MOUNT}" --no-pager branch)
+        if [[ "$current_branch" != *"${REPO_BRANCH}" ]]; then
+          echo "Branch: '${current_branch//\* }' (expected: '${REPO_BRANCH}')"
+          clone_git_repo_safe "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME" "$SHALLOW_CLONE" "$REPO_BRANCH"
+        fi
+      else
+        # remove lock to repo since this should be an error
+        rm -f "${GIT_MOUNT}/.git/index.lock"
+      fi
+
+      # branch handling
+      local git_branch="${REPO_BRANCH}"
+
+      if ${ACCESSIBLE}; then
+        local git_checkout=$(git -C "${GIT_MOUNT}" checkout "${git_branch}" -f 2>&1)
+        if [[ "${git_checkout}" != *"Already on"* ]]; then
+          echo "${git_checkout}";
+        fi
+
+        git -C "${GIT_MOUNT}" clean -df
+        git -C "${GIT_MOUNT}" reset --hard >/dev/null
+      fi
+
+      BLOCK_ACCESS=false
+      CHECKOUT_REPO_AGAIN=false
+      # on error clone repo again!! avoid counting COUNT to repeat all actions
+      if ! git_output="$(git -C "${GIT_MOUNT}" pull 2>&1)"; then
+        echo "git -C ${GIT_MOUNT} pull"
+        echo "ERR: ${git_output}"
+        if [[ "${git_output}" == *"The requested URL returned error: 503"* ]]; then
+          echo "git repo is currently not accessible -> backup"
+          ACCESSIBLE=false
+        elif [[ "${git_output}" == *"Could not resolve host"* ]]; then
+          echo "git repo is currently not accessible -> host could not resolved"
+          ACCESSIBLE=false
+        elif [[ "${git_output}" == *"unable to update"* ]]; then
+          echo "git repo is currently not accessible -> unable to update"
+          ACCESSIBLE=false
+        elif [[ "${git_output}" == *"unable to access"* ]]; then
+          echo "git repo is currently not accessible -> unable to access"
+          ACCESSIBLE=false
+        elif [[ "${git_output}" == *"Authentication failed"* ]]; then
+          echo "git repo is currently not accessible -> Authentication failed"
+          ACCESSIBLE=false
+        elif [[ "${git_output}" == "fatal:"* ]]; then
+          if [[ "${git_output}" == *"index file smaller than expected"* ]]; then
+            echo "local git repo has a serious problem"
+            CHECKOUT_REPO_AGAIN=true
+          else
+            echo "local git repo is not accessible, block access"
+            ACCESSIBLE=false
+            BLOCK_ACCESS=true
+          fi
+        else
+          CHECKOUT_REPO_AGAIN=true
+        fi
+      fi
+
+      if $CHECKOUT_REPO_AGAIN; then
+         echo "error resetting state, retrieve repo again"
+         echo "touch ${GIT_REPO_PATH}.error"
+         touch "${GIT_REPO_PATH}.error"
+         done=false
+         continue
+      fi
+      if ${ACCESSIBLE}; then
+        # all works well / show subject of last commit
+        local git_log=$(git -C "${GIT_MOUNT}" log -1 --pretty=format:'%s (%ar, %an)')
+        echo "last_commit_log: ${git_log}"
+
+        # set file times
+        if pushd "$GIT_MOUNT" > /dev/null ; then
+          local num=$(/usr/share/rsync/scripts/git-set-file-times | wc -l)
+          if [ "$num" != "0" ]; then
+            echo "set time for $num files -> /usr/share/rsync/scripts/git-set-file-times"
+          fi
+          popd > /dev/null || echo "ERR: popd from '$(pwd)'"
+        fi
+      fi
+
+      if ! $BLOCK_ACCESS; then
+        # update -> call from periodic_jobs
+        if [ "${TYPE}" != "update" ]; then
+          echo
+          initial_create_symlinks_for_resources "${RESOURCE_NAME}" "GIT_${COUNT}" "${GIT_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
+        fi
+      fi
+      done=true
+    done
   done
 }
 

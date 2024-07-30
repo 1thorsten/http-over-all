@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2155
+# shellcheck disable=SC2155,SC2115
 # SC2155: Declare and assign separately to avoid masking return values.
+# SC2115: Use "${var:?}" to ensure this never expands to /* .
 source /scripts/system-helper.sh
 
 # parameter expansion (NFS_1_SHARE -> 10.10.0.201:/home)
@@ -173,7 +174,7 @@ function configure_nginx_proxy() {
 
 function clean_up() {
   echo "clean up -> reinitialize ${HTDOCS}"
-  rm -rf "${HTDOCS:?}/"*
+  rm -rf "${HTDOCS:?}"/{.,}*
 
   echo "clean up -> reinitialize ${WEBDAV}"
   rm -rf "${WEBDAV}"
@@ -194,10 +195,10 @@ function link_permitted_resource() {
 
   # echo "link_permitted_resource: SRC=${SRC} DST=${DST}"
 
-  if [[ -e "${SRC}" ]]; then
-    if [[ ! -e "${DST}" ]]; then
+  if [ -e "${SRC}" ]; then
+    if [ ! -e "${DST}" ]; then
       DST_DIRNAME="$(dirname "${DST}")"
-      if [[ ! -d "${DST_DIRNAME}" ]]; then
+      if [ ! -d "${DST_DIRNAME}" ]; then
         mkdir -p "${DST_DIRNAME}"
       fi
 
@@ -253,7 +254,7 @@ function create_symlinks_for_resources() {
 
   local MAIN_PATH="${HTDOCS%/}"
 
-  if [[ "${HTTP_ACTIVE}" == "false" ]]; then
+  if [ "${HTTP_ACTIVE}" = "false" ]; then
     echo "HTTP: not active"
     MAIN_PATH="/tmp/http-over-all/no-http"
     rm -rf "${MAIN_PATH}"
@@ -292,7 +293,7 @@ function create_symlinks_for_resources() {
       # SMB_1_SHARE_SUB_DIR_NAME_1=d
       local SUB_DIR_NAME="$(var_exp "${SUB_DIR}_NAME_${COUNT_SUB_DIR}")"
       echo "SUB-DIR-MODE: active: ${COUNT_SUB_DIR} -> ${SUB_DIR_NAME}"
-      if [[ -d "${RESOURCE_SRC}/${SUB_DIR_PATH}" ]]; then
+      if [ -d "${RESOURCE_SRC}/${SUB_DIR_PATH}" ]; then
         local DESTINATION="${MAIN_PATH}/${RESOURCE_NAME}/${SUB_DIR_NAME}"
         if [[ "$(var_exp "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}")" != "nil" ]]; then
           echo "${SUB_DIR_NAME}: check permitted resources"
@@ -334,11 +335,11 @@ function validate_and_process_permitted_resources() {
   local SUB_DIR="${4}"
   local PERMISSION_FILE="$(var_exp "${ENV_NAME}")"
 
-  if [[ ! -e "${PERMISSION_FILE}" ]]; then
+  if [ ! -e "${PERMISSION_FILE}" ]; then
     PERMISSION_FILE="${RESOURCE_SRC%/}/${PERMISSION_FILE}"
     echo "validation: try to retrieve resource from resource source: ${PERMISSION_FILE}"
   fi
-  if [[ ! -e "${PERMISSION_FILE}" ]]; then
+  if [ ! -e "${PERMISSION_FILE}" ]; then
     echo "validation: permitted resource not found -> ignore resource"
   else
     process_permitted_resources "create" "${ENV_NAME}" "${PERMISSION_FILE}" "${RESOURCE_SRC}" "${DST}" "${SUB_DIR}"
@@ -363,7 +364,7 @@ function process_permitted_resources() {
   # if SUB_DIR (Scanner) than modify START_PATH (/) -> /Scanner
   if [ -n "$SUB_DIR" ]; then START_PATH="${START_PATH}/${SUB_DIR}"; fi
 
-  if [[ "$TYPE" == "create" ]]; then
+  if [ "$TYPE" = "create" ]; then
     mkdir -p "${PERMITTED_RESOURCES_DIR}/${ENV_NAME}"
     sha1sum "${PERMISSION_FILE}" >"${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/${RESOURCES_FILE}"
     echo "START_PATH = ${START_PATH}"
@@ -371,16 +372,15 @@ function process_permitted_resources() {
 
     echo "DST_PATH = ${DST_PATH}"
     echo "${DST_PATH}" >"${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/DST_PATH"
-
-  elif [[ "$TYPE" == "update" ]]; then
+  elif [ "$TYPE" = "update" ]; then
     sha1sum "${PERMISSION_FILE}" >"${PERMITTED_RESOURCES_DIR}/${ENV_NAME}/${RESOURCES_FILE}"
 
     echo "rm -rf ${DST_PATH}"
     rm -rf "${DST_PATH}"
   fi
 
-  while IFS='' read -r line || [[ -n "$line" ]]; do
-    if [[ "$line" != "" ]]; then
+  while IFS='' read -r line || [ -n "$line" ]; do
+    if [ "$line" != "" ]; then
       # ignore comments
       if [[ $line == "#"* ]]; then continue; fi
       local normalizedResource="$(echo "${line}" | tr -d '\r' | tr -d '\n')"
@@ -514,12 +514,17 @@ function clone_git_repo() {
   local REPO_URL="${2}"
   local OBF_REPO_URL="${3}"
   local RESOURCE_NAME="${4}"
+  local SHALLOW_CLONE="${5}"
 
   echo mkdir -p "${GIT_REPO_PATH}"
   mkdir -p "${GIT_REPO_PATH}"
 
-  echo git -C "${GIT_REPO_PATH}" clone "${OBF_REPO_URL}"
-  if ! git -C "${GIT_REPO_PATH}" clone "${REPO_URL}"; then
+  local GIT_CLONE="clone"
+  if [ "${SHALLOW_CLONE}" = "true" ]; then GIT_CLONE="clone --depth=1 --branch=${REPO_BRANCH}"; fi
+
+  echo git -C "${GIT_REPO_PATH}" "${GIT_CLONE}" "${OBF_REPO_URL}"
+  # shellcheck disable=SC2086
+  if ! git -C "${GIT_REPO_PATH}" ${GIT_CLONE} "${REPO_URL}"; then
     echo "cloning repo failed"
   fi
 
@@ -531,13 +536,19 @@ function clone_git_repo_safe() {
   local REPO_URL="${2}"
   local OBF_REPO_URL="${3}"
   local RESOURCE_NAME="${4}"
+  local SHALLOW_CLONE="${5}"
+  local REPO_BRANCH="${6}"
 
   local PATH_SAFE="${GIT_REPO_PATH}_safe"
   rm -rf "${PATH_SAFE}"
   mkdir -p "${PATH_SAFE}"
 
-  echo git -C "${PATH_SAFE}" clone "${OBF_REPO_URL}"
-  if git -C "${PATH_SAFE}" clone "${REPO_URL}"; then
+  local GIT_CLONE="clone"
+  if [ "${SHALLOW_CLONE}" = "true" ]; then GIT_CLONE="clone --depth=1 --branch=${REPO_BRANCH}"; fi
+
+  echo git -C "${PATH_SAFE}" "${GIT_CLONE}" "${OBF_REPO_URL}"
+  # shellcheck disable=SC2086
+  if git -C "${PATH_SAFE}" ${GIT_CLONE} "${REPO_URL}"; then
     echo "cloning repo succeeded"
     rm -f "${GIT_REPO_PATH}.error"
     rm -rf "${GIT_REPO_PATH}"
@@ -545,7 +556,7 @@ function clone_git_repo_safe() {
     mv "${PATH_SAFE}" "${GIT_REPO_PATH}"
   else
     echo "cloning repo failed"
-    rm -rf "${PATH_SAFE}"
+    rm -rf "${PATH_SAFE}" "${GIT_REPO_PATH}"
   fi
 
   echo "$(date +'%T'): git repo safe cloned: ${RESOURCE_NAME}"
@@ -671,5 +682,61 @@ function socket_permission() {
     return 0
   fi
   return 1
+}
+
+function sync_files_from_docker_container() {
+    local remove_old_content="$1"
+    local COUNT="$2"
+    local DOCKER_MOUNT="$3"
+    local RESOURCE_NAME="$4"
+
+    local IMAGE="$(var_exp "DOCKER_${COUNT}_IMAGE")"
+    local TAG="$(var_exp "DOCKER_${COUNT}_TAG" "latest")"
+    local METHOD="$(var_exp "DOCKER_${COUNT}_METHOD" "COPY")"
+    local SRC_DIRS="$(var_exp "DOCKER_${COUNT}_SRC_DIRS" "./")"
+    local EXCLUDES="$(var_exp "DOCKER_${COUNT}_EXCL")"
+
+    if [ "$METHOD" != "COPY" ]; then
+      echo "unknown method: $METHOD | ignore"
+      return
+    fi
+
+    # copying files from container
+    local tmp_dir=$(mktemp -d -t docker-copy-XXXXXXXXXXXX)
+    # handle excludes
+    local exclude_list=""
+    local tmp_exclude_file=""
+    if [ "$EXCLUDES" != "nil" ]; then
+      echo "$METHOD: path excludes: $EXCLUDES (after copying data from container -> via rsync)"
+      tmp_exclude_file=$(mktemp /tmp/docker-copy-excludes.XXXXXX)
+      exclude_list="--exclude-from=$tmp_exclude_file"
+      for excl in ${EXCLUDES//,/ }; do
+        echo "- $excl" >> "$tmp_exclude_file"
+      done
+    fi
+    # extract the data
+    if doclig -action copy -image "${IMAGE}:${TAG}" -srcPaths="$SRC_DIRS" -dst="$tmp_dir" > /dev/null; then
+      # align creation date of the syncing directories
+      local ORIGTS=$(stat -c "%Y" "${DOCKER_MOUNT}")
+      touch -d "@$ORIGTS" "${tmp_dir}"/
+
+      # shellcheck disable=SC2086
+      if [ "$remove_old_content" != true ] && [ "$(rsync -rtu --dry-run --out-format="%f" $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}" | wc -l)" = "0" ]; then
+        echo "INFO (rsync): no files changed"
+      else
+        if [ "$remove_old_content" = true ]; then
+          echo rm -rf "${DOCKER_MOUNT%/}/{.,}*"
+          if ! rm -rf "${DOCKER_MOUNT%/}"/{.,}* ;then
+            echo rm -rf "${DOCKER_MOUNT%/}/$RESOURCE_NAME/{.,}*"
+            rm -rf "${DOCKER_MOUNT%/}""$RESOURCE_NAME"/{.,}*
+          fi
+        fi
+        echo "start rsync at $(date +'%T')"
+        # shellcheck disable=SC2086
+        rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
+      fi
+    fi
+    if [ "$tmp_exclude_file" != "" ]; then rm -f "$tmp_exclude_file"; fi
+    rm -rf "$tmp_dir"
 }
 
