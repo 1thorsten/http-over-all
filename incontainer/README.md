@@ -95,11 +95,12 @@ General Options: yes
 ### Options
 CACHE is set to false, because the resources are lying on the local drive.
 
-| ENV-Variable              | Description                                                      | required |
-|---------------------------|------------------------------------------------------------------|----------|
-| GIT_[COUNT]_REPO_URL      | e.g. https://[user]:[pass]@bitbucket.company.de/scm/sof/repo.git | x        | 
-| GIT_[COUNT]_REPO_BRANCH   | branch name (default: master)                                    | -        |
-| GIT_[COUNT]_SHALLOW_CLONE | true (only clone one branch) or false (default: false)           | -        |
+| ENV-Variable                 | Description                                                      | required |
+|------------------------------|------------------------------------------------------------------|----------|
+| GIT_[COUNT]_REPO_URL         | e.g. https://[user]:[pass]@bitbucket.company.de/scm/sof/repo.git | x        | 
+| GIT_[COUNT]_REPO_BRANCH      | branch name (default: master)                                    | -        |
+| GIT_[COUNT]_SHALLOW_CLONE    | true (only clone one branch) or false (default: false)           | -        |
+| GIT_[COUNT]_SEPARATE_GIT_DIR | true (outside the repo) or false (default: false)                | -        |
 
 General Options: yes
 

@@ -288,6 +288,7 @@ function connect_or_update_git_repos() {
       local REPO_BRANCH="$(var_exp "GIT_${COUNT}_REPO_BRANCH" "master")"
       local RESOURCE_NAME="$(var_exp "GIT_${COUNT}_NAME")"
       local SHALLOW_CLONE="$(var_exp "GIT_${COUNT}_SHALLOW_CLONE" "false")"
+      local SEPARATE_GIT_DIR="$(var_exp "GIT_${COUNT}_SEPARATE_GIT_DIR" "false")"
 
       local DAV_ACTIVE="$(var_exp "GIT_${COUNT}_DAV" "false")"
       local HTTP_ACTIVE="$(var_exp "GIT_${COUNT}_HTTP" "true")"
@@ -300,17 +301,27 @@ function connect_or_update_git_repos() {
       echo
       echo "$(date +'%T'): git ($TYPE): ${RESOURCE_NAME} (${REPO_BRANCH}) | ${GIT_MOUNT}"
 
+      local GIT_DIR="${GIT_MOUNT%/}/.git"
+      if [ "${SEPARATE_GIT_DIR}" = "true" ]; then
+        GIT_DIR="${GIT_REPO_PATH}.git"
+      elif [ -e "${GIT_REPO_PATH}.git" ]; then
+        echo "delete orphaned git-dir: ${GIT_REPO_PATH}.git"
+        rm -rf "${GIT_REPO_PATH}.git"
+      fi
       if [ -e "${GIT_REPO_PATH}" ] && [ ! -e "${GIT_MOUNT}" ]; then
         echo "delete orphaned data: ${GIT_REPO_PATH}"
         rm -rf "${GIT_REPO_PATH:?}"/{.,}*
-      elif [ -d "${GIT_MOUNT}" ] && [ ! -d "${GIT_MOUNT%/}/.git" ]; then
+        if [ -e "${GIT_REPO_PATH}.git" ]; then echo "delete orphaned git-dir: ${GIT_REPO_PATH}.git"; rm -rf "${GIT_REPO_PATH}.git"; fi
+      elif [ -d "${GIT_MOUNT}" ] && [ ! -d "${GIT_DIR}" ]; then
         echo "delete obsolete data: ${GIT_MOUNT}"
         rm -rf "${GIT_MOUNT:?}"/{.,}*
-      elif [ -d "${GIT_MOUNT}" ] && [ -d "${GIT_MOUNT%/}/.git" ]; then
+        if [ -e "${GIT_REPO_PATH}.git" ]; then echo "delete orphaned git-dir: ${GIT_REPO_PATH}.git"; rm -rf "${GIT_REPO_PATH}.git"; fi
+      elif [ -d "${GIT_MOUNT}" ] && [ -d "${GIT_DIR}" ]; then
         local remote_origin_url=$(git -C "${GIT_MOUNT}" config remote.origin.url)
         if [ "$REPO_URL" != "$remote_origin_url" ]; then
           echo "delete old git data: ${GIT_MOUNT}"
           rm -rf "${GIT_MOUNT:?}"/{.,}*
+          if [ -e "${GIT_REPO_PATH}.git" ]; then echo "delete orphaned git-dir: ${GIT_REPO_PATH}.git"; rm -rf "${GIT_REPO_PATH}.git"; fi
         fi
       fi
 
@@ -336,17 +347,17 @@ function connect_or_update_git_repos() {
         echo "resource ('${OBF_REPO_URL}' -> '${URL_STRICT}') is not accessible -> ${HTTP_STATUS}"
       fi
 
-      if [ ! -d "${GIT_MOUNT}" ] || [ ! -d "${GIT_MOUNT%/}/.git" ]; then
+      if [ ! -d "${GIT_MOUNT}" ] || [ ! -d "${GIT_DIR}" ]; then
         if ! ${ACCESSIBLE}; then
           echo "${GIT_MOUNT} not exists -> ignore"
           done=true
           continue
         fi
-        clone_git_repo "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME" "$SHALLOW_CLONE" "$REPO_BRANCH"
+        clone_git_repo "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME" "$SHALLOW_CLONE" "$REPO_BRANCH" "$SEPARATE_GIT_DIR"
       elif [ -e "${GIT_REPO_PATH}.error" ]; then
         echo "detect previous error: ${GIT_REPO_PATH}.error"
         if ${ACCESSIBLE}; then
-          clone_git_repo_safe "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME" "$SHALLOW_CLONE" "$REPO_BRANCH"
+          clone_git_repo_safe "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME" "$SHALLOW_CLONE" "$REPO_BRANCH" "$SEPARATE_GIT_DIR"
         fi
         # if error file still exists, go with the existing local repo
         if [ -e "${GIT_REPO_PATH}.error" ]; then
@@ -362,11 +373,11 @@ function connect_or_update_git_repos() {
         local current_branch=$(git -C "${GIT_MOUNT}" --no-pager branch)
         if [[ "$current_branch" != *"${REPO_BRANCH}" ]]; then
           echo "Branch: '${current_branch//\* }' (expected: '${REPO_BRANCH}')"
-          clone_git_repo_safe "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME" "$SHALLOW_CLONE" "$REPO_BRANCH"
+          clone_git_repo_safe "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME" "$SHALLOW_CLONE" "$REPO_BRANCH" "$SEPARATE_GIT_DIR"
         fi
       else
         # remove lock to repo since this should be an error
-        rm -f "${GIT_MOUNT}/.git/index.lock"
+        rm -f "${GIT_DIR}/index.lock"
       fi
 
       # branch handling

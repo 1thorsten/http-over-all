@@ -515,13 +515,15 @@ function clone_git_repo() {
   local OBF_REPO_URL="${3}"
   local RESOURCE_NAME="${4}"
   local SHALLOW_CLONE="${5}"
+  local REPO_BRANCH="${6}"
+  local SEPARATE_GIT_DIR="${7}"
 
   echo mkdir -p "${GIT_REPO_PATH}"
   mkdir -p "${GIT_REPO_PATH}"
 
   local GIT_CLONE="clone"
   if [ "${SHALLOW_CLONE}" = "true" ]; then GIT_CLONE="clone --depth=1 --branch=${REPO_BRANCH}"; fi
-
+  if [ "${SEPARATE_GIT_DIR}" = "true" ]; then GIT_CLONE="$GIT_CLONE --separate-git-dir=${GIT_REPO_PATH}.git"; fi
   echo git -C "${GIT_REPO_PATH}" "${GIT_CLONE}" "${OBF_REPO_URL}"
   # shellcheck disable=SC2086
   if ! git -C "${GIT_REPO_PATH}" ${GIT_CLONE} "${REPO_URL}"; then
