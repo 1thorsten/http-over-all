@@ -29,14 +29,14 @@ if (strstr($uptoDate->lastHttpStatus,'301') === '301 Moved Permanently') {
     exit();
 }
 
-$requestMethod = $_SERVER['REQUEST_METHOD'];
-
+$log = false;
 $debugOut = '';
 if (isset($_SERVER['HTTP_X_DEBUG_OUT'])) {
     $log = true;
     $debugOut = "| Debug: {$_SERVER['HTTP_X_DEBUG_OUT']} ";
 }
 
+$requestMethod = $_SERVER['REQUEST_METHOD'];
 if ($requestMethod == "HEAD") {
     header('Content-Type: ' . $uptoDate->resourceHeaders['Content-Type']);
     header('Content-Length: ' . $uptoDate->resourceHeaders['Content-Length']);

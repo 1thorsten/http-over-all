@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2155,SC2115
+# shellcheck disable=SC2005,SC2046,SC2155,SC2115
+# SC2005: Useless echo? Instead of echo $(cmd), just use cmd
+# SC2046: Quote this to prevent word splitting.
 # SC2155: Declare and assign separately to avoid masking return values.
 # SC2115: Use "${var:?}" to ensure this never expands to /* .
 source /scripts/system-helper.sh
@@ -273,12 +275,12 @@ function create_symlinks_for_resources() {
 
   # permitted files
   local RESOURCE_RESTRICTION=false
-  if [[ "$(var_exp "${BASE}_PERMITTED_RESOURCES")" != "nil" ]]; then
+  if [ "$(var_exp "${BASE}_PERMITTED_RESOURCES")" != "nil" ]; then
     if [ "$SUB_DIRS" != "" ]; then echo "ignore SUB_DIRS for ${BASE} b/c of ${BASE}_PERMITTED_RESOURCES"; fi
     RESOURCE_RESTRICTION=true
     local DESTINATION="${MAIN_PATH}/${RESOURCE_NAME}"
     validate_and_process_permitted_resources "${BASE}_PERMITTED_RESOURCES" "${RESOURCE_SRC}" "${DESTINATION}"
-  elif [ "$SUB_DIRS" == "" ]; then
+  elif [ "$SUB_DIRS" = "" ]; then
     echo "SUB-DIR-MODE: not active"
     echo "ln -fs ${RESOURCE_SRC} ${MAIN_PATH}/${RESOURCE_NAME}"
     ln -fs "${RESOURCE_SRC}" "${MAIN_PATH}/${RESOURCE_NAME}"
@@ -295,7 +297,7 @@ function create_symlinks_for_resources() {
       echo "SUB-DIR-MODE: active: ${COUNT_SUB_DIR} -> ${SUB_DIR_NAME}"
       if [ -d "${RESOURCE_SRC}/${SUB_DIR_PATH}" ]; then
         local DESTINATION="${MAIN_PATH}/${RESOURCE_NAME}/${SUB_DIR_NAME}"
-        if [[ "$(var_exp "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}")" != "nil" ]]; then
+        if [ "$(var_exp "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}")" != "nil" ]; then
           echo "${SUB_DIR_NAME}: check permitted resources"
           RESOURCE_RESTRICTION=true
           validate_and_process_permitted_resources "${SUB_DIR}_PERMITTED_RESOURCES_${COUNT_SUB_DIR}" "${RESOURCE_SRC}" "${DESTINATION}" "${SUB_DIR_PATH}"
@@ -500,7 +502,7 @@ function initial_create_symlinks_for_resources() {
   local MOUNT="$3"
   local HTTP_ACTIVE="$4"
   local DAV_ACTIVE="$5"
-  local CACHE_ACTIVE=${6:-"true"}
+  local CACHE_ACTIVE="$6"
 
   create_symlinks_for_resources "${MOUNT}" "${RESOURCE_NAME}" "${BASE}" "${DAV_ACTIVE}" "${HTTP_ACTIVE}"
   local RESOURCE_RESTRICTION="$?"
@@ -528,6 +530,7 @@ function clone_git_repo() {
   # shellcheck disable=SC2086
   if ! git -C "${GIT_REPO_PATH}" ${GIT_CLONE} "${REPO_URL}"; then
     echo "cloning repo failed"
+    return 1
   fi
 
   echo "$(date +'%T'): git repo cloned: ${RESOURCE_NAME}"
@@ -553,15 +556,55 @@ function clone_git_repo_safe() {
   if git -C "${PATH_SAFE}" ${GIT_CLONE} "${REPO_URL}"; then
     echo "cloning repo succeeded"
     rm -f "${GIT_REPO_PATH}.error"
-    rm -rf "${GIT_REPO_PATH}"
-    echo "mv ${PATH_SAFE} ${GIT_REPO_PATH}"
-    mv "${PATH_SAFE}" "${GIT_REPO_PATH}"
+    echo rm -rf "${GIT_REPO_PATH}"
+    if ! rm -rf "${GIT_REPO_PATH}" 2>/dev/null; then
+      echo "rm -rf ${GIT_REPO_PATH}: failed -> use rsync"
+      echo rsync -a "${PATH_SAFE%/}/" "${GIT_REPO_PATH%/}/"
+      rsync -a "${PATH_SAFE%/}/" "${GIT_REPO_PATH%/}/"
+      echo rm -rf "${PATH_SAFE}"
+      rm -rf "${PATH_SAFE}"
+    else
+      echo "mv ${PATH_SAFE} ${GIT_REPO_PATH}"
+      mv "${PATH_SAFE}" "${GIT_REPO_PATH}"
+    fi
   else
     echo "cloning repo failed"
     rm -rf "${PATH_SAFE}" "${GIT_REPO_PATH}"
+    return 1
   fi
 
   echo "$(date +'%T'): git repo safe cloned: ${RESOURCE_NAME}"
+}
+
+# Function to calculate and return the next execution time as a string
+get_next_execution_time() {
+    local wait_value=${1%[smhd]}  # Remove the suffix (s, m, h, d)
+    local wait_unit=${1: -1}      # Extract the last character (s, m, h, d)
+
+    # Check if no suffix is provided
+    if [[ $wait_unit =~ [0-9] ]]; then
+        wait_unit="s"  # Default to seconds
+        wait_value=$1   # Use the entire value as seconds
+    fi
+
+    # Calculate the next execution time using the system's time zone
+    case $wait_unit in
+        s)
+            echo $(date -d "+$wait_value seconds" "+%X")  # Only time
+            ;;
+        m)
+            echo $(date -d "+$wait_value minutes" "+%X")  # Only time
+            ;;
+        h)
+            echo $(date -d "+$wait_value hours" "+%X")    # Only time
+            ;;
+        d)
+            echo $(date -d "+$wait_value days" "+%x %X")  # Date and time
+            ;;
+        *)
+            echo $(date -d "+$wait_value seconds" "+%X")  # Default to only time
+            ;;
+    esac
 }
 
 function periodic_jobs() {
@@ -569,17 +612,34 @@ function periodic_jobs() {
   # assume minutes are meant if only digits are given
   if [[ ! $WAIT =~ [^[:digit:]] ]]; then WAIT="${WAIT}m"; fi
   local LOCK_FILE="/var/run/force-update.lock"
-  echo "$(date +'%T'): periodic_jobs -> interval ${WAIT}"
   while true; do
+    NEXT_EXEC=$(get_next_execution_time "$WAIT")
+    echo "$(date +'%T'): periodic_jobs (${RELEASE}): next execution -> $NEXT_EXEC (interval ${WAIT})"
     sleep "$WAIT"
-    echo "$(date +'%T'): periodic_jobs start"
-    handle_update_jobs_lock "${LOCK_FILE}" "no-trap"
-    connect_or_update_git_repos "update"
-    connect_or_update_docker "update"
-    periodic_job_update_permitted_resources
-    echo "$(date +'%T'): periodic_jobs terminated / RELEASE: ${RELEASE}"
-    rm -f "${LOCK_FILE}"
-    echo
+    if [ -f "/var/run/sds.ready" ]; then
+      UPDATE_OK=true
+      handle_update_jobs_lock "${LOCK_FILE}" "no-trap"
+      if ! connect_or_update_git_repos "update"; then
+        UPDATE_OK=false
+      fi
+
+      if ! connect_or_update_docker "update"; then
+        UPDATE_OK=false
+      fi
+
+      if [ ! "$UPDATE_OK" ]; then
+        echo "$(date +'%T'): periodic_jobs (${RELEASE}): shutdown services"
+        echo "sudo -E /scripts/shutdown-services.sh"
+        sudo -E /scripts/shutdown-services.sh
+        break
+      fi
+
+      periodic_job_update_permitted_resources
+      rm -f "${LOCK_FILE}"
+      echo
+    else
+      echo "$(date +'%T'): periodic_jobs (${RELEASE}): sds is not ready!!!"
+    fi
   done
 }
 
@@ -694,14 +754,8 @@ function sync_files_from_docker_container() {
 
     local IMAGE="$(var_exp "DOCKER_${COUNT}_IMAGE")"
     local TAG="$(var_exp "DOCKER_${COUNT}_TAG" "latest")"
-    local METHOD="$(var_exp "DOCKER_${COUNT}_METHOD" "COPY")"
     local SRC_DIRS="$(var_exp "DOCKER_${COUNT}_SRC_DIRS" "./")"
     local EXCLUDES="$(var_exp "DOCKER_${COUNT}_EXCL")"
-
-    if [ "$METHOD" != "COPY" ]; then
-      echo "unknown method: $METHOD | ignore"
-      return
-    fi
 
     # copying files from container
     local tmp_dir=$(mktemp -d -t docker-copy-XXXXXXXXXXXX)
@@ -723,7 +777,9 @@ function sync_files_from_docker_container() {
       touch -d "@$ORIGTS" "${tmp_dir}"/
 
       # shellcheck disable=SC2086
-      if [ "$remove_old_content" != true ] && [ "$(rsync -rtu --dry-run --out-format="%f" $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}" | wc -l)" = "0" ]; then
+      local files_changed=$(rsync --dry-run -rtu --info=name --ignore-errors $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}" | grep -cv '/$')
+      # shellcheck disable=SC2086
+      if [ "$remove_old_content" != true ] && [ "$files_changed" = "0" ]; then
         echo "INFO (rsync): no files changed"
       else
         if [ "$remove_old_content" = true ]; then
@@ -732,13 +788,51 @@ function sync_files_from_docker_container() {
             echo rm -rf "${DOCKER_MOUNT%/}/$RESOURCE_NAME/{.,}*"
             rm -rf "${DOCKER_MOUNT%/}""$RESOURCE_NAME"/{.,}*
           fi
+        elif [ "$files_changed" != "0" ]; then
+          echo "changed files: $files_changed"
+          rsync -rtu --dry-run --info=name --ignore-errors $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}" | grep -v '/$'
         fi
         echo "start rsync at $(date +'%T')"
         # shellcheck disable=SC2086
-        rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
+        # rsync -rtu --links --delete --ignore-errors --stats --human-readable $exclude_list "${tmp_dir}"/ "${DOCKER_MOUNT}"
+        rsync_with_logging "$RESOURCE_NAME" "${tmp_dir}"/ "${DOCKER_MOUNT}"
       fi
     fi
     if [ "$tmp_exclude_file" != "" ]; then rm -f "$tmp_exclude_file"; fi
     rm -rf "$tmp_dir"
 }
 
+rsync_with_logging() {
+    local project_name=$1
+    local source_dir=$2
+    local target_dir=$3
+    local output_file="/tmp/rsync_${project_name}.out"
+
+    # Temporary file to store the current rsync output
+    local temp_output=$(mktemp)
+
+    # Run rsync command and save the output in the temporary file
+    rsync -rtu --links --delete --ignore-errors --stats --human-readable "$source_dir" "$target_dir" > "$temp_output"
+
+    # Check if the output file exists
+    if [[ ! -f "$output_file" ]]; then
+        # File does not exist, print output to the console and save it to the file
+        tee "$output_file" < "$temp_output"
+    else
+        # File exists, extract the relevant line from the old and new output
+        local old_line new_line
+        old_line=$(grep "^Number of files:" "$output_file")
+        new_line=$(grep "^Number of files:" "$temp_output")
+
+        if [[ "$old_line" != "$new_line" ]]; then
+            # The line has changed, print output to the console and save it to the file
+            tee "$output_file" < "$temp_output"
+        else
+            # The line has not changed, just save the output to the file
+            cat "$temp_output" > "$output_file"
+        fi
+    fi
+
+    # Remove the temporary file
+    rm "$temp_output"
+}

@@ -124,7 +124,6 @@ content is copied.
 | DOCKER_[COUNT]_TAG         | tag (default: latest)                                               | -        |
 | DOCKER_[COUNT]_USER        | if access to registry requires authentication                       | -        |
 | DOCKER_[COUNT]_PASS        | if access to registry requires authentication                       | -        |
-| DOCKER_[COUNT]_METHOD      | method for synchronizing data (COPY)                                | x        |
 | DOCKER_[COUNT]_DIGEST_PATH | path for persisting digest information (sha256-key of the image)    | -        |
 | DOCKER_[COUNT]_EXCL        | paths to exclude (e.g. proc/* dev/* sys/*)                          | -        |
 | DOCKER_[COUNT]_SRC_DIRS    | dirs to extract from the container (default: DOCKER-VAR WORKSPACE)  | -        |
@@ -205,6 +204,7 @@ Options for all resources
 | [RES]_HTTP_LOG_ACCESS                 | access_log -> file, device (/dev/stdout) off (default: off)                                      | -        | 
 | [RES]_HTTP_LOG_ERROR                  | error_log -> file, device (/dev/stdout) off (default: /dev/stdout)                               | -        |
 | [RES]_PERMITTED_RESOURCES             | absolute path of permitted resource file                                                         | -        |
+| [RES]_STOP_ON_ERROR                   | avoid starting webserver and set http-over-all to error (default: false)                         | -        |
 | [RES]_SUB_DIR_PATH_1++                | restrict acccess to this path (relative)                                                         | -        |
 | [RES]_SUB_DIR_NAME_1++                | accessible name                                                                                  | -        |
 | [RES]_SUB_DIR_PERMITTED_RESOURCES_1++ | absolute path of permitted resource file                                                         | -        |

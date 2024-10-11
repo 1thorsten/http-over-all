@@ -15,8 +15,14 @@ function mount_dav_shares() {
     local DAV_ACTIVE="$(var_exp "DAV_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "DAV_${COUNT}_HTTP" "true")"
     local CACHE_ACTIVE="$(var_exp "DAV_${COUNT}_CACHE" "true")"
+    local STOP_ON_ERROR="$(var_exp "DAV_${COUNT}_STOP_ON_ERROR" "false")"
     echo
     echo "$(date +'%T'): dav: ${RESOURCE_NAME}"
+
+    if [ "$RESOURCE_NAME" = "nil" ]; then
+      echo "ERR (config): define DAV_${COUNT}_NAME"
+      return 1
+    fi
 
     local DAV_MOUNT="${DATA}/dav/${COUNT}"
 
@@ -49,6 +55,9 @@ function mount_dav_shares() {
         echo "mount not successful (ignore): ${SHARE}"
         echo "sometimes it only works on the second try..."
       fi
+    elif [ "$STOP_ON_ERROR" = "true" ]; then
+      echo "!!! STOP_ON_ERROR !!! -> $RESOURCE_NAME is not accessible"
+      return 1
     fi
   done
 }
@@ -62,8 +71,14 @@ function mount_ssh_shares() {
     local DAV_ACTIVE="$(var_exp "SSH_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "SSH_${COUNT}_HTTP" "true")"
     local CACHE_ACTIVE="$(var_exp "SSH_${COUNT}_CACHE" "true")"
+    local STOP_ON_ERROR="$(var_exp "SSH_${COUNT}_STOP_ON_ERROR" "false")"
     echo
     echo "$(date +'%T'): ssh: ${RESOURCE_NAME}"
+
+    if [ "$RESOURCE_NAME" = "nil" ]; then
+      echo "ERR (config): define SSH_${COUNT}_NAME"
+      return 1
+    fi
 
     local SSH_MOUNT="${DATA}/ssh/${COUNT}"
 
@@ -83,6 +98,10 @@ function mount_ssh_shares() {
       initial_create_symlinks_for_resources "${RESOURCE_NAME}" "SSH_${COUNT}" "${SSH_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     else
       echo "mount not successful (ignore): ${SHARE}"
+      if [ "$STOP_ON_ERROR" = "true" ]; then
+        echo "!!! STOP_ON_ERROR !!! -> $RESOURCE_NAME is not accessible"
+        return 1
+      fi
     fi
   done
 }
@@ -97,8 +116,14 @@ function mount_nfs_shares() {
     local DAV_ACTIVE="$(var_exp "NFS_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "NFS_${COUNT}_HTTP" "true")"
     local CACHE_ACTIVE="$(var_exp "NFS_${COUNT}_CACHE" "true")"
+    local STOP_ON_ERROR="$(var_exp "NFS_${COUNT}_STOP_ON_ERROR" "false")"
     echo
     echo "$(date +'%T'): nfs: ${RESOURCE_NAME}"
+
+    if [ "$RESOURCE_NAME" = "nil" ]; then
+      echo "ERR (config): define NFS_${COUNT}_NAME"
+      return 1
+    fi
 
     local NFS_MOUNT="${DATA}/nfs/${COUNT}"
 
@@ -119,8 +144,15 @@ function mount_nfs_shares() {
     echo "mount -v $SHARE $NFS_MOUNT $NFS_OPTS"
     # shellcheck disable=SC2086
     mount -v "$SHARE" "$NFS_MOUNT" $NFS_OPTS
-
-    initial_create_symlinks_for_resources "${RESOURCE_NAME}" "NFS_${COUNT}" "${NFS_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
+    if [ $? -eq 0 ]; then
+      initial_create_symlinks_for_resources "${RESOURCE_NAME}" "NFS_${COUNT}" "${NFS_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
+    else
+       echo "mount not successful (ignore): ${SHARE}"
+       if [ "$STOP_ON_ERROR" = "true" ]; then
+         echo "!!! STOP_ON_ERROR !!! -> $RESOURCE_NAME is not accessible"
+         return 1
+       fi
+    fi
   done
 }
 
@@ -134,8 +166,15 @@ function mount_smb_shares() {
     local DAV_ACTIVE="$(var_exp "SMB_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "SMB_${COUNT}_HTTP" "true")"
     local CACHE_ACTIVE="$(var_exp "SMB_${COUNT}_CACHE" "true")"
+    local STOP_ON_ERROR="$(var_exp "SMB_${COUNT}_STOP_ON_ERROR" "false")"
+
     echo
     echo "$(date +'%T'): smb: ${RESOURCE_NAME}"
+
+    if [ "$RESOURCE_NAME" = "nil" ]; then
+      echo "ERR (config): define SMB_${COUNT}_NAME"
+      return 1
+    fi
 
     local SMB_MOUNT="${DATA}/smb/${COUNT}"
 
@@ -160,6 +199,10 @@ function mount_smb_shares() {
       initial_create_symlinks_for_resources "${RESOURCE_NAME}" "SMB_${COUNT}" "${SMB_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     else
       echo "mount not successful (ignore): ${SHARE}"
+       if [ "$STOP_ON_ERROR" = "true" ]; then
+         echo "!!! STOP_ON_ERROR !!! -> $RESOURCE_NAME is not accessible"
+         return 1
+       fi
     fi
   done
 }
@@ -178,6 +221,7 @@ function connect_or_update_docker() {
     local DAV_ACTIVE="$(var_exp "DOCKER_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "DOCKER_${COUNT}_HTTP" "true")"
     local CACHE_ACTIVE="$(var_exp "DOCKER_${COUNT}_CACHE" "false")"
+    local STOP_ON_ERROR="$(var_exp "DOCKER_${COUNT}_STOP_ON_ERROR" "false")"
 
     local REPO_PATH="${DATA}/docker/${COUNT}"
     local REPO_DIR="$(echo "${REPO_URL}" | awk -F '/' '{print $NF}' | cut -d '.' -f 1)"
@@ -186,6 +230,11 @@ function connect_or_update_docker() {
 
     echo
     echo "$(date +'%T'): docker ($TYPE): ${RESOURCE_NAME} (${IMAGE}:${TAG}) | ${DOCKER_MOUNT}"
+
+    if [ "$RESOURCE_NAME" = "nil" ]; then
+      echo "ERR (config): define DOCKER_${COUNT}_NAME"
+      return 1
+    fi
 
     if [ "${TYPE}" = "connect" ] || [ ! -e "${DOCKER_MOUNT}" ]; then
       mkdir -p "${DOCKER_MOUNT}"
@@ -208,6 +257,10 @@ function connect_or_update_docker() {
         echo "doclig -action check-image -image ${IMAGE}:${TAG}"
         echo "ERR (check-image): No such image: ${IMAGE}:${TAG}"
         echo "ignore ${RESOURCE_NAME}"
+        if [ "$STOP_ON_ERROR" = "true" ]; then
+         echo "!!! STOP_ON_ERROR !!! -> $RESOURCE_NAME is not accessible"
+         return 1
+        fi
         continue
       else
         DIGEST=$(echo "$CHECK_IMAGE" | grep Digest | awk -F 'sha256:' '{print $2}')
@@ -272,7 +325,7 @@ function connect_or_update_docker() {
     fi
 
     # update -> call from periodic_jobs
-    if [ "${TYPE}" != "update" ] || [ "$MODIFIED_FILES" != "0" ] || [ "$SYNC_ALWAYS" = "true" ]; then
+    if [ "${TYPE}" != "update" ] || [ "$MODIFIED_FILES" != "0" ]; then
       initial_create_symlinks_for_resources "${RESOURCE_NAME}" "DOCKER_${COUNT}" "${DOCKER_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
     fi
   done
@@ -294,12 +347,18 @@ function connect_or_update_git_repos() {
       local HTTP_ACTIVE="$(var_exp "GIT_${COUNT}_HTTP" "true")"
       local CACHE_ACTIVE="$(var_exp "GIT_${COUNT}_CACHE" "false")"
 
+      local STOP_ON_ERROR="$(var_exp "GIT_${COUNT}_STOP_ON_ERROR" "false")"
       local GIT_REPO_PATH="${DATA}/git/${COUNT}"
       local REPO_DIR="$(echo "${REPO_URL}" | awk -F '/' '{print $NF}' | cut -d '.' -f 1)"
       local GIT_MOUNT="${GIT_REPO_PATH}/${REPO_DIR}"
 
       echo
       echo "$(date +'%T'): git ($TYPE): ${RESOURCE_NAME} (${REPO_BRANCH}) | ${GIT_MOUNT}"
+
+      if [ "$RESOURCE_NAME" = "nil" ]; then
+        echo "ERR (config): define GIT_${COUNT}_NAME"
+        return 1
+      fi
 
       local GIT_DIR="${GIT_MOUNT%/}/.git"
       if [ "${SEPARATE_GIT_DIR}" = "true" ]; then
@@ -347,6 +406,9 @@ function connect_or_update_git_repos() {
         echo "resource ('${OBF_REPO_URL}' -> '${URL_STRICT}') is not accessible -> ${HTTP_STATUS}"
       fi
 
+      # remove lock to repo since this should be an error
+      if [ "${TYPE}" = "connect" ] && [ -f "${GIT_DIR}/index.lock" ]; then rm -f "${GIT_DIR}/index.lock"; fi
+
       if [ ! -d "${GIT_MOUNT}" ] || [ ! -d "${GIT_DIR}" ]; then
         if ! ${ACCESSIBLE}; then
           echo "${GIT_MOUNT} not exists -> ignore"
@@ -372,11 +434,10 @@ function connect_or_update_git_repos() {
         # clone repo for shallow branches when current branch is different from specified branch
         local current_branch=$(git -C "${GIT_MOUNT}" --no-pager branch)
         if [[ "$current_branch" != *"${REPO_BRANCH}" ]]; then
-          echo "Branch: '${current_branch//\* }' (expected: '${REPO_BRANCH}')"
+          echo "Branch: '${current_branch//\* }' (expect: '${REPO_BRANCH}')"
           clone_git_repo_safe "${GIT_REPO_PATH}" "${REPO_URL}" "${OBF_REPO_URL}" "$RESOURCE_NAME" "$SHALLOW_CLONE" "$REPO_BRANCH" "$SEPARATE_GIT_DIR"
         fi
-      else
-        # remove lock to repo since this should be an error
+      elif [ -f "${GIT_DIR}/index.lock" ]; then
         rm -f "${GIT_DIR}/index.lock"
       fi
 
@@ -397,7 +458,7 @@ function connect_or_update_git_repos() {
       CHECKOUT_REPO_AGAIN=false
       # on error clone repo again!! avoid counting COUNT to repeat all actions
       if ! git_output="$(git -C "${GIT_MOUNT}" pull 2>&1)"; then
-        echo "git -C ${GIT_MOUNT} pull"
+        echo "git -C ${GIT_MOUNT} pull (failed)"
         echo "ERR: ${git_output}"
         if [[ "${git_output}" == *"The requested URL returned error: 503"* ]]; then
           echo "git repo is currently not accessible -> backup"
@@ -453,9 +514,11 @@ function connect_or_update_git_repos() {
       if ! $BLOCK_ACCESS; then
         # update -> call from periodic_jobs
         if [ "${TYPE}" != "update" ]; then
-          echo
           initial_create_symlinks_for_resources "${RESOURCE_NAME}" "GIT_${COUNT}" "${GIT_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
         fi
+      elif [ "$STOP_ON_ERROR" = "true" ]; then
+        echo "!!! STOP_ON_ERROR !!! -> $RESOURCE_NAME is not accessible"
+        return 1
       fi
       done=true
     done
@@ -469,15 +532,25 @@ function handle_local_paths() {
     local DAV_ACTIVE="$(var_exp "LOCAL_${COUNT}_DAV" "false")"
     local HTTP_ACTIVE="$(var_exp "LOCAL_${COUNT}_HTTP" "true")"
     local CACHE_ACTIVE="$(var_exp "LOCAL_${COUNT}_CACHE" "false")"
+    local STOP_ON_ERROR="$(var_exp "LOCAL_${COUNT}_STOP_ON_ERROR" "false")"
 
     echo
     echo "$(date +'%T'): local: ${LOCAL_NAME}"
 
+    if [ "$LOCAL_NAME" = "nil" ]; then
+      echo "ERR (config): define LOCAL_${COUNT}_NAME"
+      return 1
+    fi
+
     if [ ! -d "${LOCAL_PATH}" ]; then
       echo "LOCAL_${COUNT}_PATH: ${LOCAL_PATH}: not exists -> ignore"
+      if [ "$STOP_ON_ERROR" = "true" ]; then
+        echo "!!! STOP_ON_ERROR !!! -> $LOCAL_NAME is not accessible"
+        return 1
+      fi
     else
       # no subdir supported so far, so "LOCAL_${COUNT}" always points to a non existing location
-      initial_create_symlinks_for_resources "${LOCAL_NAME}" "LOCAL_${COUNT}" "${LOCAL_PATH}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
+      initial_create_symlinks_for_resources "${LOCAL_NAME}" "LOCAL_${COUNT}" "${LOCAL_PATH}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}" "init"
     fi
   done
 }
@@ -490,9 +563,15 @@ function handle_proxy() {
     local PROXY_MODE_DEFAULT="cache"
     local HTTP_ROOT_SHOW="$(var_exp "PROXY_${COUNT}_HTTP_ROOT_SHOW" "true")"
     local IP_RESTRICTION="$(var_exp "PROXY_${COUNT}_IP_RESTRICTION" "allow all")"
+    local STOP_ON_ERROR="$(var_exp "LOCAL_${COUNT}_STOP_ON_ERROR" "false")"
 
     echo
     echo "$(date +'%T'): proxy: $PROXY_NAME"
+
+    if [ "$PROXY_NAME" = "nil" ]; then
+      echo "ERR (config): define PROXY_${COUNT}_NAME"
+      return 1
+    fi
 
     parse_url "${PROXY_URL%/}/"
     local STATUS
@@ -549,8 +628,17 @@ function handle_proxy() {
       sed -i "/#/d" "${TEMP_FILE}"
     else
       echo "resource is not accessible (ignore): ${PROXY_URL}"
+       if [ "$STOP_ON_ERROR" = "true" ]; then
+         echo "!!! STOP_ON_ERROR !!! -> $PROXY_NAME is not accessible"
+         return 1
+       fi
     fi
   done
+}
+function start_light_http_server() {
+    echo
+    echo "$(date +'%T'): start light http server"
+    doclig -action serve -listen-addr :80 &
 }
 
 function start_http_server() {

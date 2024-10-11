@@ -17,13 +17,13 @@ echo "$_ENV" | grep "^TZ" | awk -F '=' '{printf "export %s=\"%s\"\n",$1,$2 }'
 
 echo "-- ENV --"
 for RES in DAV DOCKER GIT LOCAL NFS PROXY SMB SSH; do
-  echo "$_ENV" | grep "^${RES}_[0-9]*_" | sort -t '_' -k2 -n
+  echo "$_ENV" | grep -vi "crypt" | grep "^${RES}_[0-9]*_" | sort -t '_' -k2 -n
 done
 for RES in DAV DOCKER GIT LOCAL NFS PROXY SMB SSH; do
   _ENV=$(echo "$_ENV" | grep -v "^${RES}_[0-9]*_")
 done
 echo "---------"
-echo "$_ENV" | sort
+echo "$_ENV" | grep -vi "crypt" | sort
 echo "-- ENV --"
 
 mkdir -p "${DATA}"
@@ -32,29 +32,64 @@ initialize
 
 clean_up
 
-mount_nfs_shares
+if ! mount_nfs_shares; then
+  echo "$(date +'%T'): error connecting resource -> set to ERROR (http-over-all -> RELEASE: ${RELEASE})"
+  sleep inf
+  exit 1
+fi
 
-mount_smb_shares
+if ! mount_smb_shares; then
+  echo "$(date +'%T'): error connecting resource -> set to ERROR (http-over-all -> RELEASE: ${RELEASE})"
+  sleep inf
+  exit 1
+fi
 
-mount_ssh_shares
+if ! mount_ssh_shares; then
+  echo "$(date +'%T'): error connecting resource -> set to ERROR (http-over-all -> RELEASE: ${RELEASE})"
+  sleep inf
+  exit 1
+fi
 
-mount_dav_shares
+if ! mount_dav_shares; then
+  echo "$(date +'%T'): error connecting resource -> set to ERROR (http-over-all -> RELEASE: ${RELEASE})"
+  sleep inf
+  exit 1
+fi
 
-connect_or_update_git_repos "connect"
+if ! connect_or_update_git_repos "connect"; then
+  echo "$(date +'%T'): error connecting resource -> set to ERROR (http-over-all -> RELEASE: ${RELEASE})"
+  sleep inf
+  exit 1
+fi
 
-handle_proxy
+if ! handle_proxy; then
+  echo "$(date +'%T'): error connecting resource -> set to ERROR (http-over-all -> RELEASE: ${RELEASE})"
+  sleep inf
+  exit 1
+fi
 
-handle_local_paths
+if ! handle_local_paths; then
+  echo "$(date +'%T'): error connecting resource -> set to ERROR (http-over-all -> RELEASE: ${RELEASE})"
+  sleep inf
+  exit 1
+fi
 
-connect_or_update_docker "connect"
+if ! connect_or_update_docker "connect"; then
+  echo "$(date +'%T'): error connecting resource -> set to ERROR (http-over-all -> RELEASE: ${RELEASE})"
+  sleep inf
+  exit 1
+fi
 
 echo touch /var/run/force-update.last
 touch /var/run/force-update.last
 
-if [ "$(var_exp "HTTP_SERVER_START" "true")" = "true" ]; then
+HTTP_SERVER_START="$(var_exp "HTTP_SERVER_START" "true")"
+if [ "$HTTP_SERVER_START" = "true" ]; then
   start_http_server
+elif [ "$HTTP_SERVER_START" = "light" ]; then
+  start_light_http_server
 else
-  echo "$(date +'%T'): do not start nginx -> (env: HTTP_SERVER_START != true)"
+  echo "$(date +'%T'): do not start nginx -> (env: HTTP_SERVER_START != true | light)"
   touch ${SDS_NO_HTTP}
 fi
 

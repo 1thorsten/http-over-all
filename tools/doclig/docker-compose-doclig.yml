@@ -9,6 +9,7 @@ services:
     container_name: hoa-doclig
     image: 1thorsten/http-over-all:doclig
     restart: unless-stopped
+    
     labels:
       # value (false,all,admin)
       - docon.v1={"console":"all","control":"all","show":"http-over-all"}

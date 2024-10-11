@@ -1,5 +1,5 @@
 update_dependencies:
-	/usr/local/opt/go/libexec/bin/go get -u -t ./...
+	/usr/local/opt/go/libexec/bin/go get -v -u -t ./... all
 
 build:
 	mkdir -p bin
