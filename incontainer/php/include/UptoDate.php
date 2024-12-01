@@ -16,7 +16,7 @@ class UptoDate
     const INTERNAL = "http://127.0.0.1/internal";
     const CACHED_INTERNAL = "http://127.0.0.1/cached_internal";
     const CACHE_PATH = "/nginx-cache/";
-    private $log = PHP_LOG_ENABLED;
+    private bool $log = (PHP_LOG_ENABLED === "true");
     public string $path;
     public ?string $lastHttpStatus = null;
     public ?string $cacheStatus = null;
@@ -88,7 +88,6 @@ class UptoDate
     // $path = path from Webserve (/ibe_and_more/java/security/README.txt)
     public function getCacheStatus(): string
     {
-
         if (substr($this->path, -1) === '/') {
             return $this->cacheStatus = "CACHE_NO";
         }
@@ -99,7 +98,6 @@ class UptoDate
             }
 
             $header_direct = $this->header(self::INTERNAL . $this->path);
-
             if ($header_cache['Last-Modified'] == $header_direct['Last-Modified']) {
                 return $this->cacheStatus = "CACHE_HIT";
             }
@@ -127,8 +125,8 @@ class UptoDate
                 LOG::write(get_called_class(), "cleanUpCache: file does not exists -> $file");
                 continue;
             }
-            $cacheKey = $this->readCacheKeyFromFile($file);
 
+            $cacheKey = $this->readCacheKeyFromFile($file);
             if (substr($cacheKey, -$len) === $this->path) {
                 LOG::write(get_called_class(), "cleanUpCache: delete old cached resource -> $file");
                 unlink($file);
@@ -160,6 +158,5 @@ class UptoDate
             $contents = $file->current();
         } while ($file->eof() || !strstr($contents, "KEY:"));
         return substr($contents, 0, -1);
-
     }
 }

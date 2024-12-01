@@ -464,7 +464,7 @@ function connect_or_update_git_repos() {
           echo "git repo is currently not accessible -> backup"
           ACCESSIBLE=false
         elif [[ "${git_output}" == *"Could not resolve host"* ]]; then
-          echo "git repo is currently not accessible -> host could not resolved"
+          echo "git repo is currently not accessible -> host could not be resolved"
           ACCESSIBLE=false
         elif [[ "${git_output}" == *"unable to update"* ]]; then
           echo "git repo is currently not accessible -> unable to update"

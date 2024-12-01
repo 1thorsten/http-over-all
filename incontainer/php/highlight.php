@@ -16,7 +16,7 @@ $time_start = microtime(true);
 $uri = $_REQUEST['uri'];
 $remote_addr = $_REQUEST['remote_addr'];
 
-$log = PHP_LOG_ENABLED;
+$log = (PHP_LOG_ENABLED === "true");
 $debugOut = '';
 if (isset($_SERVER['HTTP_X_DEBUG_OUT'])) {
     $log = true;
