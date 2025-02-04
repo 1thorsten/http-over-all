@@ -149,8 +149,8 @@ Proxy (mode: direct) supports websockets.
 | PROXY_[COUNT]_CACHE_TIME     | cache content, and how to cache - e.g. 1d (one day)                                              | -        |
 | PROXY_[COUNT]_HTTP_ROOT_SHOW | show the content in the root directory (default: true)                                           | -        | 
 | PROXY_[COUNT]_IP_RESTRICTION | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | -        | 
-| PROXY_[COUNT]_LOG_ACCESS     | access_log -> file, device (/dev/stdout) off (default: off)                                      | -        | 
-| PROXY_[COUNT]_LOG_ERROR      | error_log -> file, device (/dev/stdout) off (default: /dev/stdout)                               | -        | 
+| PROXY_[COUNT]_LOG_ACCESS     | access_log -> file, device (/dev/stdout), off (default: off)                                     | -        | 
+| PROXY_[COUNT]_LOG_ERROR      | error_log -> file, device (/dev/stdout), off (default: /dev/stdout)                              | -        | 
 | PROXY_[COUNT]_MODE           | cache (default for non unix-sockets) or direct (default for unix-sockets)                        | -        | 
 
 General Options: no
