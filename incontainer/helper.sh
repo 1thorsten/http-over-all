@@ -29,7 +29,7 @@ function decrypt() {
   local VAR="${1}"
   local ENCRYPTED=$(echo "$VAR" | grep -oP "{crypt:\K(.*)(?=\})")
   if [ "$ENCRYPTED" != "" ]; then
-    local DECRYPTED=$(php -r "include 'UnsafeCrypto.php'; echo UnsafeCrypto::decrypt('$ENCRYPTED', true);")
+    local DECRYPTED=$(php -r "include 'Crypto.php'; echo Crypto::decrypt('$ENCRYPTED', true);")
     VAR=$(echo "$VAR" | perl -pe "s/{crypt:.*}/$DECRYPTED/g")
   fi
   echo "${VAR}"

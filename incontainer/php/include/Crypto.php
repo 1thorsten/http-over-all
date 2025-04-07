@@ -1,12 +1,12 @@
 <?php
 
-# rm /scripts/php/include/UnsafeCrypto.php ; nano /scripts/php/include/UnsafeCrypto.php
+# rm /scripts/php/include/Crypto.php ; nano /scripts/php/include/Crypto.php
 # use with php interpreter:
-# php -r "include 'UnsafeCrypto.php'; echo UnsafeCrypto::encrypt('lala', true);" ; echo
-# php -r "include 'UnsafeCrypto.php'; echo UnsafeCrypto::decrypt('IsoGWzW7Tem-2j-cVTIIc1BRL1g', true);" ; echo
+# php -r "include 'Crypto.php'; echo UnsafeCrypto::encrypt('lala', true);" ; echo
+# php -r "include 'Crypto.php'; echo UnsafeCrypto::decrypt('IsoGWzW7Tem-2j-cVTIIc1BRL1g', true);" ; echo
 include_once "globals.php";
 
-class UnsafeCrypto
+class Crypto
 {
     # http://micmap.org/php-by-example/de/function/openssl_get_cipher_methods
     const METHOD = 'AES-128-CTR';

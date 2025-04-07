@@ -8,7 +8,7 @@
 
 include_once "Log.php";
 include "common_functions.php";
-include "UnsafeCrypto.php";
+include "Crypto.php";
 include "UptoDate.php";
 
 denyAccessFromExternal("decrypt-link.php");
@@ -27,7 +27,7 @@ if (!$found) {
 
 $encrypted = $matches[1];
 $filename = $matches[2];
-$decrypted = UnsafeCrypto::decrypt($encrypted, true);
+$decrypted = Crypto::decrypt($encrypted, true);
 
 $object = json_decode($decrypted);
 

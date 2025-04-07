@@ -2,7 +2,7 @@
 # rm -f /scripts/php/func_encrypt-msg.php ; nano /scripts/php/func_encrypt-msg.php
 
 include_once "Log.php";
-include "UnsafeCrypto.php";
+include "Crypto.php";
 
 $remote_addr = $_REQUEST['remote_addr'];
 $message = null;
@@ -45,10 +45,9 @@ if (isset($_REQUEST['v'])) {
 }
 
 $json = json_encode((array)$object);
-$cipher_algo = 'BF-OFB';
 
 $encrypted = $encrypt_for_hosts ?
-    UnsafeCrypto::encrypt($json, true) :
-    UnsafeCrypto::encrypt_ext(strrev($remote_addr), $cipher_algo, $json, true);
+    Crypto::encrypt($json, true) :
+    Crypto::encrypt_ext(strrev($remote_addr) . KEY, Crypto::METHOD, $json, true);
 
 echo $encrypted;

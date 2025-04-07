@@ -10,7 +10,7 @@ export NGINX_CONF=/etc/nginx/http-over-all
 function encrypt {
   local VAR="${1}"
   if [ -z "$VAR" ]; then echo "no argument given" && exit 1; fi
-  ENCRYPTED=$(php -r "include 'UnsafeCrypto.php'; echo UnsafeCrypto::encrypt('$VAR', true);")
+  ENCRYPTED=$(php -r "include 'Crypto.php'; echo Crypto::encrypt('$VAR', true);")
   echo "{crypt:${ENCRYPTED}}"
 }
 

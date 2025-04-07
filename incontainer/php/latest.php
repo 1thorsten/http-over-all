@@ -54,7 +54,7 @@ $encoded_url = preg_replace_callback('#://([^/]+)/([^?]+)#', function ($match) {
 }, $url);
 # common_functions.php
 $res = forwardRequest($encoded_url);
-$forwaredUrlPath = parse_url($encoded_url, PHP_URL_PATH);
+$forwardedUrlPath = parse_url($encoded_url, PHP_URL_PATH);
 if (PHP_LOG_ENABLED) {
-    LOG::writeTime("latest.php", $remote_addr, "processed $forwaredUrlPath $debugOut | Length: {$res['Content-Length']} | Cache: $uptoDate->cacheStatus", $time_start);
+    LOG::writeTime("latest.php", $remote_addr, "processed $forwardedUrlPath $debugOut | Length: {$res['Content-Length']} | Cache: $uptoDate->cacheStatus", $time_start);
 }

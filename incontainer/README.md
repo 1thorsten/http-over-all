@@ -145,6 +145,7 @@ Proxy (mode: direct) supports websockets.
 |------------------------------|--------------------------------------------------------------------------------------------------|----------|
 | PROXY_[COUNT]_NAME           | resource name (shown in root dir)                                                                | x        | 
 | PROXY_[COUNT]_URL            | e.g http:/x.x.x.x/resource/ or http://unix:/var/run/docker.sock:/                                | x        | 
+| PROXY_[COUNT]_CHECK          | URL to check (default: PROXY_[COUNT]_URL), false for not checking                                | -        | 
 | PROXY_[COUNT]_AUTH           | user:password (basic auth)                                                                       | -        |
 | PROXY_[COUNT]_CACHE_TIME     | cache content, and how to cache - e.g. 1d (one day)                                              | -        |
 | PROXY_[COUNT]_HTTP_ROOT_SHOW | show the content in the root directory (default: true)                                           | -        | 
@@ -282,7 +283,7 @@ Options:
 
 ```bash
 curl 'http://[http-over-all:8338]/func/encrypt-msg?h=192.168.15.14&m=message2encrypt&v=now +10 min'
-curl -X POST -H "Content-Type: text/plain" --data "this is the message" 'http://[http-over-all:8338]/func/encrypt-msg?h=192.168.15.14&m=message2encrypt&v=now +10 min'
+curl -X POST -H "Content-Type: text/plain" --data "this is the message" 'http://[http-over-all:8338]/func/encrypt-msg?h=192.168.15.14&v=now +10 min'
 ```
 
 ## func/decrypt-msg
@@ -298,7 +299,7 @@ curl -X POST -H "Content-Type: text/plain" --data 'encryptedMessage' 'http://[ht
 
 ## func/remote-ip
 
-Show ip address from the requestor.
+Show ip address from the  requester.
 Sometimes you need to know your real internal ip address (e.g. if you are in a container with its own virtual network)
 
 ```bash
@@ -307,7 +308,7 @@ curl http://[http-over-all:8338]/func/remote-ip
 
 ## func/show-headers
 
-Show all headers from the requestor request.
+Show all headers from the requester request.
 
 ```bash
 curl http://[http-over-all:8338]/func/show-headers

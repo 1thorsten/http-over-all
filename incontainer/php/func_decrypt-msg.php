@@ -2,7 +2,7 @@
 # rm -f /scripts/php/func_decrypt-msg.php ; nano /scripts/php/func_decrypt-msg.php
 
 include_once "Log.php";
-include "UnsafeCrypto.php";
+include "Crypto.php";
 include "Ip4Range.php";
 
 $remote_addr = $_REQUEST['remote_addr'];
@@ -23,16 +23,17 @@ $rev_remote_addr = strrev($remote_addr);
 $object = null;
 
 try {
-    // first try OFB (than encryption for multiple hosts)
-    $dec = UnsafeCrypto::decrypt_ext($rev_remote_addr, 'BF-OFB', $message, true);
-    $object = json_decode($dec);
-
-    if ($object === null) {
-        $dec = UnsafeCrypto::decrypt($message, true);
-        $object = json_decode($dec);
-        if ($object !== null && !evaluateResponseForHosts($object, $remote_addr)) {
-            // querying host not valid
-            $object = null;
+    // first try for multiple hosts
+    $object = json_decode(Crypto::decrypt($message, true));
+    if ($object !== null && !evaluateResponseForHosts($object, $remote_addr)) {
+        // querying host not valid
+        $object = null;
+    } else if ($object === null) {
+        // second try AES with extended passphrase
+        $object = json_decode(Crypto::decrypt_ext($rev_remote_addr . KEY, Crypto::METHOD, $message, true));
+        if ($object === null) {
+            // third try OFB without extended passphrase
+            $object = json_decode(Crypto::decrypt_ext($rev_remote_addr, 'BF-OFB', $message, true));
         }
     }
 } catch (Exception $e) {
@@ -80,7 +81,7 @@ function evaluateResponseForHosts(object $object, string $remote_addr): bool
 
         $validHost = (new Ip4Range($for_hosts))->isIncluded($remote_addr);
         if ($validHost) {
-            header("For-hosts: $remote_addr");
+            header("For-hosts: $for_hosts");
             return true;
         }
     }

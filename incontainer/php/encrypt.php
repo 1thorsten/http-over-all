@@ -3,7 +3,7 @@
 # rm /scripts/php/encrypt.php ; nano /scripts/php/encrypt.php
 
 include_once "Log.php";
-include "UnsafeCrypto.php";
+include "Crypto.php";
 include "common_functions.php";
 
 denyAccessFromExternal("encrypt.php");
@@ -14,12 +14,12 @@ $time_start = microtime(true);
 
 $uri = $_REQUEST['uri'];
 $remote_addr = $_REQUEST['remote_addr'];
-$cache  = $_REQUEST['cache'];
+$cache = $_REQUEST['cache'];
 
-$object = (object) ['uri' => $uri, 'cache' => $cache];
-$json = json_encode( (array)$object );
+$object = (object)['uri' => $uri, 'cache' => $cache];
+$json = json_encode((array)$object);
 
-$encrypted = UnsafeCrypto::encrypt($json, true);
+$encrypted = Crypto::encrypt($json, true);
 
 $filename = basename($uri);
 
@@ -27,14 +27,14 @@ $filename = basename($uri);
 #echo "<br><a href='$decryptUrl'>$decryptUrl</a>";
 $encryptedUrl = "{$_REQUEST['scheme']}://{$_REQUEST['http_host']}/decrypt/$encrypted/$filename";
 
-LOG::writeTime("encrypt.php",$remote_addr,"create url: $encryptedUrl", $time_start);
+LOG::writeTime("encrypt.php", $remote_addr, "create url: $encryptedUrl", $time_start);
 
 # curl -i -H "Accept: application/json" http://localhost:8338/git_aerintapi/docker/http-over-all/docker-compose.yml?share
 if ($_SERVER['HTTP_ACCEPT'] == "application/json") {
     header('Content-Type: application/json; charset=utf-8');
     $responseArray = array('url' => $encryptedUrl, 'path' => '/decrypt', 'cipher' => $encrypted, 'resourceName' => $filename);
     echo json_encode($responseArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    return; 
+    return;
 }
 if (!accessFromBrowser()) {
     echo $encryptedUrl;
@@ -47,13 +47,13 @@ $linkDecryptionUrl = "{$_REQUEST['scheme']}://{$_REQUEST['http_host']}/decrypt-l
 ?>
 <html lang="en">
 <body style="background-color: lightgrey;">
-    <h1>SDS Link encryption</h1>
-    <span style="font-family: monospace;">
-        <?php echo $encryptedUrl;?><br/>
+<h1>SDS Link encryption</h1>
+<span style="font-family: monospace;">
+        <?php echo $encryptedUrl; ?><br/>
     </span>
-    <p>
-        <a href="<?php echo $encryptedUrl; ?>" target="_blank"><?php echo "encrypted link (len: $encryptedLen)"; ?></a><br>
-        <a href="<?php echo $linkDecryptionUrl; ?>" target="_blank"><?php echo "decrypt link"; ?></a>
-    </p>
+<p>
+    <a href="<?php echo $encryptedUrl; ?>" target="_blank"><?php echo "encrypted link (len: $encryptedLen)"; ?></a><br>
+    <a href="<?php echo $linkDecryptionUrl; ?>" target="_blank"><?php echo "decrypt link"; ?></a>
+</p>
 </body>
 </html>

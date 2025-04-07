@@ -37,7 +37,7 @@ function mount_dav_shares() {
     # check accessibility
     local ACCESSIBLE
     local HTTP_STATUS="$(curl --user "${USER}:${PASS}" -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${SHARE%/}/")"
-    if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' ]]; then
+    if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' || "${HTTP_STATUS}" -eq '405' ]]; then
       ACCESSIBLE=true
     else
       ACCESSIBLE=false
@@ -398,7 +398,7 @@ function connect_or_update_git_repos() {
       fi
       # shellcheck disable=SC2086
       local HTTP_STATUS="$(curl ${CURL_CREDENTIALS} -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${URL_STRICT}")"
-      if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' || "${HTTP_STATUS}" -eq '302' ]]; then
+      if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' || "${HTTP_STATUS}" -eq '405' || "${HTTP_STATUS}" -eq '302' ]]; then
         ACCESSIBLE=true
       else
         ACCESSIBLE=false
@@ -559,6 +559,7 @@ function handle_proxy() {
   for COUNT in $(env | grep -o "^PROXY_[0-9]*_URL" | awk -F '_' '{print $2}' | sort -nu); do
     local PROXY_NAME="$(var_exp "PROXY_${COUNT}_NAME")"
     local PROXY_URL="$(var_exp "PROXY_${COUNT}_URL")"
+    local PROXY_CHECK="$(var_exp "PROXY_${COUNT}_CHECK" "$PROXY_URL")"
     local PROXY_CACHE="$(var_exp "PROXY_${COUNT}_CACHE_TIME")"
     local PROXY_MODE_DEFAULT="cache"
     local HTTP_ROOT_SHOW="$(var_exp "PROXY_${COUNT}_HTTP_ROOT_SHOW" "true")"
@@ -587,15 +588,16 @@ function handle_proxy() {
       fi
       local permissions=$(stat -c '%A %a %n' "$SOCKET_FILE")
       echo "permissions: $permissions"
-    else
+    elif [ "$PROXY_CHECK" != "false" ]; then
       # check accessibility
-      echo "check accessibility : curl -s -o /dev/null -I -w '%{http_code}' --connect-timeout 1 ${PROXY_URL%/}/"
-      STATUS="$(curl -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${PROXY_URL%/}/")"
+      echo "check accessibility : curl -s -o /dev/null -I -w '%{http_code}' --connect-timeout 1 ${PROXY_CHECK}"
+      #sleep 20s
+      STATUS="$(curl -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${PROXY_CHECK}")"
     fi
 
     local PROXY_MODE="$(var_exp "PROXY_${COUNT}_MODE" "$PROXY_MODE_DEFAULT")"
 
-    if [[ "${STATUS}" -eq '200' || "${STATUS}" -eq '401' ]]; then
+    if [[ "${STATUS}" -eq '200' || "${STATUS}" -eq '302' || "${STATUS}" -eq '401' || "${STATUS}" -eq '405' ]]; then
       if [[ ${IP_RESTRICTION,,} != *"satisfy"* ]]; then
         IP_RESTRICTION="satisfy all; $IP_RESTRICTION"
       fi
@@ -627,7 +629,7 @@ function handle_proxy() {
       fi
       sed -i "/#/d" "${TEMP_FILE}"
     else
-      echo "resource is not accessible (ignore): ${PROXY_URL}"
+      echo "resource is not accessible (ignore -> HTTP $STATUS): ${PROXY_URL}"
        if [ "$STOP_ON_ERROR" = "true" ]; then
          echo "!!! STOP_ON_ERROR !!! -> $PROXY_NAME is not accessible"
          return 1
