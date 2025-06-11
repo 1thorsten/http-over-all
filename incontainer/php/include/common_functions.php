@@ -4,13 +4,15 @@
 include_once "globals.php";
 include_once "Log.php";
 
-function denyAccessFromExternal(string $callingScript) {
-    $remoteAddress=$_SERVER['REMOTE_ADDR'];
+function denyAccessFromExternal(string $callingScript): void
+{
+    $host=$_SERVER['HTTP_HOST'];
 
-    if ($remoteAddress != "127.0.0.1") {
+    if ($host != "127.0.0.1") {
         echo "Error: do not call this script directly";
-        LOG::write($callingScript,"script was called directly from {$remoteAddress} -> uri: {$_SERVER['REQUEST_URI']}");
-        exit;   
+        LOG::write($callingScript,"script was called directly from {$host} -> uri: {$_SERVER['REQUEST_URI']}");
+
+        exit;
     }
 }
 
@@ -47,7 +49,7 @@ function forwardRequest(string $encoded_url): array {
     // the content to the client will be compressed with the help of the underlying nginx
 
     // if(isset($_SERVER['HTTP_ACCEPT_ENCODING'])) {
-    //    fwrite($sock, "Accept-Encoding: {$_SERVER['HTTP_ACCEPT_ENCODING']}\r\n");        
+    //    fwrite($sock, "Accept-Encoding: {$_SERVER['HTTP_ACCEPT_ENCODING']}\r\n");
     // }
 
     fwrite($sock, "Connection: Close\r\n");
@@ -79,10 +81,10 @@ function forwardRequest(string $encoded_url): array {
             header($str);
         }
     }
-    
+
     // change order of the crypt output (uri ends with filename, so no Content-Dispositon is necessary anymore)
     // $name = basename($url);
-    // header("Content-Disposition: inline; filename=\"$name\"");  
+    // header("Content-Disposition: inline; filename=\"$name\"");
     // stream_set_timeout($sock, 600);
     while (!feof($sock)) {
         echo fgets($sock, 4096);
@@ -131,4 +133,3 @@ function determineLanguage(string $basename): string
     if(strpos($n,".yaml") !== false) return "lang-yaml";
     return "lang-markup";
 }
-

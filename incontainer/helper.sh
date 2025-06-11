@@ -35,6 +35,18 @@ function decrypt() {
   echo "${VAR}"
 }
 
+function add_if_missing_to_protocols() {
+  local name="$1"
+  local number="$2"
+  local comment="$3"
+
+  local PROTO_FILE="/etc/protocols"
+  if ! grep -qE "^${name}[[:space:]]+${number}[[:space:]]+${comment}" "$PROTO_FILE"; then
+   echo "${PROTO_FILE}: entry for ${name} is missing – adding it."
+   echo "${name} ${number} ${comment}" >> "$PROTO_FILE"
+  fi
+  }
+
 function initialize() {
   echo "initialize"
 
@@ -74,6 +86,10 @@ function initialize() {
     cp /scripts/ext-config/debian-bookworm/openssl.cnf /etc/ssl/
     chmod 644 /etc/ssl/openssl.cnf
   fi
+
+  # Check and add protocol entries if missing (for nfs for example)
+  add_if_missing_to_protocols "tcp" 6 "TCP"
+  add_if_missing_to_protocols "udp" 17 "UDP"
 
   echo "cp /scripts/nginx-config/php/php${PHP_VERSION}.ini ${PHP_ETC}/fpm/php.ini"
   mv -f "${PHP_ETC}/fpm/php.ini" "${PHP_ETC}/fpm/php.ini_orig"

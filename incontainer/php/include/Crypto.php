@@ -21,6 +21,20 @@ class Crypto
         return base64_decode(str_replace(['-', '_'], ['+', '/'], $data), true);
     }
 
+    private static function isZlibCompressed(string $string): bool
+    {
+        if (strlen($string) < 2) {
+            return false;
+        }
+
+        // check zlib Header (CMF and FLG Bytes)
+        $header = unpack('C2', substr($string, 0, 2));
+
+        // CMF Byte should be 0x78 by zlib 0x78 (120 decimal)
+        // FLG Byte 0x01, 0x9C or 0xDA
+        return $header[1] == 120 && in_array($header[2], [1, 156, 218]);
+    }
+
     /**
      * Encrypt (but does not authenticate) a message
      *
@@ -48,6 +62,13 @@ class Crypto
         # docker run --rm php:8.2.0-cli-alpine php -r 'print_r(openssl_get_cipher_methods());'
         # docker run --rm php:7.4.0-cli-alpine php -r 'echo "L:".openssl_cipher_iv_length("bf-ofb")."\n";'
         # docker run --rm php:cli-alpine php -r 'echo "CRYPT_KEY:".base64_encode(openssl_random_pseudo_bytes(32))."\n";'
+
+        if (strlen($message) > 500) {
+            $compressed = gzcompress($message, 9);
+            if (strlen($compressed) < strlen($message)) {
+                $message = $compressed;
+            }
+        }
 
         $iv_length = openssl_cipher_iv_length($cipher_algo);
         $iv = openssl_random_pseudo_bytes($iv_length);
@@ -104,13 +125,18 @@ class Crypto
         # php -r 'echo "ciphertext: ".mb_substr(base64_decode(str_replace(["-","_"], ["+","/"], "FPkwTGnJ5stmrcHbbj4e6zwoVtuff-wL4g-c0mIN00h6Hgx6nMGko1BwOYP_2JXC"), true), 8, null, "8bit")."\n";'
         $ciphertext = mb_substr($message, $iv_length, null, '8bit');
 
-        return openssl_decrypt(
+        $decrypted =  openssl_decrypt(
             $ciphertext,
             $cipher_algo,
             $passphrase,
             OPENSSL_RAW_DATA,
             $iv
         );
+
+        if (self::isZlibCompressed($decrypted)) {
+            $decrypted = gzuncompress($decrypted);
+        }
+        return $decrypted;
     }
 }
 

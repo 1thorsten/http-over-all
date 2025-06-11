@@ -159,18 +159,19 @@ General Options: no
 ## NFS
 ### Options
 On the server that provides the nfs share you have to edit the /etc/exports accordingly.
-```
+```bash
 /etc/exports:
 /mnt/data/downloads 10.40.4.33(async,no_subtree_check,rw,all_squash,anonuid=1000,anongid=1000)
 ```
 Reload the configuration afterwards:
 ```bash
-exportfs -rs
+exportfs -ra
 ```
 
 | ENV-Variable      | Description            | required |
 |-------------------|------------------------|----------|
-| NFS_[COUNT]_SHARE | e.g. 10.23.4.161:/home | x        | 
+| NFS_[COUNT]_SHARE | e.g. 10.23.4.161:/home | x        |
+| NFS_[COUNT]_OPTS  | e.g. vers=3,nolock,tcp | -        |
 
 General Options: yes
 
@@ -260,6 +261,10 @@ Generate your own CRYPT_KEY:
 docker run --rm php:cli-alpine php -r 'echo "CRYPT_KEY:".base64_encode(openssl_random_pseudo_bytes(32))."\n";'
 ```
 # <a name="additions"></a>Additions
+
+## A-FRONTEND or f/
+use the fronend to easily control the additions
+
 ## func/encrypt-msg
 encrypt the given message depending on the requesting host.
 Only the requesting host is able to decrypt the encrypted message.

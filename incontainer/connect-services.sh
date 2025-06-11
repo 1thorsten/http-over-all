@@ -666,6 +666,10 @@ function start_http_server() {
   sed -i "/__INCLUDE_README__/r README.md" "/scripts/nginx-config/README.html"
   if [ -n "$RELEASE" ]; then sed -i "s|__RELEASE__|${RELEASE}|" "/scripts/nginx-config/README.html"; fi
 
+
+  echo "create ${HTDOCS}/frontend for frontend integration"
+  touch "${HTDOCS}/A-FRONTEND"
+
   # remove the __INCLUDE_README__ line
   sed -i "/__INCLUDE_README__/d" "/scripts/nginx-config/README.html"
   ln -fs "/scripts/nginx-config/README.html" "${HTDOCS}/README.html"

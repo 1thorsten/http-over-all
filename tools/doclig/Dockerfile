@@ -28,8 +28,8 @@ RUN set -x && \
     echo "OS part successfully terminated" && \
     set +x
 
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
 ENV PHP_ETC=/etc/php/$PHP_VERSION
 ENV PHP_SERVICE=php${PHP_VERSION}-fpm
@@ -37,7 +37,7 @@ ENV PHP_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.2-doclig"
+ARG RELEASE="1.3-doclig"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin

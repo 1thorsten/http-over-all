@@ -17,6 +17,7 @@ if ($message === null) {
     LOG::writeHost("func_encrypt-msg.php", $remote_addr, "param 'm' is missing.");
     return;
 }
+
 header('Content-Type: text/plain; charset=utf-8');
 
 $encrypt_for_hosts = false;
@@ -35,6 +36,11 @@ $valid_ts = null;
 if (isset($_REQUEST['v'])) {
     $valid = $_REQUEST['v'];
     $valid_ts = strtotime($valid);
+    if ($valid_ts === false) {
+        http_response_code(400);
+        LOG::writeHost("func_encrypt-msg.php", $remote_addr, "value for param 'v' is invalid -> $valid");
+        return;
+    }
     header("Valid: " . date('F j, Y, g:i a', $valid_ts));
 
     $object = (object)['v' => $valid_ts, 'h' => $remote_addr, 'm' => $message];

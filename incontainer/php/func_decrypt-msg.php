@@ -49,6 +49,7 @@ if ($object === null) {
 }
 
 header('Content-Type: text/plain; charset=utf-8');
+
 if (property_exists($object, 'v')) {
     header("Valid: " . date('F j, Y, g:i a', $object->v));
     if (strtotime("now") > $object->v) {
@@ -75,17 +76,17 @@ function evaluateResponseForHosts(object $object, string $remote_addr): bool
 
         // for ALL = *
         if ($for_hosts === "*") {
-            header("For-hosts: ALL");
+            header("for-hosts: ALL");
             return true;
         }
 
         $validHost = (new Ip4Range($for_hosts))->isIncluded($remote_addr);
         if ($validHost) {
-            header("For-hosts: $for_hosts");
+            header("for-hosts: $for_hosts");
             return true;
         }
     }
-    header("For-hosts: not found");
+    header("for-hosts: not found");
     return false;
 }
 

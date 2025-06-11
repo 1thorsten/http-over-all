@@ -23,6 +23,8 @@ $remote_addr = $_REQUEST['remote_addr'];
 $uptoDate = new UptoDate($path);
 # $uptoDate->cleanUpCache();
 $url = $uptoDate->url(true);
+
+// Redirect if status is 301
 if (strstr($uptoDate->lastHttpStatus,'301') === '301 Moved Permanently') {
     header("Location: $path/");
     LOG::writeTime("latest.php", $remote_addr, "redirect to $path/ [$uptoDate->lastHttpStatus]", $time_start);

@@ -61,8 +61,16 @@ server {
     }
 
     location /func/nginx_status {
+        access_by_lua_block {
+            local xff = ngx.req.get_headers()["X-Forwarded-For"]
+            if xff ~= "127.0.0.1" then
+                return ngx.exit(ngx.HTTP_FORBIDDEN)
+            end
+        }
+
         allow 127.0.0.1;
         deny all;
+
         stub_status;
     }
 
@@ -75,18 +83,43 @@ server {
     }
 
     location /func/show-headers {
-        set_by_lua_block $request_headers{
-          local h = ngx.req.get_headers()
-          local request_headers_all = ""
-          for k, v in pairs(h) do
-            local rowtext = ""
-            rowtext = string.format("%s: %s\n", k, v)
-            request_headers_all = request_headers_all .. rowtext
-          end
-          return request_headers_all
+        set_by_lua_block $request_info {
+            local lines = {}
+
+            -- Request Headers
+            local req_headers = ngx.req.get_headers()
+            local req_keys = {}
+            for k in pairs(req_headers) do
+                table.insert(req_keys, k)
+            end
+            table.sort(req_keys)
+
+            table.insert(lines, "--- Request Headers ---")
+            for _, k in ipairs(req_keys) do
+                local v = req_headers[k]
+                if type(v) == "table" then
+                    v = table.concat(v, ", ")
+                end
+                table.insert(lines, string.format("%s: %s", k, v))
+            end
+
+            -- Nginx Variables (a selected subset)
+            local var_keys = {
+                "remote_addr", "remote_user", "request", "request_uri", "request_method",
+                "server_protocol", "host", "http_user_agent", "http_cookie", "http_referer"
+            }
+            table.sort(var_keys)
+
+            table.insert(lines, "\n--- Nginx Variables ---")
+            for _, k in ipairs(var_keys) do
+                local v = ngx.var[k] or "-"
+                table.insert(lines, string.format("%s: %s", k, v))
+            end
+
+            return table.concat(lines, "\n")
         }
 
-        return 200 $request_headers;
+        return 200 $request_info;
     }
 
     # return base64 encoded encrypted message (key ip address and crypt-key)
@@ -105,6 +138,13 @@ server {
         proxy_pass http://127.0.0.1/php/func_decrypt-msg.php?remote_addr=$real_remote_addr&$args;
     }
 
+    location /func/encrypt-link {
+        default_type	text/plain;
+        add_header	X-Remote-Addr $remote_addr;
+        add_header	X-Forwarded-For $http_x_forwarded_for;
+        proxy_pass http://127.0.0.1/php/encrypt.php?remote_addr=$real_remote_addr&$args;
+    }
+
     location = /dav/ {
         root /var/www;
         client_max_body_size 2000M;
@@ -116,6 +156,8 @@ server {
         create_full_put_path  on;
         dav_access    user:rw group:rw all:rw;
         autoindex     on;
+        add_header DAV "1,2";
+        add_header MS-Author-Via "DAV";
 
         satisfy all;    
 
@@ -135,6 +177,19 @@ server {
         fastcgi_read_timeout 300s;
         fastcgi_send_timeout 300s;
         include fastcgi.conf;
+    }
+
+    # Redirect von /frontend zu /f/
+    location = /A-FRONTEND {
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+        return 301 /f/;
+    }
+
+    # Frontend unter /f
+    location /f {
+        alias /scripts/react-dist;
+        try_files $uri $uri/ /f/index.html;
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
     }
 
     location /decrypt/ {

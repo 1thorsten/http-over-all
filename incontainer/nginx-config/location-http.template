@@ -16,11 +16,13 @@
         proxy_send_timeout  300s;
 
         if ($args ~ share) {
-            rewrite_by_lua_block {
-                ngx.req.set_uri(ngx.escape_uri(ngx.var.uri));
-            }
+            #rewrite_by_lua_block {
+            #    ngx.req.set_uri(ngx.escape_uri(ngx.var.uri));
+            #}
 
-            proxy_pass http://127.0.0.1/php/encrypt.php?uri=$uri&scheme=$scheme&http_host=$http_host&remote_addr=$remote_addr&cache=true;
+            rewrite ^ /f?encrypt-link&uri=$uri&cache=true redirect;
+
+            # proxy_pass http://127.0.0.1/php/encrypt.php?uri=$uri&scheme=$scheme&http_host=$http_host&remote_addr=$remote_addr&cache=true;
             break;
         }
 
