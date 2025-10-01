@@ -262,9 +262,6 @@ docker run --rm php:cli-alpine php -r 'echo "CRYPT_KEY:".base64_encode(openssl_r
 ```
 # <a name="additions"></a>Additions
 
-## A-FRONTEND or f/
-use the fronend to easily control the additions
-
 ## func/encrypt-msg
 encrypt the given message depending on the requesting host.
 Only the requesting host is able to decrypt the encrypted message.

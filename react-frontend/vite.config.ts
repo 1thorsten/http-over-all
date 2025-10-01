@@ -1,5 +1,5 @@
 import {defineConfig} from 'vite';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc'
 import {transformReadmePlugin} from './vite-transform-readme';
 import path from 'path';
 
@@ -32,6 +32,16 @@ export default defineConfig({
         secure: false,
       },
       '/decrypt': {
+        target: 'http://localhost:8338',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/git_timeset/': {
+        target: 'http://localhost:8338',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/local/': {
         target: 'http://localhost:8338',
         changeOrigin: true,
         secure: false,

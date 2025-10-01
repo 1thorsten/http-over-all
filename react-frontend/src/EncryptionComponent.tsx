@@ -21,18 +21,20 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import LinkIcon from '@mui/icons-material/Link';
 import CodeIcon from '@mui/icons-material/Code';
-import axios from 'axios';
 import {useClipboardAvailable} from "./useClipboardAvailable.ts";
 import {usePersistentState} from "./usePersistentState.ts";
 
 interface EncryptionComponentProps {
     onEncryptedChange?: (data: { result: string, headers: Record<string, string> }) => void;
     showUrls?: boolean;
+    fetchedIpAddress: string | null; // Neue Prop
 }
 
-function EncryptionComponent({onEncryptedChange, showUrls = true}: EncryptionComponentProps) {
+const defaultIpAddressVal = '*';
+
+function EncryptionComponent({onEncryptedChange, showUrls = true, fetchedIpAddress}: EncryptionComponentProps) {
     const [textToEncrypt, setTextToEncrypt] = usePersistentState('textToEncrypt', '');
-    const [ipAddress, setIpAddress] = usePersistentState('ipAddress', '');
+    const [ipAddress, setIpAddress] = usePersistentState('ipAddress', defaultIpAddressVal);
     const [validity, setValidity] = usePersistentState('validity', '');
     const [encryptedResult, setEncryptedResult] = usePersistentState('encryptedResult', '');
     const [loading, setLoading] = useState<boolean>(false);
@@ -49,10 +51,6 @@ function EncryptionComponent({onEncryptedChange, showUrls = true}: EncryptionCom
     const clipboardAvailable = useClipboardAvailable();
 
     useEffect(() => {
-        if (!ipAddress) {
-            fetchIpAddress().then();
-        }
-
         textFieldRef.current?.focus();
     }, []);
 
@@ -88,16 +86,6 @@ function EncryptionComponent({onEncryptedChange, showUrls = true}: EncryptionCom
         ];
     }, [encryptedResult, showUrls, textToEncrypt]);
 
-    const fetchIpAddress = async () => {
-        try {
-            const response = await axios.get('/func/remote-ip');
-            setIpAddress(response.data);
-        } catch (err) {
-            console.error('Error fetching IP address:', err);
-            setError('Could not retrieve IP address');
-        }
-    };
-
     const handleEncrypt = async () => {
         setEncryptedResult('');
         setResponseHeaders({});
@@ -116,19 +104,31 @@ function EncryptionComponent({onEncryptedChange, showUrls = true}: EncryptionCom
             if (ipAddress) queryParams += 'h=' + ipAddress + '&';
             if (validity) queryParams += 'v=' + validity;
 
-            const response = await axios.post<string>('/func/encrypt-msg' + queryParams, textToEncrypt);
-            setEncryptedResult(response.data);
+            const response = await fetch('/func/encrypt-msg' + queryParams, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: textToEncrypt
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.text();
+            setEncryptedResult(data);
 
             const headersToExtract = ['for-host', 'for-hosts', 'valid'];
             const filteredHeaders: Record<string, string> = {};
             headersToExtract.forEach((key) => {
-                const value = response.headers[key];
+                const value = response.headers.get(key);
                 if (value) filteredHeaders[key] = value;
             });
             setResponseHeaders(filteredHeaders);
 
             if (onEncryptedChange) {
-                onEncryptedChange({result: response.data, headers: filteredHeaders});
+                onEncryptedChange({result: data, headers: filteredHeaders});
             }
 
         } catch (err) {
@@ -144,8 +144,10 @@ function EncryptionComponent({onEncryptedChange, showUrls = true}: EncryptionCom
             <Typography variant="h4" component="h1" gutterBottom>
                 Text Encryption
             </Typography>
-            <Typography variant="subtitle1" sx={{ mb: 2, color: 'text.secondary' }}>
-                Encrypt passwords, text snippets, or code segments. Define decryption access by specifying allowed IP addresses or IP ranges (use * to allow all). Optionally, set a validity period for the encrypted content.
+            <Typography variant="subtitle1" sx={{mb: 2, color: 'text.secondary'}}>
+                Encrypt passwords, text snippets, or code segments. Define decryption access by specifying allowed IP
+                addresses or IP ranges (use * to allow all). Optionally, set a validity period for the encrypted
+                content.
             </Typography>
             <TextField
                 label="Text to Encrypt"
@@ -170,11 +172,19 @@ function EncryptionComponent({onEncryptedChange, showUrls = true}: EncryptionCom
             <Grid container spacing={2} sx={{mt: 1}}>
                 <Grid size={{xs: 12, md: 8}}>
                     <TextField
-                        label={`IP Address (e.g. ${ipAddress ?? '192.168.1.5'}, 192.168.2.1-192.168.2.25,!192.168.2.5, *)`}
+                        label={`IP Address (e.g. ${fetchedIpAddress ?? '192.168.1.5'}, 192.168.2.1-192.168.2.25,!192.168.2.5, *)`}
                         fullWidth
                         margin="normal"
                         value={ipAddress}
-                        onChange={(e) => setIpAddress(e.target.value.replace(/\s+/g, ''))}
+                        onChange={(e) => {
+                            let val = e.target.value;
+                            if (val === '' && fetchedIpAddress) {
+                                val = fetchedIpAddress;
+                            } else if (val !== defaultIpAddressVal) {
+                                val = val.replace(/\s+/g, '');
+                            }
+                            setIpAddress(val);
+                        }}
                         slotProps={{inputLabel: {shrink: true}}}
                         sx={{'& .MuiInputBase-input': {fontFamily: 'monospace'}}}
                     />

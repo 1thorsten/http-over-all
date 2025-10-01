@@ -11,7 +11,6 @@ import {
     useTheme
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import axios from 'axios';
 import {useClipboardAvailable} from './useClipboardAvailable.ts';
 import {usePersistentState} from "./usePersistentState.ts";
 
@@ -89,17 +88,28 @@ export default function EncryptLinkComponent({queryParams: initialParams = undef
                 // ignore
             }
 
-            const response = await axios.get(
+            const response = await fetch(
                 `/func/encrypt-link?uri=${pathname}&scheme=${protocol}&http_host=${hostname}${port ? `:${port}` : ''}&cache=${cache}`,
-                {headers: {Accept: 'application/json'}}
+                {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                }
             );
 
-            if (response.data?.url) {
-                const path = `${response.data.path}/${response.data.cipher}/${response.data.resourceName}`;
+            if (!response.ok) {
+                throw new Error(`Fehler beim Verschlüsseln des Links: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (data?.url) {
+                const path = `${data.path}/${data.cipher}/${data.resourceName}`;
                 setEncryptedUrl(path);
             } else {
                 throw new Error('Response does not contain a url field.');
             }
+
         } catch (err) {
             console.error('Encryption error:', err);
             setError('Encryption failed.');

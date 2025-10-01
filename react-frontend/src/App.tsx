@@ -4,6 +4,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import IconButton from '@mui/material/IconButton';
 import DescriptionIcon from "@mui/icons-material/Description";
+import FolderIcon from '@mui/icons-material/Folder';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import {AnimatePresence, motion} from 'framer-motion';
@@ -11,6 +12,7 @@ import EncryptionComponent from './EncryptionComponent';
 import DecryptionComponent from "./DecryptionComponent.tsx";
 import EncryptLinkComponent from "./EncryptLinkComponent.tsx";
 import ReadmeTab from "./components/ReadmeTab.tsx";
+import BrowseTab from "./components/BrowseTab.tsx";
 
 type AppProps = {
     toggleTheme: () => void;
@@ -23,18 +25,51 @@ function App({ toggleTheme, currentMode }: AppProps) {
 
     const [activeTab, setActiveTab] = useState(() => {
         if (queryParams.has("encrypt-link")) {
-            return 2; // Encrypt-Link = Tab 2
+            return 3; // Encrypt-Link = Tab 3 (verschoben wegen Browse-Tab)
         }
-        if (initialDecryptionValue) return 1;               // Decrypt = Tab 1
-        return 0;                                     // Encrypt = Tab 0 (default)
+        if (initialDecryptionValue) return 2;               // Decrypt = Tab 2 (verschoben)
+        return 0;                                     // Browse = Tab 0 (neuer Standard)
     });
+
+    const [selectedFile, setSelectedFile] = useState<string | null>(null);
+    const [fetchedIpAddress, setFetchedIpAddress] = useState<string | null>(null);
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
     };
 
+    const handleFileSelect = (filePath: string) => {
+        setSelectedFile(filePath);
+        console.log('Selected file:', selectedFile);
+
+        // Neuen Browser-Tab mit der Datei öffnen
+        const { protocol, hostname, port } = window.location;
+        const baseUrl = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+        const fileUrl = `${baseUrl}${filePath}`;
+
+        window.open(fileUrl, '_blank');
+    };
+
+    // IP-Adresse beim App-Start abrufen
+    const fetchIpAddress = async (): Promise<void> => {
+        try {
+            const response = await fetch('/func/remote-ip');
+            if (!response.ok) {
+                throw new Error(`Fehler beim Abrufen der IP-Adresse: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.text();
+            setFetchedIpAddress(data);
+        } catch (err) {
+            console.error('Error fetching IP address:', err);
+        }
+    };
+
+
     useEffect(() => {
         document.title = 'http-over-all';
+
+        void fetchIpAddress();
     }, []);
 
     return (
@@ -64,6 +99,7 @@ function App({ toggleTheme, currentMode }: AppProps) {
                         textColor="inherit"
                         indicatorColor="secondary"
                     >
+                        <Tab icon={<FolderIcon />} label="Browse" />
                         <Tab icon={<LockIcon />} label="Encrypt" />
                         <Tab icon={<LockOpenIcon />} label="Decrypt" />
                         <Tab icon={<LockIcon />} label="Encrypt-Link" />
@@ -82,10 +118,11 @@ function App({ toggleTheme, currentMode }: AppProps) {
                             exit={{ opacity: 0, x: activeTab === 0 ? 30 : -30 }}
                             transition={{ duration: 0.3 }}
                         >
-                            {activeTab === 0 && <EncryptionComponent />}
-                            {activeTab === 1 && <DecryptionComponent initialEncryptedValue={initialDecryptionValue} />}
-                            {activeTab === 2 && <EncryptLinkComponent queryParams={queryParams} />}
-                            {activeTab === 3 && <ReadmeTab />}
+                            {activeTab === 0 && <BrowseTab onFileSelect={handleFileSelect} />}
+                            {activeTab === 1 && <EncryptionComponent fetchedIpAddress={fetchedIpAddress}/>}
+                            {activeTab === 2 && <DecryptionComponent initialEncryptedValue={initialDecryptionValue} />}
+                            {activeTab === 3 && <EncryptLinkComponent queryParams={queryParams} />}
+                            {activeTab === 4 && <ReadmeTab />}
                         </motion.div>
                     </AnimatePresence>
                 </Paper>

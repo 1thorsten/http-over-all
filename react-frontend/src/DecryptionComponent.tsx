@@ -11,7 +11,6 @@ import {
     useTheme
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import axios from 'axios';
 import {useClipboardAvailable} from "./useClipboardAvailable.ts";
 import {usePersistentState} from "./usePersistentState.ts";
 
@@ -63,14 +62,24 @@ function DecryptionComponent({initialEncryptedValue = ''}: { initialEncryptedVal
         setLoading(true);
 
         try {
-            const response = await axios.post<string>('/func/decrypt-msg', encryptedInput);
-            setDecryptedResult(response.data);
+            const response = await fetch('/func/decrypt-msg', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: encryptedInput
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-            const valid = response.headers['valid'];
+            setDecryptedResult(await response.text());
+
+            const valid = response.headers.get('valid');
             if (valid) {
                 setValidHeader(valid);
             }
-            const forHosts = response.headers['for-hosts'];
+            const forHosts = response.headers.get('for-hosts');
             if (forHosts) {
                 setForHostsHeader(forHosts);
             }

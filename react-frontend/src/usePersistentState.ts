@@ -13,6 +13,8 @@ export function usePersistentState<T>(key: string, defaultValue: T): [T, (val: T
             } else {
                 sessionStorage.setItem(key, JSON.stringify(value));
             }
+        } else {
+            sessionStorage.removeItem(key);
         }
     }, [key, value, defaultValue]);
 

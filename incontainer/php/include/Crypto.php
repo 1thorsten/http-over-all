@@ -11,12 +11,12 @@ class Crypto
     # http://micmap.org/php-by-example/de/function/openssl_get_cipher_methods
     const METHOD = 'AES-128-CTR';
 
-    private static function base64_urlencode(string $data)
+    private static function base64_urlencode(string $data): array|string
     {
         return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($data));
     }
 
-    private static function base64_urldecode(string $data)
+    private static function base64_urldecode(string $data): false|string
     {
         return base64_decode(str_replace(['-', '_'], ['+', '/'], $data), true);
     }
