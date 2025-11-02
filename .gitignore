@@ -357,3 +357,4 @@ crypt_key.env
 example_*.env
 /incontainer/react-dist/
 /tools/doclig/vendor/
+/example-doclig.env
