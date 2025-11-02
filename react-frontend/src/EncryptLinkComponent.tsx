@@ -84,7 +84,7 @@ export default function EncryptLinkComponent({queryParams: initialParams = undef
                 const url = new URL(uri);
                 pathname = url.pathname;
                 setLinkToEncrypt(pathname)
-            } catch (e) {
+            } catch {
                 // ignore
             }
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 export function usePersistentState<T>(key: string, defaultValue: T): [T, (val: T) => void, () => void] {
     const [value, setValue] = useState<T>(() => {
-        let stored = sessionStorage.getItem(key);
+        const stored = sessionStorage.getItem(key);
         return stored ? JSON.parse(stored) : defaultValue;
     });
 

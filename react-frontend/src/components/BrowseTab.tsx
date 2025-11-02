@@ -118,7 +118,6 @@ const BrowseTab: React.FC<BrowseTabProps> = ({onFileSelect}) => {
         };
 
         const handleBreadcrumbClick = (_: string, index: number, arr: {name: string, path: string}[]) => {
-            debugger
             if (index === arr.length-1) {
                 window.open(currentPath, '_blank');
                 return;

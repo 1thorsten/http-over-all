@@ -1,15 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 
-// z.B. aus Umgebungsvariable oder woanders konfiguriert
-const allowClipboard = false; // kannst du auch dynamisch aus localStorage, etc. holen
+const allowClipboard = false;
 
 export function useClipboardAvailable(): boolean {
-    const [available, setAvailable] = useState(false);
-
-    useEffect(() => {
+    return useMemo(() => {
         const hasClipboard = Boolean(navigator.clipboard && navigator.clipboard.writeText);
-        setAvailable(allowClipboard && hasClipboard);
+        return allowClipboard && hasClipboard;
     }, []);
-
-    return available;
 }
