@@ -10,10 +10,9 @@
 
 server {
     listen 80 default_server;
-    # listen [::]:80 default_server;
 
-    listen 443 ssl http2;
-    # listen [::]:443 ssl http2;
+    listen 443 ssl;
+    http2 on;
 
     server_name http-over-all.de;
     
@@ -31,14 +30,26 @@ server {
     location = / {
         access_log  off;
         error_log   off;
-        # seems to be necessary for webdav on windows clients
+
+        # CORS Headers für alle Requests
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "x-raw, Content-Type, Accept, Origin" always;
+
         if ($request_method = OPTIONS ) {
             add_header Content-Length 0;
             add_header Content-Type text/plain;
+
             return 200;
         }
+
+       if ($arg_raw != "true") {
+            return 301 /f/;
+       }
+
         autoindex on;
     }
+
 
     location = /robots.txt {
        add_header Content-Type text/plain;
@@ -79,6 +90,7 @@ server {
         default_type	text/plain;
         add_header	X-Remote-Addr $remote_addr;
         add_header	X-Forwarded-For $http_x_forwarded_for;
+        add_header  X-Release "__RELEASE__";
         return	200	$real_remote_addr;
     }
 
@@ -177,12 +189,6 @@ server {
         fastcgi_read_timeout 300s;
         fastcgi_send_timeout 300s;
         include fastcgi.conf;
-    }
-
-    # Redirect von /frontend zu /f/
-    location = /A-FRONTEND {
-        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
-        return 301 /f/;
     }
 
     # Frontend unter /f

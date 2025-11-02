@@ -1,5 +1,7 @@
-FROM debian:bookworm-slim
-ENV PHP_VERSION=8.2
+FROM debian:trixie-slim
+ENV PHP_VERSION=8.4
+#FROM debian:bookworm-slim
+#ENV PHP_VERSION=8.2
 
 ARG USER=hoax
 
@@ -16,7 +18,7 @@ RUN set -x && \
     apt-get dist-upgrade -y && \
     APT_SYSTEM="sudo tzdata ca-certificates" && \
     APT_HTTP="nginx nginx-extras" && \
-    APT_PHP="php-curl php-fpm php-mbstring" && \
+    APT_PHP="php-curl php-fpm php-mbstring php-mysql" && \
     APT_SERVICES="sshfs nfs-common davfs2 cifs-utils git" && \
     APT_TOOLS="iputils-ping curl rsync" && \
     APT_ETC="nano" && \
@@ -57,7 +59,7 @@ WORKDIR /scripts
 
 RUN set -x && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt -subj "/C=${SSL_COUNTRY}/ST=${SSL_STATE}/L=${SSL_LOCALITY}/O=${SSL_ORGANIZATION}/OU=${SSL_ORGANIZATIONALUNIT}/CN=${SSL_COMMONNAME}/emailAddress=${SSL_EMAILADDRESS}" && \
-    # https://wiki.ubuntuusers.de/sudo/Konfiguration/
+    # https://wiki.ubuntuusers.de/sudo/Konfiguration/ \
     # https://kofler.info/sudo-ohne-passwort/ \
     groupadd -g 1000 $USER && \
     useradd -d /home/$USER -u 1000 -g 1000 -m -s /bin/bash $USER && \
@@ -69,7 +71,7 @@ RUN set -x && \
     find /scripts -name "*.sh" -exec sed -i 's/\r$//' {} + && \
     echo "\nexport RELEASE=${RELEASE}\n" >> /scripts/system-helper.sh && \
     echo "source /scripts/system-helper.sh" >> /etc/bash.bashrc && \
-    # colors (bash)
+    # colors (bash) \
     sed -i 's/^# export/export/' /root/.bashrc && \
     sed -i 's/^# alias l/alias l/g' /root/.bashrc && \
     echo "alias grep=\"grep --color=always\"" >> /root/.bashrc && \

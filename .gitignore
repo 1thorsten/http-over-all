@@ -356,3 +356,4 @@ crypt_key.env
 !/scripts/docker-proxy_run.sh.sh
 example_*.env
 /incontainer/react-dist/
+/tools/doclig/vendor/

@@ -33,6 +33,7 @@ function App({ toggleTheme, currentMode }: AppProps) {
 
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [fetchedIpAddress, setFetchedIpAddress] = useState<string | null>(null);
+    const [release, setRelease] = useState<string | null>(null);
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
@@ -60,6 +61,10 @@ function App({ toggleTheme, currentMode }: AppProps) {
 
             const data = await response.text();
             setFetchedIpAddress(data);
+            const releaseHeader = response.headers.get('X-Release');
+            if (releaseHeader) {
+                setRelease(releaseHeader);
+            }
         } catch (err) {
             console.error('Error fetching IP address:', err);
         }
@@ -84,8 +89,19 @@ function App({ toggleTheme, currentMode }: AppProps) {
                             const { protocol, hostname, port } = window.location;
                             window.location.href = `${protocol}//${hostname}${port ? `:${port}` : ''}/`;
                         }}
-                    >
-                        http-over-all
+                    >http-over-all
+                        {release && (
+                            <span style={{
+                                fontSize: '0.6em',
+                                fontWeight: 'normal',
+                                opacity: 0.75,
+                                position: 'relative',
+                                top: '4px',
+                                marginLeft: '8px'
+                            }}>
+                                    {release}
+                                </span>
+                        )}
                     </Typography>
 
                     {/* Theme Toggle Button */}

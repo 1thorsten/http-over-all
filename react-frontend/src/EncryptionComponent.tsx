@@ -81,7 +81,7 @@ function EncryptionComponent({onEncryptedChange, showUrls = true, fetchedIpAddre
             },
             {
                 label: 'cloud_apj.js',
-                value: `{ await api.remoteEncrypt('${textToEncrypt}'); await api.remoteDecrypt('${encryptedResult}') }`,
+                value: `{ await api.remoteEncrypt({msg:'${textToEncrypt}'}); await api.remoteDecrypt('${encryptedResult}') }`,
             },
         ];
     }, [encryptedResult, showUrls, textToEncrypt]);

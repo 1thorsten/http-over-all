@@ -95,6 +95,8 @@ fi
 
 touch ${SDS_READY}
 for i in "${DATA}"/*; do
+  # Skip if pattern has not been expanded
+  [[ -e "$i" ]] || continue
   touch "$i/sds.ready"
 done
 

@@ -160,16 +160,18 @@ function DecryptionComponent({initialEncryptedValue = ''}: { initialEncryptedVal
                             mb: 1,
                         }}
                     >
-                        {validHeader && (
-                            <Typography variant="caption" sx={{mb: -1, display: 'block', color: 'text.secondary'}}>
-                                Valid until: {validHeader}
-                            </Typography>
-                        )}
-                        {forHostsHeader && (
-                            <Typography variant="caption" sx={{mb: -1, display: 'block', color: 'text.secondary'}}>
-                                Valid for: {forHostsHeader}
-                            </Typography>
-                        )}
+                        <Box>
+                            {validHeader && (
+                                <Typography variant="caption" sx={{display: 'block', color: 'text.secondary'}}>
+                                    Valid until: {validHeader}
+                                </Typography>
+                            )}
+                            {forHostsHeader && (
+                                <Typography variant="caption" sx={{display: 'block', color: 'text.secondary'}}>
+                                    Valid for: {forHostsHeader}
+                                </Typography>
+                            )}
+                        </Box>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ml: 'auto'}}>
                             {clipboardAvailable && (
                                 <IconButton onClick={handleCopy} color="primary">

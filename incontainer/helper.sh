@@ -71,6 +71,10 @@ function initialize() {
 
   echo "cp /scripts/nginx-config/nginx-default /etc/nginx/sites-enabled/default"
   cp "/scripts/nginx-config/nginx-default" "/etc/nginx/sites-enabled/default"
+  if [ -n "$RELEASE" ]; then
+    echo "set RELEASE ($RELEASE) to /etc/nginx/sites-enabled/default"
+    sed -i "s|__RELEASE__|${RELEASE}|" "/etc/nginx/sites-enabled/default";
+  fi
 
   echo "cp /scripts/nginx-config/mime.types /etc/nginx/mime.types"
   cp "/scripts/nginx-config/mime.types" "/etc/nginx/mime.types"
@@ -84,6 +88,10 @@ function initialize() {
   if [ "$VERSION_CODENAME" = "bookworm" ]; then
     echo "cp /scripts/ext-config/debian-bookworm/openssl.cnf /etc/ssl/ ($VERSION_CODENAME)"
     cp /scripts/ext-config/debian-bookworm/openssl.cnf /etc/ssl/
+    chmod 644 /etc/ssl/openssl.cnf
+  elif [ "$VERSION_CODENAME" = "trixie" ]; then
+    echo "cp /scripts/ext-config/debian-trixie/openssl.cnf /etc/ssl/ ($VERSION_CODENAME)"
+    cp /scripts/ext-config/debian-trixie/openssl.cnf /etc/ssl/
     chmod 644 /etc/ssl/openssl.cnf
   fi
 

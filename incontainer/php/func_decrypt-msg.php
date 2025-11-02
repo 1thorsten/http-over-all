@@ -34,6 +34,9 @@ try {
         if ($object === null) {
             // third try OFB without extended passphrase
             $object = json_decode(Crypto::decrypt_ext($rev_remote_addr, 'BF-OFB', $message, true));
+            if ($object !== null) {
+                LOG::writeHost("func_decrypt-msg.php", $remote_addr, "WARN: detecting old cipher: $message");
+            }
         }
     }
 } catch (Exception $e) {

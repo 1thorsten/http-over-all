@@ -18,6 +18,9 @@ doclig-build:
 doclig-up:
 	docker compose -f docker-compose-doclig.yml up hoa-doclig
 
+doclig-db-up:
+	docker compose -f docker-compose-doclig.yml up hoa-doclig mariadb
+
 doclig-down:
 	docker compose -f docker-compose-doclig.yml down
 

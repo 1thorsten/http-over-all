@@ -2,6 +2,7 @@ services:
   http-over-all:
     container_name: http-over-all
     image: 1thorsten/http-over-all
+    platform: linux/amd64
     restart: unless-stopped
     labels:
       # value (false,all,admin)
