@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS doclig-build
+FROM golang:1.25-alpine AS doclig-build
 COPY tools/doclig /doclig
 
 WORKDIR /doclig
@@ -8,8 +8,8 @@ RUN set +x && \
     time upx --brute doclig && \
     set x
 
-FROM debian:bookworm-slim
-ENV PHP_VERSION=8.2
+FROM debian:trixie-slim
+ENV PHP_VERSION=8.4
 
 ARG USER=hoax
 
@@ -33,7 +33,6 @@ RUN set -x && \
     apt-get install -y --no-install-recommends ${APT_SYSTEM} ${APT_HTTP} ${APT_PHP} ${APT_SERVICES} ${APT_TOOLS} ${APT_ETC} && \
     rm -f /var/www/html/index.nginx-debian.html ; rm -f /etc/nginx/mime.types && \
     # debian cleanup \
-    #apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* ; rm -f /var/lib/dpkg/*-old ; rm -rf /usr/share/doc && \
     echo "OS part successfully terminated" && \
     set +x
@@ -49,7 +48,7 @@ ENV PHP_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.2.0-20p01"
+ARG RELEASE="1.4.0"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
@@ -68,7 +67,7 @@ WORKDIR /scripts
 
 RUN set -x && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt -subj "/C=${SSL_COUNTRY}/ST=${SSL_STATE}/L=${SSL_LOCALITY}/O=${SSL_ORGANIZATION}/OU=${SSL_ORGANIZATIONALUNIT}/CN=${SSL_COMMONNAME}/emailAddress=${SSL_EMAILADDRESS}" && \
-    # https://wiki.ubuntuusers.de/sudo/Konfiguration/
+    # https://wiki.ubuntuusers.de/sudo/Konfiguration/ \
     # https://kofler.info/sudo-ohne-passwort/ \
     groupadd -g 1000 $USER && \
     useradd -d /home/$USER -u 1000 -g 1000 -m -s /bin/bash $USER && \
@@ -81,7 +80,7 @@ RUN set -x && \
     find /scripts -name "*.sh" -exec sed -i 's/\r$//' {} + && \
     echo "\nexport RELEASE=${RELEASE}\n" >> /scripts/system-helper.sh && \
     echo "source /scripts/system-helper.sh" >> /etc/bash.bashrc && \
-    # colors (bash)
+    # colors (bash) \
     sed -i 's/^# export/export/' /root/.bashrc && \
     sed -i 's/^# alias l/alias l/g' /root/.bashrc && \
     echo "alias grep=\"grep --color=always\"" >> /root/.bashrc && \

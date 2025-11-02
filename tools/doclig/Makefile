@@ -12,10 +12,14 @@ format:
 doclig-build:
 	mkdir -p bin
 	GOOS=linux GOARCH=amd64 /usr/local/go/bin/go build -ldflags="-s -w" -o bin/doclig_lnx ./src
-	env DOCKER_BUILDKIT=0 docker compose -f docker-compose-doclig.yml build build-with-tools
+	npm run build --prefix ../../react-frontend
+	env COMPOSE_BAKE=true docker compose -f docker-compose-doclig.yml build build-with-tools
 
 doclig-up:
 	docker compose -f docker-compose-doclig.yml up hoa-doclig
+
+doclig-db-up:
+	docker compose -f docker-compose-doclig.yml up hoa-doclig mariadb
 
 doclig-down:
 	docker compose -f docker-compose-doclig.yml down

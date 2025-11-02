@@ -52,6 +52,6 @@ $encoded_url = preg_replace_callback('#://([^/]+)/([^?]+)#', function ($match) {
 
 # from common_functions.php
 $res = forwardRequest($encoded_url);
-$forwaredUrlPath = parse_url($encoded_url, PHP_URL_PATH);
+$forwardedUrlPath = parse_url($encoded_url, PHP_URL_PATH);
 
-LOG::writeTime("decrypt.php", $remote_addr, "processed $forwaredUrlPath | Length: {$res['Content-Length']} | Cache: $cacheStatus", $time_start);
+LOG::writeTime("decrypt.php", $remote_addr, "processed $forwardedUrlPath | Length: {$res['Content-Length']} | Cache: $cacheStatus", $time_start);

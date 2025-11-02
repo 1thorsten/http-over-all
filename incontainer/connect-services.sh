@@ -664,7 +664,9 @@ function start_http_server() {
 
   echo "handle README.html (weave README.md and link to ${HTDOCS})"
   sed -i "/__INCLUDE_README__/r README.md" "/scripts/nginx-config/README.html"
-  if [ -n "$RELEASE" ]; then sed -i "s|__RELEASE__|${RELEASE}|" "/scripts/nginx-config/README.html"; fi
+  if [ -n "$RELEASE" ]; then
+    sed -i "s|__RELEASE__|${RELEASE}|" "/scripts/nginx-config/README.html";
+  fi
 
   # remove the __INCLUDE_README__ line
   sed -i "/__INCLUDE_README__/d" "/scripts/nginx-config/README.html"

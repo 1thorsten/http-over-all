@@ -223,7 +223,7 @@ Options for all resources
 | PROXY_INACTIVE        | data that are not accessed during the time get removed (default: 1d)                                                                                                                   | -        |
 | TINY_INSTANCE         | configure for low requirements and low memory consumption (default: false)                                                                                                             | -        |
 | FORCE_UPDATE_LOCK     | timeout in seconds for repetitive call (default: 16)                                                                                                                                   | -        |
-# <a name="special-functions"></a>Special functions
+## **Special functions**
 ## periodic jobs
 ENV: PERIODIC_JOB_INTERVAL
 
@@ -260,7 +260,7 @@ Generate your own CRYPT_KEY:
 ```bash
 docker run --rm php:cli-alpine php -r 'echo "CRYPT_KEY:".base64_encode(openssl_random_pseudo_bytes(32))."\n";'
 ```
-# <a name="additions"></a>Additions
+## **Additions**
 
 ## func/encrypt-msg
 encrypt the given message depending on the requesting host.
