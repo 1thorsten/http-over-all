@@ -21,7 +21,7 @@ if ($message === null) {
 
 $rev_remote_addr = strrev($remote_addr);
 $object = null;
-
+$old_cipher = false;
 try {
     // first try for multiple hosts
     $object = json_decode(Crypto::decrypt($message, true));
@@ -35,6 +35,7 @@ try {
             // third try OFB without extended passphrase
             $object = json_decode(Crypto::decrypt_ext($rev_remote_addr, 'BF-OFB', $message, true));
             if ($object !== null) {
+                $old_cipher = true;
                 LOG::writeHost("func_decrypt-msg.php", $remote_addr, "WARN: detecting old cipher: $message");
             }
         }
@@ -52,6 +53,9 @@ if ($object === null) {
 }
 
 header('Content-Type: text/plain; charset=utf-8');
+if ($old_cipher === true) {
+    header("Warn: cipher");
+}
 
 if (property_exists($object, 'v')) {
     header("Valid: " . date('F j, Y, g:i a', $object->v));
