@@ -7,12 +7,14 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import FolderIcon from '@mui/icons-material/Folder';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import {AnimatePresence, motion} from 'framer-motion';
 import EncryptionComponent from './EncryptionComponent';
 import DecryptionComponent from "./DecryptionComponent.tsx";
 import EncryptLinkComponent from "./EncryptLinkComponent.tsx";
 import ReadmeTab from "./components/ReadmeTab.tsx";
 import BrowseTab from "./components/BrowseTab.tsx";
+import ObfuscationComponent from "./components/ObfuscationComponent.tsx";
 
 type AppProps = {
     toggleTheme: () => void;
@@ -119,6 +121,7 @@ function App({ toggleTheme, currentMode }: AppProps) {
                         <Tab icon={<LockIcon />} label="Encrypt" />
                         <Tab icon={<LockOpenIcon />} label="Decrypt" />
                         <Tab icon={<LockIcon />} label="Encrypt-Link" />
+                        <Tab icon={<VisibilityOffIcon />} label="Obfuscation" />
                         <Tab icon={<DescriptionIcon />}  label="README" />
                     </Tabs>
                 </Toolbar>
@@ -138,7 +141,8 @@ function App({ toggleTheme, currentMode }: AppProps) {
                             {activeTab === 1 && <EncryptionComponent fetchedIpAddress={fetchedIpAddress}/>}
                             {activeTab === 2 && <DecryptionComponent initialEncryptedValue={initialDecryptionValue} />}
                             {activeTab === 3 && <EncryptLinkComponent queryParams={queryParams} />}
-                            {activeTab === 4 && <ReadmeTab />}
+                            {activeTab === 4 && <ObfuscationComponent />}
+                            {activeTab === 5 && <ReadmeTab />}
                         </motion.div>
                     </AnimatePresence>
                 </Paper>

@@ -1,7 +1,5 @@
 FROM debian:trixie-slim
 ENV PHP_VERSION=8.4
-#FROM debian:bookworm-slim
-#ENV PHP_VERSION=8.2
 
 ARG USER=hoax
 
@@ -39,7 +37,7 @@ ENV PHP_SOCK=/var/run/php/php${PHP_VERSION}-fpm.sock
 ENV PHP_LOG_SYSOUT=true
 
 # http-over-all part
-ARG RELEASE="1.3-doclig"
+ARG RELEASE="1.4-doclig"
 
 ARG SSL_COUNTRY=DE
 ARG SSL_STATE=Berlin
