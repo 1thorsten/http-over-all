@@ -3,9 +3,6 @@ package action
 import (
 	"archive/tar"
 	"fmt"
-	"github.com/docker/distribution/context"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"io"
 	"math/rand"
 	"os"
@@ -13,6 +10,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/docker/distribution/context"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
 )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -177,8 +178,7 @@ func CopyContents(image *string, srcPaths []string, dst *string, outFormat *stri
 	}
 
 	defer timeTrack(time.Now(), "Stop container", time.Millisecond)
-	timeoutInSeconds := 2
-	if err := cli.ContainerStop(ctx, resp.ID, container.StopOptions{Timeout: &timeoutInSeconds}); err == nil {
+	if err := cli.ContainerStop(ctx, resp.ID, container.StopOptions{Timeout: new(2)}); err == nil {
 		err := cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{})
 		if err != nil {
 			return

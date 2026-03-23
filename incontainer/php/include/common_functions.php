@@ -26,6 +26,9 @@ function accessFromBrowser(): bool {
 function forwardRequest(string $encoded_url): array {
     // http://php.net/manual/de/function.parse-url.php
     $parsedUrl = parse_url($encoded_url);
+    if ($parsedUrl === false || empty($parsedUrl['host'])) {
+        throw new \InvalidArgumentException("Invalid URL: $encoded_url");
+    }
     $host = $parsedUrl["host"];
     $path = $parsedUrl["path"];
 
@@ -34,7 +37,10 @@ function forwardRequest(string $encoded_url): array {
     }
 
     $sock = fsockopen($host, 80, $errno, $errstr, 30);
-    if (!$sock) die("$errstr ($errno)\n");
+    if (!$sock) {
+        throw new \RuntimeException("Socket connection failed: $errstr ($errno)");
+    }
+
 
     fwrite($sock, "GET {$path} HTTP/1.1\r\n");
     fwrite($sock, "Host: $host\r\n");

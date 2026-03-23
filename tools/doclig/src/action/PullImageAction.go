@@ -4,12 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"strings"
+
 	"github.com/docker/distribution/context"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
-	"io"
-	"strings"
 )
 
 type PulledImage struct {
@@ -80,8 +81,7 @@ func PullImage(imageValue *string, username *string, password *string) *PulledIm
 		// fmt.Printf("EVENT: %+v\n", event)
 		if event != nil {
 			if strings.HasPrefix(event.Status, "Digest: ") {
-				digest := strings.Split(event.Status, "Digest: ")[1]
-				resp.Digest = &digest
+				resp.Digest = new(strings.Split(event.Status, "Digest: ")[1])
 				fmt.Println(event.Status)
 			}
 		}
