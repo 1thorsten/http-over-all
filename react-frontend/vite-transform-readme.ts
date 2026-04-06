@@ -1,6 +1,9 @@
-import { Plugin } from 'vite';
-import { readFile, writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import {Plugin} from 'vite';
+import {mkdir, readFile, writeFile} from 'fs/promises';
+import path, {dirname} from 'path';
+import {fileURLToPath} from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export function transformReadmePlugin(): Plugin {
     return {
@@ -20,7 +23,7 @@ export function transformReadmePlugin(): Plugin {
                     '## **$1**'
                 );
 
-                await mkdir(destDir, { recursive: true });
+                await mkdir(destDir, {recursive: true});
                 await writeFile(destPath, content, 'utf-8');
 
                 console.log('README.md wurde erfolgreich transformiert und kopiert.');

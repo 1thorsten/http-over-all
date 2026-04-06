@@ -30,7 +30,7 @@ interface BrowseTabProps {
     onFileSelect?: (filePath: string) => void;
 }
 
-const ROOT_PATH = process.env.NODE_ENV === 'production' ? '/' : '/git_timeset/';
+const ROOT_PATH = import.meta.env.DEV ? '/git_timeset/' : '/';
 
 const BrowseTab: React.FC<BrowseTabProps> = ({onFileSelect}) => {
         const [currentPath, setCurrentPath] = useState<string>(ROOT_PATH);
@@ -51,7 +51,7 @@ const BrowseTab: React.FC<BrowseTabProps> = ({onFileSelect}) => {
             setError(null);
 
             try {
-                const response =  await fetch(path+'?raw=true', {
+                const response = await fetch(path + '?raw=true', {
                     method: 'GET',
                     credentials: 'same-origin'
                 });
@@ -117,8 +117,8 @@ const BrowseTab: React.FC<BrowseTabProps> = ({onFileSelect}) => {
             }
         };
 
-        const handleBreadcrumbClick = (_: string, index: number, arr: {name: string, path: string}[]) => {
-            if (index === arr.length-1) {
+        const handleBreadcrumbClick = (_: string, index: number, arr: { name: string, path: string }[]) => {
+            if (index === arr.length - 1) {
                 window.open(currentPath, '_blank');
                 return;
             }
