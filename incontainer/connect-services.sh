@@ -239,22 +239,36 @@ function mount_ftp_shares() {
       fusermount -u "${FTP_MOUNT}"
     fi
 
-    # check accessibility
-    local ACCESSIBLE
+    # Build URL: port always goes into the URL, never as a separate flag
+    # SHARE format: host/path  (no protocol prefix)
+    local FTP_HOST
+    local FTP_PATH
+    FTP_HOST="$(echo "${SHARE}" | cut -d'/' -f1)"
+    FTP_PATH="$(echo "${SHARE}" | cut -s -d'/' -f2-)"
+
     local FTP_URL
-    if [ "${USE_SSL}" = "true" ]; then
-      FTP_URL="ftps://${SHARE%/}/"
+    if [ "${FTP_PORT}" != "21" ]; then
+      FTP_URL="ftp://${FTP_HOST}:${FTP_PORT}/${FTP_PATH}"
     else
-      FTP_URL="ftp://${SHARE%/}/"
+      FTP_URL="ftp://${FTP_HOST}/${FTP_PATH}"
     fi
 
+    # check accessibility
+    # curl always uses ftp:// – SSL is requested via --ftp-ssl / --ssl-reqd flag, not ftps://
+    local CURL_SSL_OPTS=""
+    if [ "${USE_SSL}" = "true" ]; then
+      CURL_SSL_OPTS="--ftp-ssl --insecure"
+    fi
+
+    echo "curl --user obfuscated -s -o /dev/null --connect-timeout 3 ${CURL_SSL_OPTS} ${FTP_URL}"
     local CURL_EXIT_CODE
+    # shellcheck disable=SC2086
     curl --user "${USER}:${PASS}" -s -o /dev/null --connect-timeout 3 \
-      $([ "${FTP_PORT}" != "21" ] && echo "--port ${FTP_PORT}") \
-      $([ "${USE_SSL}" = "true" ] && echo "--ssl-reqd --insecure") \
+      ${CURL_SSL_OPTS} \
       "${FTP_URL}"
     CURL_EXIT_CODE=$?
 
+    local ACCESSIBLE
     if [ "${CURL_EXIT_CODE}" -eq 0 ]; then
       ACCESSIBLE=true
     else
@@ -266,10 +280,8 @@ function mount_ftp_shares() {
       local id_user="$(id -u www-data)"
       local gid_user="$(id -g www-data)"
 
+      # curlftpfs always uses ftp:// URL; SSL is enabled via mount options
       local CURLFTPFS_OPTS="user=${USER}:${PASS},uid=${id_user},gid=${gid_user},allow_other,nonempty"
-      if [ "${FTP_PORT}" != "21" ]; then
-        CURLFTPFS_OPTS="${CURLFTPFS_OPTS},port=${FTP_PORT}"
-      fi
       if [ "${USE_SSL}" = "true" ]; then
         CURLFTPFS_OPTS="${CURLFTPFS_OPTS},ssl,no_verify_peer,no_verify_hostname"
       fi
