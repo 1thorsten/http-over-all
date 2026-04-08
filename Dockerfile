@@ -27,7 +27,7 @@ RUN set -x && \
     APT_SYSTEM="sudo tzdata ca-certificates" && \
     APT_HTTP="nginx nginx-extras" && \
     APT_PHP="php-curl php-fpm php-mbstring" && \
-    APT_SERVICES="openssl sshfs nfs-common davfs2 cifs-utils git" && \
+    APT_SERVICES="openssl sshfs nfs-common davfs2 cifs-utils git curlftpfs" && \
     APT_TOOLS="iputils-ping curl rsync" && \
     APT_ETC="nano" && \
     apt-get install -y --no-install-recommends ${APT_SYSTEM} ${APT_HTTP} ${APT_PHP} ${APT_SERVICES} ${APT_TOOLS} ${APT_ETC} && \
