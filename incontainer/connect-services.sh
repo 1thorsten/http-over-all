@@ -219,7 +219,10 @@ function mount_ftp_shares() {
     local HTTP_ACTIVE="$(var_exp "FTP_${COUNT}_HTTP" "true")"
     local CACHE_ACTIVE="$(var_exp "FTP_${COUNT}_CACHE" "true")"
     local STOP_ON_ERROR="$(var_exp "FTP_${COUNT}_STOP_ON_ERROR" "false")"
-    local USE_SSL="$(var_exp "FTP_${COUNT}_SSL" "false")"
+    # FTP_N_OPTS: additional curlftpfs mount options, e.g. "ssl,no_verify_peer,no_verify_hostname"
+    local OPTS="$(var_exp "FTP_${COUNT}_OPTS")"
+    # FTP_N_CONNECT_TIMEOUT: curl connect-timeout in seconds for the accessibility check (default: 1)
+    local CONNECT_TIMEOUT="$(var_exp "FTP_${COUNT}_CONNECT_TIMEOUT" "1")"
 
     echo
     echo "$(date +'%T'): ftp: ${RESOURCE_NAME}"
@@ -253,18 +256,22 @@ function mount_ftp_shares() {
       FTP_URL="ftp://${FTP_HOST}/${FTP_PATH}"
     fi
 
-    # check accessibility
-    # curl always uses ftp:// - SSL is requested via --ftp-ssl flag, not ftps://
-    local CURL_SSL_OPTS=""
-    if [ "${USE_SSL}" = "true" ]; then
-      CURL_SSL_OPTS="--ftp-ssl --insecure"
+    # Derive extra curl flags from OPTS for the accessibility check.
+    # curlftpfs uses mount-style options (e.g. "ssl"), but curl uses flags (--ftp-ssl).
+    # We only map the SSL-related options that are safe to pass to curl as well.
+    local CURL_EXTRA_OPTS=""
+    if [ "${OPTS}" != "nil" ] && [[ "${OPTS}" == *"ssl"* ]]; then
+      CURL_EXTRA_OPTS="--ftp-ssl"
+      if [[ "${OPTS}" == *"no_verify_peer"* || "${OPTS}" == *"no_verify_hostname"* ]]; then
+        CURL_EXTRA_OPTS="${CURL_EXTRA_OPTS} --insecure"
+      fi
     fi
 
-    echo "curl --user obfuscated -s -o /dev/null --connect-timeout 1 ${CURL_SSL_OPTS} ${FTP_URL}"
+    echo "curl --user obfuscated -s -o /dev/null --connect-timeout ${CONNECT_TIMEOUT} ${CURL_EXTRA_OPTS} ${FTP_URL}"
     local CURL_EXIT_CODE
     # shellcheck disable=SC2086
-    curl --user "${USER}:${PASS}" -s -o /dev/null --connect-timeout 1 \
-      ${CURL_SSL_OPTS} \
+    curl --user "${USER}:${PASS}" -s -o /dev/null --connect-timeout "${CONNECT_TIMEOUT}" \
+      ${CURL_EXTRA_OPTS} \
       "${FTP_URL}"
     CURL_EXIT_CODE=$?
 
@@ -280,10 +287,10 @@ function mount_ftp_shares() {
       local id_user="$(id -u www-data)"
       local gid_user="$(id -g www-data)"
 
-      # curlftpfs always uses ftp:// URL; SSL is enabled via mount options
       local CURLFTPFS_OPTS="user=${USER}:${PASS},uid=${id_user},gid=${gid_user},allow_other,nonempty"
-      if [ "${USE_SSL}" = "true" ]; then
-        CURLFTPFS_OPTS="${CURLFTPFS_OPTS},ssl,no_verify_peer,no_verify_hostname"
+      if [ "${OPTS}" != "nil" ]; then
+        echo "additional options detected: ${OPTS}"
+        CURLFTPFS_OPTS="${CURLFTPFS_OPTS},${OPTS}"
       fi
 
       echo "curlftpfs -o obfuscated ${FTP_URL} ${FTP_MOUNT}"
