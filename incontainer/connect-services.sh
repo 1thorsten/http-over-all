@@ -254,16 +254,16 @@ function mount_ftp_shares() {
     fi
 
     # check accessibility
-    # curl always uses ftp:// – SSL is requested via --ftp-ssl / --ssl-reqd flag, not ftps://
+    # curl always uses ftp:// - SSL is requested via --ftp-ssl flag, not ftps://
     local CURL_SSL_OPTS=""
     if [ "${USE_SSL}" = "true" ]; then
       CURL_SSL_OPTS="--ftp-ssl --insecure"
     fi
 
-    echo "curl --user obfuscated -s -o /dev/null --connect-timeout 3 ${CURL_SSL_OPTS} ${FTP_URL}"
+    echo "curl --user obfuscated -s -o /dev/null --connect-timeout 1 ${CURL_SSL_OPTS} ${FTP_URL}"
     local CURL_EXIT_CODE
     # shellcheck disable=SC2086
-    curl --user "${USER}:${PASS}" -s -o /dev/null --connect-timeout 3 \
+    curl --user "${USER}:${PASS}" -s -o /dev/null --connect-timeout 1 \
       ${CURL_SSL_OPTS} \
       "${FTP_URL}"
     CURL_EXIT_CODE=$?
