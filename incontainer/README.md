@@ -1,5 +1,5 @@
 # HTTP over all
-Http-over-all is a unified interface for accessing various resources (nfs, smb, ssh, http/dav, git, docker) through a http endpoint.
+Http-over-all is a unified interface for accessing various resources (nfs, smb, ssh, http/dav, git, docker, ftp) through a http endpoint.
 It integrates a proxy that always delivers the latest content and  enables access restriction on different layers.
 - http: basic auth, ip address
 - resources: acl per resource
@@ -17,6 +17,7 @@ It integrates a proxy that always delivers the latest content and  enables acces
 - GIT
 - DOCKER
 - PROXY
+- FTP
 - LOCAL (local file access)
 
 ## Features
@@ -172,6 +173,28 @@ exportfs -ra
 |-------------------|------------------------|----------|
 | NFS_[COUNT]_SHARE | e.g. 10.23.4.161:/home | x        |
 | NFS_[COUNT]_OPTS  | e.g. vers=3,nolock,tcp | -        |
+
+General Options: yes
+
+## FTP
+### Options
+FTP shares are mounted via [curlftpfs](https://linux.die.net/man/1/curlftpfs).
+The SHARE format is `host/path` without any protocol prefix.
+
+For FTPS (FTP over SSL), pass the required curlftpfs options via `FTP_[COUNT]_OPTS`,
+e.g. `ssl,no_verify_peer,no_verify_hostname`.
+When `ssl` is contained in OPTS, the accessibility check will also use `--ftp-ssl`;
+when `no_verify_peer` or `no_verify_hostname` is additionally present, `--insecure` is added automatically.
+
+| ENV-Variable                | Description                                                                            | required |
+|-----------------------------|----------------------------------------------------------------------------------------|----------|
+| FTP_[COUNT]_USER            | FTP username                                                                           | x        |
+| FTP_[COUNT]_PASS            | FTP password                                                                           | x        |
+| FTP_[COUNT]_SHARE           | host/path, e.g. 192.168.178.10/pub                                                     | x        |
+| FTP_[COUNT]_PORT            | FTP port (default: 21)                                                                 | -        |
+| FTP_[COUNT]_OPTS            | additional [curlftpfs](https://linux.die.net/man/1/curlftpfs) mount options,           | -        |
+|                             | e.g. `ssl,no_verify_peer,no_verify_hostname` for FTPS                                  |          |
+| FTP_[COUNT]_CONNECT_TIMEOUT | curl connect-timeout in seconds for the accessibility check (default: 1)               | -        |
 
 General Options: yes
 

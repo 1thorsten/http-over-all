@@ -207,6 +207,110 @@ function mount_smb_shares() {
   done
 }
 
+# https://linux.die.net/man/1/curlftpfs
+function mount_ftp_shares() {
+  for COUNT in $(env | grep -o "^FTP_[0-9]*_SHARE" | awk -F '_' '{print $2}' | sort -nu); do
+    local USER="$(var_exp "FTP_${COUNT}_USER")"
+    local PASS="$(var_exp "FTP_${COUNT}_PASS")"
+    local SHARE="$(var_exp "FTP_${COUNT}_SHARE")"
+    local FTP_PORT="$(var_exp "FTP_${COUNT}_PORT" "21")"
+    local RESOURCE_NAME="$(var_exp "FTP_${COUNT}_NAME")"
+    local DAV_ACTIVE="$(var_exp "FTP_${COUNT}_DAV" "false")"
+    local HTTP_ACTIVE="$(var_exp "FTP_${COUNT}_HTTP" "true")"
+    local CACHE_ACTIVE="$(var_exp "FTP_${COUNT}_CACHE" "true")"
+    local STOP_ON_ERROR="$(var_exp "FTP_${COUNT}_STOP_ON_ERROR" "false")"
+    # FTP_N_OPTS: additional curlftpfs mount options, e.g. "ssl,no_verify_peer,no_verify_hostname"
+    local OPTS="$(var_exp "FTP_${COUNT}_OPTS")"
+    # FTP_N_CONNECT_TIMEOUT: curl connect-timeout in seconds for the accessibility check (default: 1)
+    local CONNECT_TIMEOUT="$(var_exp "FTP_${COUNT}_CONNECT_TIMEOUT" "1")"
+
+    echo
+    echo "$(date +'%T'): ftp: ${RESOURCE_NAME}"
+
+    if [ "$RESOURCE_NAME" = "nil" ]; then
+      echo "ERR (config): define FTP_${COUNT}_NAME"
+      return 1
+    fi
+
+    local FTP_MOUNT="${DATA}/ftp/${COUNT}"
+
+    mkdir -p "${FTP_MOUNT}"
+
+    # umount share if already mounted
+    if [[ "$(mount | grep -c "${FTP_MOUNT}")" == "1" ]]; then
+      echo "fusermount -u ${FTP_MOUNT}"
+      fusermount -u "${FTP_MOUNT}"
+    fi
+
+    # Build URL: port always goes into the URL, never as a separate flag
+    # SHARE format: host/path  (no protocol prefix)
+    local FTP_HOST
+    local FTP_PATH
+    FTP_HOST="$(echo "${SHARE}" | cut -d'/' -f1)"
+    FTP_PATH="$(echo "${SHARE}" | cut -s -d'/' -f2-)"
+
+    local FTP_URL
+    if [ "${FTP_PORT}" != "21" ]; then
+      FTP_URL="ftp://${FTP_HOST}:${FTP_PORT}/${FTP_PATH}"
+    else
+      FTP_URL="ftp://${FTP_HOST}/${FTP_PATH}"
+    fi
+
+    # Derive extra curl flags from OPTS for the accessibility check.
+    # curlftpfs uses mount-style options (e.g. "ssl"), but curl uses flags (--ftp-ssl).
+    # We only map the SSL-related options that are safe to pass to curl as well.
+    local CURL_EXTRA_OPTS=""
+    if [ "${OPTS}" != "nil" ] && [[ "${OPTS}" == *"ssl"* ]]; then
+      CURL_EXTRA_OPTS="--ftp-ssl"
+      if [[ "${OPTS}" == *"no_verify_peer"* || "${OPTS}" == *"no_verify_hostname"* ]]; then
+        CURL_EXTRA_OPTS="${CURL_EXTRA_OPTS} --insecure"
+      fi
+    fi
+
+    echo "curl --user obfuscated -s -o /dev/null --connect-timeout ${CONNECT_TIMEOUT} ${CURL_EXTRA_OPTS} ${FTP_URL}"
+    local CURL_EXIT_CODE
+    # shellcheck disable=SC2086
+    curl --user "${USER}:${PASS}" -s -o /dev/null --connect-timeout "${CONNECT_TIMEOUT}" \
+      ${CURL_EXTRA_OPTS} \
+      "${FTP_URL}"
+    CURL_EXIT_CODE=$?
+
+    local ACCESSIBLE
+    if [ "${CURL_EXIT_CODE}" -eq 0 ]; then
+      ACCESSIBLE=true
+    else
+      ACCESSIBLE=false
+      echo "resource (${FTP_URL}) is not accessible (curl exit: ${CURL_EXIT_CODE}) -> ignore"
+    fi
+
+    if ${ACCESSIBLE}; then
+      local id_user="$(id -u www-data)"
+      local gid_user="$(id -g www-data)"
+
+      local CURLFTPFS_OPTS="user=${USER}:${PASS},uid=${id_user},gid=${gid_user},allow_other,nonempty"
+      if [ "${OPTS}" != "nil" ]; then
+        echo "additional options detected: ${OPTS}"
+        CURLFTPFS_OPTS="${CURLFTPFS_OPTS},${OPTS}"
+      fi
+
+      echo "curlftpfs -o obfuscated ${FTP_URL} ${FTP_MOUNT}"
+      curlftpfs -o "${CURLFTPFS_OPTS}" "${FTP_URL}" "${FTP_MOUNT}"
+      if [ $? -eq 0 ]; then
+        initial_create_symlinks_for_resources "${RESOURCE_NAME}" "FTP_${COUNT}" "${FTP_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
+      else
+        echo "mount not successful (ignore): ${FTP_URL}"
+        if [ "$STOP_ON_ERROR" = "true" ]; then
+          echo "!!! STOP_ON_ERROR !!! -> $RESOURCE_NAME is not accessible"
+          return 1
+        fi
+      fi
+    elif [ "$STOP_ON_ERROR" = "true" ]; then
+      echo "!!! STOP_ON_ERROR !!! -> $RESOURCE_NAME is not accessible"
+      return 1
+    fi
+  done
+}
+
 function connect_or_update_docker() {
   local TYPE="${1}"
   for COUNT in $(env | grep -o "^DOCKER_[0-9]*_IMAGE" | awk -F '_' '{print $2}' | sort -nu); do
@@ -475,7 +579,7 @@ function connect_or_update_git_repos() {
         elif [[ "${git_output}" == *"Authentication failed"* ]]; then
           echo "git repo is currently not accessible -> Authentication failed"
           ACCESSIBLE=false
-        elif [[ "${git_output}" == "fatal:"* ]]; then
+        elif [[ "${git_output}" == *"fatal:"* ]]; then
           if [[ "${git_output}" == *"index file smaller than expected"* ]]; then
             echo "local git repo has a serious problem"
             CHECKOUT_REPO_AGAIN=true
@@ -602,7 +706,7 @@ function handle_proxy() {
         IP_RESTRICTION="satisfy all; $IP_RESTRICTION"
       fi
       if [ "${PROXY_CACHE}" == "nil" ]; then
-        SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|;"
+        SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|"
       else
         SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|; s|__PROXY_CACHE_TIME__|${PROXY_CACHE}|;  s|#proxy_cache|proxy_cache|;"
       fi
