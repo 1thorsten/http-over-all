@@ -207,6 +207,91 @@ function mount_smb_shares() {
   done
 }
 
+# https://linux.die.net/man/1/curlftpfs
+function mount_ftp_shares() {
+  for COUNT in $(env | grep -o "^FTP_[0-9]*_SHARE" | awk -F '_' '{print $2}' | sort -nu); do
+    local USER="$(var_exp "FTP_${COUNT}_USER")"
+    local PASS="$(var_exp "FTP_${COUNT}_PASS")"
+    local SHARE="$(var_exp "FTP_${COUNT}_SHARE")"
+    local FTP_PORT="$(var_exp "FTP_${COUNT}_PORT" "21")"
+    local RESOURCE_NAME="$(var_exp "FTP_${COUNT}_NAME")"
+    local DAV_ACTIVE="$(var_exp "FTP_${COUNT}_DAV" "false")"
+    local HTTP_ACTIVE="$(var_exp "FTP_${COUNT}_HTTP" "true")"
+    local CACHE_ACTIVE="$(var_exp "FTP_${COUNT}_CACHE" "true")"
+    local STOP_ON_ERROR="$(var_exp "FTP_${COUNT}_STOP_ON_ERROR" "false")"
+    local USE_SSL="$(var_exp "FTP_${COUNT}_SSL" "false")"
+
+    echo
+    echo "$(date +'%T'): ftp: ${RESOURCE_NAME}"
+
+    if [ "$RESOURCE_NAME" = "nil" ]; then
+      echo "ERR (config): define FTP_${COUNT}_NAME"
+      return 1
+    fi
+
+    local FTP_MOUNT="${DATA}/ftp/${COUNT}"
+
+    mkdir -p "${FTP_MOUNT}"
+
+    # umount share if already mounted
+    if [[ "$(mount | grep -c "${FTP_MOUNT}")" == "1" ]]; then
+      echo "fusermount -u ${FTP_MOUNT}"
+      fusermount -u "${FTP_MOUNT}"
+    fi
+
+    # check accessibility
+    local ACCESSIBLE
+    local FTP_URL
+    if [ "${USE_SSL}" = "true" ]; then
+      FTP_URL="ftps://${SHARE%/}/"
+    else
+      FTP_URL="ftp://${SHARE%/}/"
+    fi
+
+    local CURL_EXIT_CODE
+    curl --user "${USER}:${PASS}" -s -o /dev/null --connect-timeout 3 \
+      $([ "${FTP_PORT}" != "21" ] && echo "--port ${FTP_PORT}") \
+      $([ "${USE_SSL}" = "true" ] && echo "--ssl-reqd --insecure") \
+      "${FTP_URL}"
+    CURL_EXIT_CODE=$?
+
+    if [ "${CURL_EXIT_CODE}" -eq 0 ]; then
+      ACCESSIBLE=true
+    else
+      ACCESSIBLE=false
+      echo "resource (${FTP_URL}) is not accessible (curl exit: ${CURL_EXIT_CODE}) -> ignore"
+    fi
+
+    if ${ACCESSIBLE}; then
+      local id_user="$(id -u www-data)"
+      local gid_user="$(id -g www-data)"
+
+      local CURLFTPFS_OPTS="user=${USER}:${PASS},uid=${id_user},gid=${gid_user},allow_other,nonempty"
+      if [ "${FTP_PORT}" != "21" ]; then
+        CURLFTPFS_OPTS="${CURLFTPFS_OPTS},port=${FTP_PORT}"
+      fi
+      if [ "${USE_SSL}" = "true" ]; then
+        CURLFTPFS_OPTS="${CURLFTPFS_OPTS},ssl,no_verify_peer,no_verify_hostname"
+      fi
+
+      echo "curlftpfs -o obfuscated ${FTP_URL} ${FTP_MOUNT}"
+      curlftpfs -o "${CURLFTPFS_OPTS}" "${FTP_URL}" "${FTP_MOUNT}"
+      if [ $? -eq 0 ]; then
+        initial_create_symlinks_for_resources "${RESOURCE_NAME}" "FTP_${COUNT}" "${FTP_MOUNT}" "${HTTP_ACTIVE}" "${DAV_ACTIVE}" "${CACHE_ACTIVE}"
+      else
+        echo "mount not successful (ignore): ${FTP_URL}"
+        if [ "$STOP_ON_ERROR" = "true" ]; then
+          echo "!!! STOP_ON_ERROR !!! -> $RESOURCE_NAME is not accessible"
+          return 1
+        fi
+      fi
+    elif [ "$STOP_ON_ERROR" = "true" ]; then
+      echo "!!! STOP_ON_ERROR !!! -> $RESOURCE_NAME is not accessible"
+      return 1
+    fi
+  done
+}
+
 function connect_or_update_docker() {
   local TYPE="${1}"
   for COUNT in $(env | grep -o "^DOCKER_[0-9]*_IMAGE" | awk -F '_' '{print $2}' | sort -nu); do
@@ -475,7 +560,7 @@ function connect_or_update_git_repos() {
         elif [[ "${git_output}" == *"Authentication failed"* ]]; then
           echo "git repo is currently not accessible -> Authentication failed"
           ACCESSIBLE=false
-        elif [[ "${git_output}" == "fatal:"* ]]; then
+        elif [[ "${git_output}" == *"fatal:"* ]]; then
           if [[ "${git_output}" == *"index file smaller than expected"* ]]; then
             echo "local git repo has a serious problem"
             CHECKOUT_REPO_AGAIN=true
@@ -602,7 +687,7 @@ function handle_proxy() {
         IP_RESTRICTION="satisfy all; $IP_RESTRICTION"
       fi
       if [ "${PROXY_CACHE}" == "nil" ]; then
-        SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|;"
+        SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|"
       else
         SED_PATTERN="s|__PROXY_NAME__|${PROXY_NAME%/}|; s|__PROXY_URL__|${PROXY_URL%/}/|; s|#IP_RESTRICTION|${IP_RESTRICTION%;};|; s|__PROXY_CACHE_TIME__|${PROXY_CACHE}|;  s|#proxy_cache|proxy_cache|;"
       fi
