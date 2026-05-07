@@ -17,7 +17,7 @@ RUN set -x && \
     APT_SYSTEM="sudo tzdata ca-certificates" && \
     APT_HTTP="nginx nginx-extras" && \
     APT_PHP="php-curl php-fpm php-mbstring php-mysql" && \
-    APT_SERVICES="sshfs nfs-common davfs2 cifs-utils git" && \
+    APT_SERVICES="sshfs nfs-common davfs2 cifs-utils git curlftpfs" && \
     APT_TOOLS="iputils-ping curl rsync" && \
     APT_ETC="nano" && \
     apt-get install -y --no-install-recommends ${APT_SYSTEM} ${APT_HTTP} ${APT_PHP} ${APT_SERVICES} ${APT_TOOLS} ${APT_ETC} && \
@@ -67,6 +67,7 @@ RUN set -x && \
     chmod 0440 /etc/sudoers.d/$USER && \
     chmod 0440 /etc/sudoers.d/www-data && \
     find /scripts -name "*.sh" -exec sed -i 's/\r$//' {} + && \
+    find /scripts -name "*.sh" -exec chmod u+x {} + && \
     echo "\nexport RELEASE=${RELEASE}\n" >> /scripts/system-helper.sh && \
     echo "source /scripts/system-helper.sh" >> /etc/bash.bashrc && \
     # colors (bash) \

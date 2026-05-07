@@ -222,7 +222,7 @@ function mount_ftp_shares() {
     # FTP_N_OPTS: additional curlftpfs mount options, e.g. "ssl,no_verify_peer,no_verify_hostname"
     local OPTS="$(var_exp "FTP_${COUNT}_OPTS")"
     # FTP_N_CONNECT_TIMEOUT: curl connect-timeout in seconds for the accessibility check (default: 1)
-    local CONNECT_TIMEOUT="$(var_exp "FTP_${COUNT}_CONNECT_TIMEOUT" "1")"
+    local CONNECT_TIMEOUT="$(var_exp "FTP_${COUNT}_CONNECT_TIMEOUT" "3")"
 
     echo
     echo "$(date +'%T'): ftp: ${RESOURCE_NAME}"

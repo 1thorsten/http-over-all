@@ -186,15 +186,15 @@ e.g. `ssl,no_verify_peer,no_verify_hostname`.
 When `ssl` is contained in OPTS, the accessibility check will also use `--ftp-ssl`;
 when `no_verify_peer` or `no_verify_hostname` is additionally present, `--insecure` is added automatically.
 
-| ENV-Variable                | Description                                                                            | required |
-|-----------------------------|----------------------------------------------------------------------------------------|----------|
-| FTP_[COUNT]_USER            | FTP username                                                                           | x        |
-| FTP_[COUNT]_PASS            | FTP password                                                                           | x        |
-| FTP_[COUNT]_SHARE           | host/path, e.g. 192.168.178.10/pub                                                     | x        |
-| FTP_[COUNT]_PORT            | FTP port (default: 21)                                                                 | -        |
-| FTP_[COUNT]_OPTS            | additional [curlftpfs](https://linux.die.net/man/1/curlftpfs) mount options,           | -        |
-|                             | e.g. `ssl,no_verify_peer,no_verify_hostname` for FTPS                                  |          |
-| FTP_[COUNT]_CONNECT_TIMEOUT | curl connect-timeout in seconds for the accessibility check (default: 1)               | -        |
+| ENV-Variable                | Description                                                                  | required |
+|-----------------------------|------------------------------------------------------------------------------|----------|
+| FTP_[COUNT]_USER            | FTP username                                                                 | x        |
+| FTP_[COUNT]_PASS            | FTP password                                                                 | x        |
+| FTP_[COUNT]_SHARE           | host/path, e.g. 192.168.178.10/pub                                           | x        |
+| FTP_[COUNT]_PORT            | FTP port (default: 21)                                                       | -        |
+| FTP_[COUNT]_OPTS            | additional [curlftpfs](https://linux.die.net/man/1/curlftpfs) mount options, | -        |
+|                             | e.g. `ssl,no_verify_peer,no_verify_hostname` for FTPS                        |          |
+| FTP_[COUNT]_CONNECT_TIMEOUT | curl connect-timeout in seconds for the accessibility check (default: 3)     | -        |
 
 General Options: yes
 

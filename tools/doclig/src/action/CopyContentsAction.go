@@ -138,6 +138,9 @@ func CopyContents(image *string, srcPaths []string, dst *string, outFormat *stri
 	ctx := context.Background()
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: *image,
+		Labels: map[string]string{
+			"docon.v1": `{"control":"false","console":"false","show":"false"}`,
+		},
 	}, nil, nil, nil, fmt.Sprintf("copy-contents-%s", randSeq(10)))
 	if err != nil {
 		panic(err)
