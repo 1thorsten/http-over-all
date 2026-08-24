@@ -84,11 +84,12 @@ General Options: yes
 ## DAV
 ### Options
 
-| ENV-Variable      | Description             | required |
-|-------------------|-------------------------|----------|
-| DAV_[COUNT]_USER  | -                       | x        | 
-| DAV_[COUNT]_PASS  | -                       | x        | 
-| DAV_[COUNT]_SHARE | e.g. http://x.x.x.x/dav | x        | 
+| ENV-Variable                | Description                                 | required |
+|-----------------------------|---------------------------------------------|----------|
+| DAV_[COUNT]_USER            | -                                           | x        | 
+| DAV_[COUNT]_PASS            | -                                           | x        | 
+| DAV_[COUNT]_SHARE           | e.g. http://x.x.x.x/dav                     | x        |
+| DAV_[COUNT]_CONNECT_TIMEOUT | accessibility check in seconds (default: 3) | -        |
 
 General Options: yes
 
@@ -102,6 +103,7 @@ CACHE is set to false, because the resources are lying on the local drive.
 | GIT_[COUNT]_REPO_BRANCH      | branch name (default: master)                                    | -        |
 | GIT_[COUNT]_SHALLOW_CLONE    | true (only clone one branch) or false (default: false)           | -        |
 | GIT_[COUNT]_SEPARATE_GIT_DIR | true (outside the repo) or false (default: false)                | -        |
+| GIT_[COUNT]_CONNECT_TIMEOUT  | accessibility check in seconds (default: 3)                      | -        |
 
 General Options: yes
 
@@ -142,18 +144,19 @@ Do not forget to mount the socket with write permissions (/var/run/docker.sock:/
 sufficient)
 Proxy (mode: direct) supports websockets.
 
-| ENV-Variable                 | Description                                                                                      | required |
-|------------------------------|--------------------------------------------------------------------------------------------------|----------|
-| PROXY_[COUNT]_NAME           | resource name (shown in root dir)                                                                | x        | 
-| PROXY_[COUNT]_URL            | e.g http:/x.x.x.x/resource/ or http://unix:/var/run/docker.sock:/                                | x        | 
-| PROXY_[COUNT]_CHECK          | URL to check (default: PROXY_[COUNT]_URL), false for not checking                                | -        | 
-| PROXY_[COUNT]_AUTH           | user:password (basic auth)                                                                       | -        |
-| PROXY_[COUNT]_CACHE_TIME     | cache content, and how to cache - e.g. 1d (one day)                                              | -        |
-| PROXY_[COUNT]_HTTP_ROOT_SHOW | show the content in the root directory (default: true)                                           | -        | 
-| PROXY_[COUNT]_IP_RESTRICTION | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | -        | 
-| PROXY_[COUNT]_LOG_ACCESS     | access_log -> file, device (/dev/stdout), off (default: off)                                     | -        | 
-| PROXY_[COUNT]_LOG_ERROR      | error_log -> file, device (/dev/stdout), off (default: /dev/stdout)                              | -        | 
-| PROXY_[COUNT]_MODE           | cache (default for non unix-sockets) or direct (default for unix-sockets)                        | -        | 
+| ENV-Variable                  | Description                                                                                      | required |
+|-------------------------------|--------------------------------------------------------------------------------------------------|----------|
+| PROXY_[COUNT]_NAME            | resource name (shown in root dir)                                                                | x        | 
+| PROXY_[COUNT]_URL             | e.g http:/x.x.x.x/resource/ or http://unix:/var/run/docker.sock:/                                | x        | 
+| PROXY_[COUNT]_CHECK           | URL to check (default: PROXY_[COUNT]_URL), false for not checking                                | -        | 
+| PROXY_[COUNT]_AUTH            | user:password (basic auth)                                                                       | -        |
+| PROXY_[COUNT]_CACHE_TIME      | cache content, and how to cache - e.g. 1d (one day)                                              | -        |
+| PROXY_[COUNT]_HTTP_ROOT_SHOW  | show the content in the root directory (default: true)                                           | -        | 
+| PROXY_[COUNT]_IP_RESTRICTION  | [ip restriction](http://nginx.org/en/docs/http/ngx_http_access_module.html) (default: allow all) | -        | 
+| PROXY_[COUNT]_LOG_ACCESS      | access_log -> file, device (/dev/stdout), off (default: off)                                     | -        | 
+| PROXY_[COUNT]_LOG_ERROR       | error_log -> file, device (/dev/stdout), off (default: /dev/stdout)                              | -        | 
+| PROXY_[COUNT]_MODE            | cache (default for non unix-sockets) or direct (default for unix-sockets)                        | -        | 
+| PROXY_[COUNT]_CONNECT_TIMEOUT | accessibility check in seconds (default: 3)                                                      | -        |
 
 General Options: no
 
@@ -194,7 +197,7 @@ when `no_verify_peer` or `no_verify_hostname` is additionally present, `--insecu
 | FTP_[COUNT]_PORT            | FTP port (default: 21)                                                       | -        |
 | FTP_[COUNT]_OPTS            | additional [curlftpfs](https://linux.die.net/man/1/curlftpfs) mount options, | -        |
 |                             | e.g. `ssl,no_verify_peer,no_verify_hostname` for FTPS                        |          |
-| FTP_[COUNT]_CONNECT_TIMEOUT | curl connect-timeout in seconds for the accessibility check (default: 3)     | -        |
+| FTP_[COUNT]_CONNECT_TIMEOUT | accessibility check in seconds (default: 3)                                  | -        |
 
 General Options: yes
 

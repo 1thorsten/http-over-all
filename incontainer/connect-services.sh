@@ -16,6 +16,7 @@ function mount_dav_shares() {
     local HTTP_ACTIVE="$(var_exp "DAV_${COUNT}_HTTP" "true")"
     local CACHE_ACTIVE="$(var_exp "DAV_${COUNT}_CACHE" "true")"
     local STOP_ON_ERROR="$(var_exp "DAV_${COUNT}_STOP_ON_ERROR" "false")"
+    local CONNECT_TIMEOUT="$(var_exp "DAV_${COUNT}_CONNECT_TIMEOUT" "3")"
     echo
     echo "$(date +'%T'): dav: ${RESOURCE_NAME}"
 
@@ -36,7 +37,7 @@ function mount_dav_shares() {
 
     # check accessibility
     local ACCESSIBLE
-    local HTTP_STATUS="$(curl --user "${USER}:${PASS}" -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${SHARE%/}/")"
+    local HTTP_STATUS="$(curl --user "${USER}:${PASS}" -s -o /dev/null -I -w "%{http_code}" --connect-timeout "${CONNECT_TIMEOUT}" "${SHARE%/}/")"
     if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' || "${HTTP_STATUS}" -eq '405' ]]; then
       ACCESSIBLE=true
     else
@@ -221,7 +222,7 @@ function mount_ftp_shares() {
     local STOP_ON_ERROR="$(var_exp "FTP_${COUNT}_STOP_ON_ERROR" "false")"
     # FTP_N_OPTS: additional curlftpfs mount options, e.g. "ssl,no_verify_peer,no_verify_hostname"
     local OPTS="$(var_exp "FTP_${COUNT}_OPTS")"
-    # FTP_N_CONNECT_TIMEOUT: curl connect-timeout in seconds for the accessibility check (default: 1)
+    # FTP_N_CONNECT_TIMEOUT: curl connect-timeout in seconds for the accessibility check (default: 3)
     local CONNECT_TIMEOUT="$(var_exp "FTP_${COUNT}_CONNECT_TIMEOUT" "3")"
 
     echo
@@ -452,6 +453,8 @@ function connect_or_update_git_repos() {
       local CACHE_ACTIVE="$(var_exp "GIT_${COUNT}_CACHE" "false")"
 
       local STOP_ON_ERROR="$(var_exp "GIT_${COUNT}_STOP_ON_ERROR" "false")"
+      local CONNECT_TIMEOUT="$(var_exp "GIT_${COUNT}_CONNECT_TIMEOUT" "3")"
+
       local GIT_REPO_PATH="${DATA}/git/${COUNT}"
       local REPO_DIR="$(echo "${REPO_URL}" | awk -F '/' '{print $NF}' | cut -d '.' -f 1)"
       local GIT_MOUNT="${GIT_REPO_PATH}/${REPO_DIR}"
@@ -501,12 +504,12 @@ function connect_or_update_git_repos() {
         OBF_REPO_URL=${REPO_URL//$PARSED_USER/obfuscated@}
       fi
       # shellcheck disable=SC2086
-      local HTTP_STATUS="$(curl ${CURL_CREDENTIALS} -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${URL_STRICT}")"
+      local HTTP_STATUS="$(curl ${CURL_CREDENTIALS} -s -o /dev/null -I -w "%{http_code}" --connect-timeout "${CONNECT_TIMEOUT}" "${URL_STRICT}")"
       if [[ "${HTTP_STATUS}" -eq '200' || "${HTTP_STATUS}" -eq '401' || "${HTTP_STATUS}" -eq '405' || "${HTTP_STATUS}" -eq '302' ]]; then
         ACCESSIBLE=true
       else
         ACCESSIBLE=false
-        echo "command: curl ${OBF_CURL_CREDENTIALS} -s -o /dev/null -I -w %{http_code} --connect-timeout 1 ${URL_STRICT}"
+        echo "command: curl ${OBF_CURL_CREDENTIALS} -s -o /dev/null -I -w %{http_code} --connect-timeout ${CONNECT_TIMEOUT} ${URL_STRICT}"
         echo "resource ('${OBF_REPO_URL}' -> '${URL_STRICT}') is not accessible -> ${HTTP_STATUS}"
       fi
 
@@ -668,7 +671,8 @@ function handle_proxy() {
     local PROXY_MODE_DEFAULT="cache"
     local HTTP_ROOT_SHOW="$(var_exp "PROXY_${COUNT}_HTTP_ROOT_SHOW" "true")"
     local IP_RESTRICTION="$(var_exp "PROXY_${COUNT}_IP_RESTRICTION" "allow all")"
-    local STOP_ON_ERROR="$(var_exp "LOCAL_${COUNT}_STOP_ON_ERROR" "false")"
+    local STOP_ON_ERROR="$(var_exp "PROXY_${COUNT}_STOP_ON_ERROR" "false")"
+    local CONNECT_TIMEOUT="$(var_exp "PROXY_${COUNT}_CONNECT_TIMEOUT" "3")"
 
     echo
     echo "$(date +'%T'): proxy: $PROXY_NAME"
@@ -694,9 +698,9 @@ function handle_proxy() {
       echo "permissions: $permissions"
     elif [ "$PROXY_CHECK" != "false" ]; then
       # check accessibility
-      echo "check accessibility : curl -s -o /dev/null -I -w '%{http_code}' --connect-timeout 1 ${PROXY_CHECK}"
+      echo "check accessibility : curl -s -o /dev/null -I -w '%{http_code}' --connect-timeout ${CONNECT_TIMEOUT} ${PROXY_CHECK}"
       #sleep 20s
-      STATUS="$(curl -s -o /dev/null -I -w "%{http_code}" --connect-timeout 1 "${PROXY_CHECK}")"
+      STATUS="$(curl -s -o /dev/null -I -w "%{http_code}" --connect-timeout "${CONNECT_TIMEOUT}" "${PROXY_CHECK}")"
     fi
 
     local PROXY_MODE="$(var_exp "PROXY_${COUNT}_MODE" "$PROXY_MODE_DEFAULT")"
