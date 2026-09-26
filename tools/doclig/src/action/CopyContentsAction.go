@@ -2,29 +2,20 @@ package action
 
 import (
 	"archive/tar"
+	"context"
+	"errors"
 	"fmt"
 	"io"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+	"uuid"
 
-	"github.com/docker/distribution/context"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/client"
 )
-
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func randSeq(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(b)
-}
 
 func timeTrack(start time.Time, name string, min time.Duration) {
 	elapsed := time.Since(start)
@@ -33,158 +24,204 @@ func timeTrack(start time.Time, name string, min time.Duration) {
 	}
 }
 
-// untar takes a destination path and a reader; a tar reader loops over the tarfile
-// creating the file structure at 'dst' along the way, and writing any files
+// untar extrahiert einen tar-Stream sicher in dst.
+// Es nutzt os.Root (Go 1.24+), das Pfad-Traversal auch über
+// Symlinks hinweg verhindert - eine echte Härtung gegenüber
+// filepath.Join + IsLocal allein.
 func untar(dst string, r io.Reader) error {
+	root, err := os.OpenRoot(dst)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+
 	tr := tar.NewReader(r)
 
 	for {
 		header, err := tr.Next()
-
 		switch {
-		// if no more files are found return
 		case err == io.EOF:
 			return nil
-
-		// return any other error
 		case err != nil:
 			return err
-
-		// if the header is nil, just skip it (not sure how this happens)
 		case header == nil:
 			continue
 		}
 
-		// the target location where the dir/file should be created
-		target := filepath.Join(dst, header.Name)
-		if strings.Contains(target, "..") {
-			fmt.Printf("!ignore %s\n", target)
-			continue
+		name := filepath.Clean(header.Name)
+		if !filepath.IsLocal(name) {
+			return fmt.Errorf("unsafe path in tar archive: %q", header.Name)
 		}
-		// the following switch could also be done using fi.Mode(), not sure if there
-		// is a benefit of using one vs. the other.
-		// fi := header.FileInfo()
 
-		// check the file type
 		switch header.Typeflag {
-
-		// if it's a directory, and it doesn't exist create it
 		case tar.TypeDir:
-			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0755); err != nil {
+			if err := root.MkdirAll(name, 0755); err != nil {
+				return err
+			}
+			if err := root.Chtimes(name, header.AccessTime, header.ModTime); err != nil {
+				fmt.Printf("Warn: change access and modification times failed: %s\n", name)
+			}
+
+		case tar.TypeReg:
+			// tar.TypeRegA ist deprecated und wird vom Reader
+			// bereits automatisch zu TypeReg/TypeDir normalisiert.
+			start := time.Now()
+
+			if dir := filepath.Dir(name); dir != "." {
+				if err := root.MkdirAll(dir, 0755); err != nil {
 					return err
 				}
 			}
-			if err := os.Chtimes(target, header.AccessTime, header.ModTime); err != nil {
-				fmt.Printf("Warn: change access and modification times failed: %s\n", target)
-			}
 
-		// if it's a file create it
-		case tar.TypeReg:
-			start := time.Now()
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			f, err := root.OpenFile(
+				name,
+				os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+				os.FileMode(header.Mode),
+			)
 			if err != nil {
 				return err
 			}
 
-			// copy over contents
-			if _, err := io.Copy(f, tr); err != nil {
+			_, copyErr := io.Copy(f, tr)
+			closeErr := f.Close()
+			if err := errors.Join(copyErr, closeErr); err != nil {
 				return err
 			}
 
-			// manually close here after each file operation; deferring would cause each file close
-			// to wait until all operations have completed.
-			if err := f.Close(); err != nil {
-				return err
+			if err := root.Chtimes(name, header.AccessTime, header.ModTime); err != nil {
+				fmt.Printf("Warn: change access and modification times failed: %s\n", name)
 			}
-			if err := os.Chtimes(target, header.AccessTime, header.ModTime); err != nil {
-				fmt.Printf("Warn: change access and modification times failed: %s\n", target)
-			}
-			timeTrack(start, "file: "+target+" ("+strconv.FormatInt(header.Size/1024, 10)+"kb)", 100*time.Millisecond)
+
+			timeTrack(
+				start,
+				"file: "+name+" ("+strconv.FormatInt(header.Size/1024, 10)+"kb)",
+				100*time.Millisecond,
+			)
 		}
 	}
 }
 
-// copyTar save the tar from the io.Reader as file
-func copyTar(dst string, path string, r io.Reader) (*string, error) {
-	outFileName := strings.ReplaceAll(path, "/", "_")
-	if outFileName[0] == '_' {
-		outFileName = strings.Replace(outFileName, "_", "", 1)
+func copyTar(dst string, path string, r io.Reader) (string, error) {
+	outFileName := strings.TrimPrefix(strings.ReplaceAll(path, "/", "_"), "_")
+	if outFileName == "" {
+		return "", fmt.Errorf("empty source path")
 	}
+
 	target := filepath.Join(dst, outFileName+".tar")
 	fmt.Printf("Out-File: %s\n", target)
+
 	f, err := os.Create(target)
 	if err != nil {
-		fmt.Printf("ignore %s -> %s\n", target, err)
-		return nil, err
-	} else {
-		if _, err := io.Copy(f, r); err != nil {
-			fmt.Printf("error writing %s -> %s\n", target, err)
-		}
-		if err := f.Close(); err != nil {
-			return nil, err
-		}
+		return "", err
 	}
-	return &target, nil
+
+	_, copyErr := io.Copy(f, r)
+	closeErr := f.Close()
+	if err := errors.Join(copyErr, closeErr); err != nil {
+		return "", err
+	}
+
+	return target, nil
 }
 
-// CopyContents copy the specified content (paths) from image to a specified destination
+// CopyContents kopiert die angegebenen Pfade aus einem Image zum Ziel.
 func CopyContents(image *string, srcPaths []string, dst *string, outFormat *string) {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := client.New(client.FromEnv)
 	if err != nil {
 		panic(err)
 	}
+	defer cli.Close()
 
-	ctx := context.Background()
-	resp, err := cli.ContainerCreate(ctx, &container.Config{
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	resp, err := cli.ContainerCreate(ctx, client.ContainerCreateOptions{
 		Image: *image,
-		Labels: map[string]string{
-			"docon.v1": `{"control":"false","console":"false","show":"false"}`,
+		Name:  "copy-contents-" + uuid.NewV7().String(),
+		Config: &container.Config{
+			Labels: map[string]string{
+				"docon.v1": `{"control":"false","console":"false","show":"false"}`,
+			},
 		},
-	}, nil, nil, nil, fmt.Sprintf("copy-contents-%s", randSeq(10)))
+	})
 	if err != nil {
 		panic(err)
 	}
 
-	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
+	defer func() {
+		start := time.Now()
+		if _, err := cli.ContainerRemove(
+			ctx,
+			resp.ID,
+			client.ContainerRemoveOptions{Force: true},
+		); err != nil {
+			fmt.Printf("Warn: could not remove container %s: %v\n", resp.ID, err)
+		}
+		timeTrack(start, "Remove container", time.Millisecond)
+	}()
+
+	if _, err := cli.ContainerStart(
+		ctx,
+		resp.ID,
+		client.ContainerStartOptions{},
+	); err != nil {
 		panic(err)
 	}
 
-	if err := cli.ContainerPause(ctx, resp.ID); err != nil {
-		fmt.Printf("Warn: could not pause container for image: %s\n", *image)
+	if _, err := cli.ContainerPause(
+		ctx,
+		resp.ID,
+		client.ContainerPauseOptions{},
+	); err != nil {
+		fmt.Printf("Warn: could not pause container for image: %s: %v\n", *image, err)
 	}
 
-	fmt.Printf("CopyContents: %s -> %s\n", srcPaths, *dst)
+	fmt.Printf("CopyContents: %v -> %s\n", srcPaths, *dst)
+
 	for _, srcPath := range srcPaths {
 		trimmedPath := strings.TrimSpace(srcPath)
-		reader, _, err := cli.CopyFromContainer(ctx, resp.ID, trimmedPath)
+
+		result, err := cli.CopyFromContainer(
+			ctx,
+			resp.ID,
+			client.CopyFromContainerOptions{SourcePath: trimmedPath},
+		)
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println(err)
 			break
 		}
 
 		start := time.Now()
-		if *outFormat != "tar" {
-			err := untar(*dst, reader)
-			if err != nil {
-				fmt.Println(err.Error())
+
+		if *outFormat == "tar" {
+			target, copyErr := copyTar(*dst, trimmedPath, result.Content)
+			closeErr := result.Content.Close()
+
+			if err := errors.Join(copyErr, closeErr); err != nil {
+				fmt.Println(err)
 				break
 			}
-			timeTrack(start, fmt.Sprintf("Untar [%s]", trimmedPath), time.Microsecond)
-		} else {
-			if target, _ := copyTar(*dst, trimmedPath, reader); target != nil {
-				timeTrack(start, fmt.Sprintf("Copy [%s] to %s", trimmedPath, *target), time.Microsecond)
-			} else {
-				fmt.Printf("Error copying [%s]\n", trimmedPath)
-			}
-		}
-	}
 
-	defer timeTrack(time.Now(), "Stop container", time.Millisecond)
-	if err := cli.ContainerStop(ctx, resp.ID, container.StopOptions{Timeout: new(2)}); err == nil {
-		err := cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{})
-		if err != nil {
-			return
+			timeTrack(
+				start,
+				fmt.Sprintf("Copy [%s] to %s", trimmedPath, target),
+				time.Microsecond,
+			)
+			continue
 		}
+
+		extractErr := untar(*dst, result.Content)
+		closeErr := result.Content.Close()
+
+		if err := errors.Join(extractErr, closeErr); err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		timeTrack(
+			start,
+			fmt.Sprintf("Untar [%s]", trimmedPath),
+			time.Microsecond,
+		)
 	}
 }

@@ -1,23 +1,27 @@
 package action
 
 import (
+	"context"
 	"fmt"
-	"github.com/docker/distribution/context"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
+
+	"github.com/moby/moby/client"
 )
 
-// PruneImages prune dangling images (image which are not referenced anymore)
+// PruneImages entfernt nicht mehr referenzierte, ungetaggte Images.
 func PruneImages() {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := client.New(client.FromEnv)
 	if err != nil {
 		panic(err)
 	}
+	defer cli.Close()
 
 	fmt.Println("Prune dangling images")
-	pruneFilters := filters.NewArgs()
-	pruneFilters.Add("dangling", "true")
-	ctx := context.Background()
-	pruneReport, _ := cli.ImagesPrune(ctx, pruneFilters)
-	fmt.Printf("Space Reclaimed: %d bytes", pruneReport.SpaceReclaimed)
+	filters := client.Filters{}.Add("dangling", "true")
+	result, err := cli.ImagePrune(context.Background(), client.ImagePruneOptions{
+		Filters: filters,
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Space Reclaimed: %d bytes\n", result.Report.SpaceReclaimed)
 }

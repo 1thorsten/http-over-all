@@ -7,10 +7,10 @@ import (
 	"io"
 	"strings"
 
-	"github.com/docker/distribution/context"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/registry"
-	"github.com/docker/docker/client"
+	"context"
+
+	"github.com/moby/moby/api/types/registry"
+	"github.com/moby/moby/client"
 )
 
 type PulledImage struct {
@@ -21,12 +21,13 @@ type PulledImage struct {
 
 // PullImage pull the specified image from the registry
 func PullImage(imageValue *string, username *string, password *string) *PulledImage {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := client.New(client.FromEnv)
 	if err != nil {
 		panic(err)
 	}
+	defer cli.Close()
 
-	pullOptions := image.PullOptions{}
+	pullOptions := client.ImagePullOptions{}
 
 	auth := ""
 	// registry authentication
@@ -46,7 +47,7 @@ func PullImage(imageValue *string, username *string, password *string) *PulledIm
 	}
 
 	ctx := context.Background()
-	events, err := cli.ImagePull(ctx, *imageValue, image.PullOptions{})
+	events, err := cli.ImagePull(ctx, *imageValue, pullOptions)
 
 	if err != nil {
 		panic(err)
@@ -103,10 +104,9 @@ func PullImage(imageValue *string, username *string, password *string) *PulledIm
 		}
 	}
 
-	inspect, _, err := cli.ImageInspectWithRaw(ctx, *imageValue)
+	inspect, err := cli.ImageInspect(ctx, *imageValue)
 	if err == nil {
 		fmt.Printf("Created: %s\n", inspect.Created)
-		fmt.Printf("Docker-Version: %s\n", inspect.DockerVersion)
 	}
 
 	return &resp
