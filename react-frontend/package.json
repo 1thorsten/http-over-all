@@ -39,7 +39,7 @@
     "vite": "^8.0.5"
   },
   "allowScripts": {
-    "@swc/core@1.15.47": true,
-    "fsevents@2.3.3": true
+    "fsevents": true,
+    "@swc/core": true
   }
 }
