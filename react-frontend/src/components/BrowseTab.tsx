@@ -184,7 +184,12 @@ const BrowseTab: React.FC<BrowseTabProps> = ({onFileSelect}) => {
                 </Paper>
 
                 {loading && (
-                    <Box display="flex" justifyContent="center" p={4}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            p: 4
+                        }}>
                         <CircularProgress/>
                     </Box>
                 )}
@@ -227,7 +232,9 @@ const BrowseTab: React.FC<BrowseTabProps> = ({onFileSelect}) => {
                                                 </Typography>
                                             </Box>
                                             <Box sx={{width: '120px', minWidth: '120px'}}>
-                                                <Typography variant="caption" color="text.secondary">
+                                                <Typography variant="caption" sx={{
+                                                    color: "text.secondary"
+                                                }}>
                                                     Parent directory
                                                 </Typography>
                                             </Box>
@@ -266,18 +273,20 @@ const BrowseTab: React.FC<BrowseTabProps> = ({onFileSelect}) => {
                                             <Box sx={{width: '130px', minWidth: '130px'}}>
                                                 <Typography
                                                     variant="caption"
-                                                    color="text.secondary"
-                                                    sx={{fontFamily: 'monospace'}}
-                                                >
+                                                    sx={{
+                                                        color: "text.secondary",
+                                                        fontFamily: 'monospace'
+                                                    }}>
                                                     {item.lastModified}
                                                 </Typography>
                                             </Box>
                                             <Box sx={{width: '80px', minWidth: '80px', textAlign: 'right'}}>
                                                 <Typography
                                                     variant="caption"
-                                                    color="text.secondary"
-                                                    sx={{fontFamily: 'monospace'}}
-                                                >
+                                                    sx={{
+                                                        color: "text.secondary",
+                                                        fontFamily: 'monospace'
+                                                    }}>
                                                     {item.size && item.type === 'file' ? formatFileSize(parseInt(item.size)) : ''}
                                                 </Typography>
                                             </Box>
@@ -289,7 +298,9 @@ const BrowseTab: React.FC<BrowseTabProps> = ({onFileSelect}) => {
                             {items.length === 0 && (
                                 <ListItem sx={{py: 2}}>
                                     <Box sx={{width: '100%'}}>
-                                        <Typography variant="body2" color="text.secondary">
+                                        <Typography variant="body2" sx={{
+                                            color: "text.secondary"
+                                        }}>
                                             Empty directory
                                         </Typography>
                                     </Box>

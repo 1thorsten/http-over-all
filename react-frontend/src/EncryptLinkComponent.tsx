@@ -182,7 +182,13 @@ export default function EncryptLinkComponent({queryParams: initialParams = undef
                         <Typography variant="subtitle1" gutterBottom>
                             Link to decrypt
                         </Typography>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ml: 'auto'}}>
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{
+                                alignItems: "center",
+                                ml: 'auto'
+                            }}>
                             {clipboardAvailable && (
                                 <IconButton onClick={() => {
                                     navigator.clipboard.writeText(encryptedUrl).then();

@@ -172,7 +172,13 @@ function DecryptionComponent({initialEncryptedValue = ''}: { initialEncryptedVal
                                 </Typography>
                             )}
                         </Box>
-                        <Stack direction="row" alignItems="center" spacing={1} sx={{ml: 'auto'}}>
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{
+                                alignItems: "center",
+                                ml: 'auto'
+                            }}>
                             {clipboardAvailable && (
                                 <IconButton onClick={handleCopy} color="primary">
                                     <ContentCopyIcon/>

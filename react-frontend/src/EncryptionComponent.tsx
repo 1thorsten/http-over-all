@@ -325,7 +325,11 @@ function EncryptionComponent({onEncryptedChange, showUrls = true, fetchedIpAddre
                                     <Box sx={{flexGrow: 1}}>
                                         <Typography variant="body2" gutterBottom
                                                     sx={{display: 'flex', alignItems: 'center'}}>
-                                            {isLink ? <LinkIcon fontSize="small" sx={{mr: 0.5}}/> :
+                                            {isLink ? <LinkIcon
+                                                sx={{
+                                                    fontSize: "small",
+                                                    mr: 0.5
+                                                }} /> :
                                                 <CodeIcon fontSize="small" sx={{mr: 0.5}}/>}
                                             {label}:
                                         </Typography>
@@ -395,7 +399,6 @@ function EncryptionComponent({onEncryptedChange, showUrls = true, fetchedIpAddre
                     </Box>
                 </Box>
             )}
-
 
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
                 <DialogTitle>Server Response Headers</DialogTitle>

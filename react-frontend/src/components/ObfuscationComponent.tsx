@@ -152,7 +152,12 @@ export default function ObfuscationComponent() {
             <Typography variant="h5" gutterBottom>
                 Text Obfuscation
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            <Typography
+                variant="body2"
+                sx={{
+                    color: "text.secondary",
+                    mb: 3
+                }}>
                 Obfuscate or deobfuscate text using Jetty-compatible obfuscation algorithm.
                 Use this to hide sensitive configuration values or passwords in plain text files.
             </Typography>
@@ -231,8 +236,16 @@ export default function ObfuscationComponent() {
                         <Divider />
 
                         <Box>
-                            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                                <Typography variant="subtitle1" fontWeight="bold">
+                            <Stack
+                                direction="row"
+                                sx={{
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    mb: 1
+                                }}>
+                                <Typography variant="subtitle1" sx={{
+                                    fontWeight: "bold"
+                                }}>
                                     {mode === 'obfuscate' ? 'Obfuscated Result' : 'Deobfuscated Result'}
                                 </Typography>
 
@@ -264,7 +277,13 @@ export default function ObfuscationComponent() {
                                 {currentOutput}
                             </Box>
 
-                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    color: "text.secondary",
+                                    mt: 1,
+                                    display: 'block'
+                                }}>
                                 {clipboardAvailable
                                     ? 'Click the copy icon to copy the result to clipboard.'
                                     : 'The text has been automatically selected. Press Ctrl+C or Cmd+C to copy.'}
