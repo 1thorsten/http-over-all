@@ -1,4 +1,4 @@
-FROM golang:1.26-alpine AS doclig-build
+FROM golang:1.27-alpine AS doclig-build
 COPY tools/doclig /doclig
 
 WORKDIR /doclig
@@ -14,7 +14,7 @@ ENV PHP_VERSION=8.4
 ARG USER=hoax
 
 LABEL maintainer="Thorsten Winkler"
-LABEL description="http-over-all"
+LABEL description  ="http-over-all"
 
 # os part
 ENV WEBDAV=/var/www/dav
