@@ -2,11 +2,11 @@ FROM golang:1.27-alpine AS doclig-build
 COPY tools/doclig /doclig
 
 WORKDIR /doclig
-RUN set +x && \
+RUN set -x && \
     apk add --no-cache upx && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o doclig ./src && \
     time upx --brute doclig && \
-    set x
+    set +x
 
 FROM debian:trixie-slim
 ENV PHP_VERSION=8.4
@@ -14,7 +14,7 @@ ENV PHP_VERSION=8.4
 ARG USER=hoax
 
 LABEL maintainer="Thorsten Winkler"
-LABEL description  ="http-over-all"
+LABEL description="http-over-all"
 
 # os part
 ENV WEBDAV=/var/www/dav
